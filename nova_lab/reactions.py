@@ -133,32 +133,39 @@ def order_reactants(m1: tuple, m2: tuple, role_a: int, role_b: int) -> tuple | N
     return None
 
 
-def react(rxn_id: int, mol_ids: list[int], k: int = 0) -> str | None:
+def products(rxn_id: int, mol_ids: list[int]) -> list[str]:
+    """All distinct products of a reagent combination; the k-th is name suffix ':k<k>'."""
     info = reaction_info(rxn_id)
     mols = [molecule(m) for m in mol_ids]
     if info is None or not all(mols):
-        return None
+        return []
     _, smarts, role_a, role_b, role_c = info
     ordered = order_reactants(mols[0], mols[1], role_a, role_b)
     if ordered is None:
-        return None
+        return []
     r1, r2 = ordered
 
     if len(mol_ids) == 2:
         if rxn_id == 1:  # triazole
-            return combine_triazole_synthons(r1, r2) if k == 0 else None
-        return smarts_product(r1, r2, smarts, k)
+            product = combine_triazole_synthons(r1, r2)
+            return [product] if product else []
+        return enumerate_smarts_products(r1, r2, smarts)
 
     r3, mask3 = mols[2]
     if not has_role(mask3, role_c):
-        return None
+        return []
     if rxn_id == 3:  # click_amide_cascade
         triazole_acid = combine_triazole_synthons(r1, r2)
-        return smarts_product(triazole_acid, r3, AMIDE_SMARTS, k) if triazole_acid else None
+        return enumerate_smarts_products(triazole_acid, r3, AMIDE_SMARTS) if triazole_acid else []
     if rxn_id == 5:  # suzuki_bromide_then_chloride
         intermediate = smarts_product(r1, r2, SUZUKI_BR_SMARTS)
-        return smarts_product(intermediate, r3, SUZUKI_CL_SMARTS, k) if intermediate else None
-    return None
+        return enumerate_smarts_products(intermediate, r3, SUZUKI_CL_SMARTS) if intermediate else []
+    return []
+
+
+def react(rxn_id: int, mol_ids: list[int], k: int = 0) -> str | None:
+    found = products(rxn_id, mol_ids)
+    return found[k] if k < len(found) else None
 
 
 def parse_name(name: str) -> tuple | None:

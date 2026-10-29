@@ -30,32 +30,35 @@ from nova_lab.config import MAX_SIMILARITY_TO_HISTORICAL, MIN_ENTROPY, NUM_MOLEC
 from nova_lab.features import featurize
 from nova_lab.filters import first_failure
 from nova_lab.surrogate import Surrogate
-from nova_lab.reactions import make_name, molecules_for_role, react, reaction_info
+from nova_lab.reactions import make_name, molecules_for_role, products, reaction_info
+
+
+MAX_K = 4  # alternative products per combination (name suffix :k<k>)
 
 
 def _make(combo):
+    """Every filter-passing product of one reagent combination."""
     rxn_id, mol_ids = combo
-    smi = react(rxn_id, list(mol_ids))
-    if not smi:
-        return None
-    mol = Chem.MolFromSmiles(smi)
-    if mol is None or first_failure(mol):
-        return None
-    return make_name(rxn_id, list(mol_ids)), smi, featurize(smi)
+    out = []
+    for k, smi in enumerate(products(rxn_id, list(mol_ids))[:MAX_K]):
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None and not first_failure(mol):
+            out.append((make_name(rxn_id, list(mol_ids), k), smi, featurize(smi), tuple(mol_ids)))
+    return out
 
 
 def evaluate(pool, model, rxn_id, combos, seen):
     combos = [c for c in combos if c not in seen]
     seen.update(combos)
-    out = [r for r in pool.map(_make, [(rxn_id, c) for c in combos], chunksize=200) if r]
+    out = [p for batch in pool.map(_make, [(rxn_id, c) for c in combos], chunksize=200) for p in batch]
     if not out:
         return pd.DataFrame(columns=["name", "smiles", "pred", "combo"])
-    X = np.vstack([x for _, _, x in out])
+    X = np.vstack([x for _, _, x, _ in out])
     return pd.DataFrame({
-        "name": [n for n, _, _ in out],
-        "smiles": [s for _, s, _ in out],
+        "name": [n for n, _, _, _ in out],
+        "smiles": [s for _, s, _, _ in out],
         "pred": model.predict(X),
-        "combo": [tuple(int(p) for p in n.split(":")[2:]) for n, _, _ in out],
+        "combo": [c for _, _, _, c in out],
     })
 
 
