@@ -34,6 +34,8 @@ source .venv/bin/activate
 | Construire le jeu d'entraînement | `python -m scripts.build_dataset` |
 | Entraîner et backtester le modèle | `python -m scripts.train_surrogate` |
 | Proposer 20 molécules pour une réaction | `python -m scripts.propose_molecules --reaction rxn:41` |
+| Noter un lot avec Boltz-2 comme les validateurs (GPU ; CPU trop lent : >1 h 30 par molécule) | `python -m scripts.boltz_score --file inputs/kaggle_batch.csv --accelerator gpu` |
+| Idem sur GPU Kaggle gratuit (recherche uniquement) | importer `notebooks/kaggle_boltz.ipynb` dans Kaggle |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur

@@ -10,10 +10,15 @@ binder), same predict settings and seed. Needs Boltz 2.2.1 (Python <= 3.12):
 Usage:
     python -m scripts.boltz_score rxn:33:2661472:131680 rxn:41:2633028:2588908
     python -m scripts.boltz_score --file data/proposals/O15427_rxn41_shortlist.csv --top 5
+    python -m scripts.boltz_score --file inputs/kaggle_batch.csv --accelerator gpu --extra=--no_kernels
+
+Extra columns of --file (group, pred, published_score...) are kept in the output.
+Re-running with the same --run resumes: Boltz skips records already predicted.
 """
 import argparse
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import time
@@ -103,7 +108,7 @@ def read_outputs(results_dir: Path, records: dict) -> pd.DataFrame:
         p, v = metrics["affinity_probability_binary"], metrics["affinity_pred_value"]
         rows.append({**info, "affinity_probability_binary": p, "affinity_pred_value": v,
                      "score": boltz_score(p, v, heavy_atoms(info["smiles"]))})
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows, columns=["name", "smiles", "affinity_probability_binary", "affinity_pred_value", "score"])
 
 
 def main():
@@ -112,32 +117,47 @@ def main():
     parser.add_argument("--file", help="CSV with a 'name' column (e.g. a proposer shortlist)")
     parser.add_argument("--top", type=int, default=None)
     parser.add_argument("--target", default="O15427")
-    parser.add_argument("--boltz", default=str(Path(sys.executable).parent / "boltz"), help="boltz CLI")
+    parser.add_argument("--boltz", default=shutil.which("boltz") or str(Path(sys.executable).parent / "boltz"),
+                        help="boltz CLI")
     parser.add_argument("--accelerator", default="cpu", choices=["cpu", "gpu"])
     parser.add_argument("--run", default=None, help="run name (default: timestamp)")
+    parser.add_argument("--extra", default="", help="extra boltz predict flags, e.g. --extra=--no_kernels")
     args = parser.parse_args()
 
     names = list(args.names)
+    meta = pd.DataFrame({"name": names})
     if args.file:
-        names += list(pd.read_csv(args.file)["name"].head(args.top))
+        meta = pd.concat([meta, pd.read_csv(args.file).head(args.top)], ignore_index=True)
+        names = list(meta["name"])
     run = args.run or time.strftime("run_%Y%m%d_%H%M%S")
     base = DATA_DIR / "boltz" / run
     records = write_inputs(names, args.target, base / "inputs")
 
     t = time.time()
     subprocess.run([args.boltz, "predict", str(base / "inputs"), "--out_dir", str(base / "out"),
-                    "--accelerator", args.accelerator, *PREDICT_ARGS], check=True)
+                    "--accelerator", args.accelerator, *PREDICT_ARGS, *args.extra.split()], check=True)
     elapsed = time.time() - t
 
     # boltz names its results folder after the input folder
     res = read_outputs(base / "out" / "boltz_results_inputs", records)
 
-    published = pd.read_parquet(DATA_DIR / "scores" / "molecules.parquet")
-    published = published[published["target"] == args.target].groupby("name")["score"].mean()
-    res["published_score"] = res["name"].map(published)
+    res = res.merge(meta.drop_duplicates("name"), on="name", how="left")
+    scores_path = DATA_DIR / "scores" / "molecules.parquet"
+    if "published_score" not in res and scores_path.exists():
+        published = pd.read_parquet(scores_path)
+        published = published[published["target"] == args.target].groupby("name")["score"].mean()
+        res["published_score"] = res["name"].map(published)
     res.to_csv(base / "scores.csv", index=False)
-    with pd.option_context("display.float_format", "{:.4f}".format, "display.width", 140):
-        print(res[["name", "affinity_probability_binary", "affinity_pred_value", "score", "published_score"]])
+    cols = [c for c in ["name", "group", "pred", "score", "published_score"] if c in res]
+    with pd.option_context("display.float_format", "{:.4f}".format, "display.width", 140, "display.max_rows", 500):
+        print(res[cols])
+    if "published_score" in res and res["published_score"].notna().sum() >= 3:
+        known = res.dropna(subset=["published_score"])
+        print(f"\ncalibration: corr {known['score'].corr(known['published_score']):.3f}, "
+              f"mean abs diff {(known['score'] - known['published_score']).abs().mean():.4f}")
+    if "group" in res and (res["group"] == "submission").any():
+        print(f"proposed submission true total: {res.loc[res['group'] == 'submission', 'score'].sum():.3f} "
+              f"({(res['group'] == 'submission').sum()} molecules scored)")
     print(f"\n{len(res)} molecules in {elapsed / 60:.1f} min ({elapsed / max(len(res), 1) / 60:.1f} min/molecule)")
     print(f"saved to {base / 'scores.csv'}")
 
