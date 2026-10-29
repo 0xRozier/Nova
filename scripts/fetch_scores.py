@@ -8,8 +8,8 @@ Output: data/scores/molecules.jsonl (raw, one item per line, resumable) and
 data/scores/molecules.parquet (flattened, deduplicated on name+epoch+target).
 
 Usage:
-    python scripts/fetch_scores.py                 # full download
-    python scripts/fetch_scores.py --max-pages 50  # only the newest pages
+    python -m scripts.fetch_scores                 # full download (~1 h)
+    python -m scripts.fetch_scores --max-pages 50  # newest pages only, merged into the existing data
 """
 import argparse
 import json
@@ -72,7 +72,7 @@ def main():
     # dedup on (name, epoch, target) absorbs the overlap.
     raw_path = OUT_DIR / "molecules.jsonl"
     items: list[dict] = []
-    with ThreadPoolExecutor(args.workers) as pool, raw_path.open("w") as raw:
+    with ThreadPoolExecutor(args.workers) as pool, raw_path.open("a" if args.max_pages else "w") as raw:
         for i, page_items in enumerate(pool.map(fetch_page, range(1, total_pages + 1)), 1):
             for item in page_items:
                 raw.write(json.dumps(item) + "\n")
@@ -81,6 +81,10 @@ def main():
                 print(f"  {i}/{total_pages} pages")
 
     df = flatten(items)
+    out_path = OUT_DIR / "molecules.parquet"
+    if args.max_pages and out_path.exists():
+        df = pd.concat([pd.read_parquet(out_path), df]).drop_duplicates(
+            subset=["name", "epoch", "target"], keep="last")
     df.to_parquet(OUT_DIR / "molecules.parquet", index=False)
     print(f"saved {len(df)} rows ({df['name'].nunique()} unique molecules) to {OUT_DIR}")
 

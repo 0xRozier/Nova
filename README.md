@@ -29,6 +29,8 @@ source .venv/bin/activate
 | Paramètres de l'époque en cours (réaction imposée, gène V, longueur CDR3) | `python -m scripts.epoch_info` |
 | Télécharger tous les scores publiés (~280k molécules, ~1 h) | `python -m scripts.fetch_scores` |
 | Statistiques : niveau des gagnants, réactions favorables | `python -m scripts.analyze_scores` |
+| Déchiffrer les soumissions passées de chaque mineur (nœud archive + drand) | `python -m scripts.fetch_submissions --last 50` |
+| Scores exacts des gagnants par époque, qui gagne | `python -m scripts.analyze_winners` |
 | Construire le jeu d'entraînement | `python -m scripts.build_dataset` |
 | Entraîner et backtester le modèle | `python -m scripts.train_surrogate` |
 | Proposer 20 molécules pour une réaction | `python -m scripts.propose_molecules --reaction rxn:41` |
