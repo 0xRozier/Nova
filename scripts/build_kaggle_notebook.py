@@ -3,7 +3,8 @@
 The notebook carries its own code (nova_lab + scripts/boltz_score.py), the
 batch CSV and the target's MSA as an embedded archive: fetching anything from
 GitHub proved unreliable on Kaggle (git clone hung, codeload returned non-gzip).
-Only Hugging Face (molecule DB) and PyPI/PyTorch are used.
+The MSA is downloaded (jsDelivr, then GitHub) and checked against its hash;
+otherwise only Hugging Face (molecule DB) and PyPI/PyTorch are used.
 Run scripts.boltz_score once locally first so data/msa/<target>.{a3m,seq} exist.
 
 Usage:
@@ -11,11 +12,20 @@ Usage:
 """
 import argparse
 import base64
+import hashlib
 import io
 import json
 import tarfile
 
-from nova_lab import REPO_ROOT
+from nova_lab import REPO_ROOT, UPSTREAM_COMMIT
+
+KAGGLE_IMPORT_LIMIT = 1_000_000
+# The MSA is too big to embed under Kaggle's 1 MB import limit: download it,
+# jsDelivr first (GitHub itself is unreliable from Kaggle), checked by hash.
+MSA_URLS = [
+    "https://cdn.jsdelivr.net/gh/metanova-labs/nova@{commit}/data/msa_files/{target}.a3m",
+    "https://raw.githubusercontent.com/metanova-labs/nova/{commit}/data/msa_files/{target}.a3m",
+]
 
 FILES = [
     "nova_lab/__init__.py",
@@ -33,8 +43,7 @@ def payload(batch: str, target: str) -> str:
     with tarfile.open(fileobj=buf, mode="w:xz") as tar:
         for rel in FILES + [batch]:
             tar.add(REPO_ROOT / rel, arcname=rel)
-        for ext in ("a3m", "seq"):
-            tar.add(REPO_ROOT / "data" / "msa" / f"{target}.{ext}", arcname=f"data/msa/{target}.{ext}")
+        tar.add(REPO_ROOT / "data" / "msa" / f"{target}.seq", arcname=f"data/msa/{target}.seq")
     return base64.b64encode(buf.getvalue()).decode()
 
 
@@ -48,13 +57,15 @@ def code(text):
 
 
 def build(batch: str, target: str) -> dict:
+    msa_sha = hashlib.sha256((REPO_ROOT / "data" / "msa" / f"{target}.a3m").read_bytes()).hexdigest()
+    msa_urls = [u.format(commit=UPSTREAM_COMMIT, target=target) for u in MSA_URLS]
     cells = [
         md(f"""
 # NOVA SN68 — scoring Boltz-2 sur GPU Kaggle
 
 Note un lot de molécules avec Boltz-2 **exactement comme les validateurs NOVA** (même entrée, même MSA, mêmes paramètres, même graine).
 
-Notebook **autonome** : le code, le lot (`{batch}`), la séquence et la MSA de {target} sont intégrés (dernière cellule de données). Rien n'est téléchargé depuis GitHub.
+Notebook **autonome** : le code, le lot (`{batch}`) et la séquence de {target} sont intégrés (cellule de données). La MSA des validateurs est téléchargée via jsDelivr (GitHub en secours) et vérifiée par empreinte SHA-256.
 
 **Réglages Kaggle :** *Accelerator* **GPU T4 x2**, *Internet* **On**.
 - Test rapide : mettre `TOP = 2` ci-dessous puis **Run All** dans l'éditeur.
@@ -106,6 +117,17 @@ OUT.mkdir(parents=True, exist_ok=True)
 with tarfile.open(fileobj=io.BytesIO(base64.b64decode(PAYLOAD)), mode="r:xz") as tar:
     tar.extractall(WORK)
 os.chdir(WORK)
+step("téléchargement de la MSA des validateurs")
+import hashlib
+msa = WORK / "data/msa/" / MSA_NAME
+for url in MSA_URLS:
+    subprocess.run(["curl", "-sSL", "-m", "120", "--retry", "2", "-o", str(msa), url])
+    if msa.exists() and hashlib.sha256(msa.read_bytes()).hexdigest() == MSA_SHA256:
+        print(f"  MSA OK depuis {url}")
+        break
+    print(f"  échec depuis {url}")
+else:
+    raise RuntimeError("MSA introuvable ou corrompue")
 sh("find . -type f | sort")
 step("téléchargement de la base combinatoire (~120 Mo)")
 sh('wget -nv --timeout=60 --tries=3 -O data/molecules.sqlite '
@@ -191,7 +213,10 @@ df
 """),
     ]
     # The payload must exist before the extraction cell runs: define it right after the parameters.
-    cells.insert(2, code(f"# Données intégrées : code nova_lab, scripts/boltz_score.py, {batch}, séquence + MSA {target} (tar.xz en base64)\n"
+    cells.insert(2, code(f"# Données intégrées : code nova_lab, scripts/boltz_score.py, {batch}, séquence {target} (tar.xz en base64)\n"
+                         f"MSA_NAME = \"{target}.a3m\"\n"
+                         f"MSA_SHA256 = \"{msa_sha}\"\n"
+                         f"MSA_URLS = {json.dumps(msa_urls)}\n"
                          f"PAYLOAD = \"{payload(batch, target)}\""))
     return {"cells": cells,
             "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
@@ -208,7 +233,10 @@ def main():
     nb = build(args.batch, args.target)
     path = REPO_ROOT / args.out
     path.write_text(json.dumps(nb, indent=1, ensure_ascii=False))
-    print(f"wrote {path} ({path.stat().st_size / 1e6:.1f} MB)")
+    size = path.stat().st_size
+    print(f"wrote {path} ({size / 1e3:.0f} kB)")
+    if size >= KAGGLE_IMPORT_LIMIT:
+        raise SystemExit(f"too big for Kaggle's {KAGGLE_IMPORT_LIMIT / 1e6:.0f} MB import limit")
 
 
 if __name__ == "__main__":
