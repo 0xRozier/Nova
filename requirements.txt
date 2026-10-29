@@ -1,0 +1,11 @@
+bittensor==10.4.1
+requests
+pandas
+numpy
+pyarrow
+rdkit
+scikit-learn
+lightgbm
+pytest
+joblib
+scipy
