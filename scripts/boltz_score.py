@@ -55,9 +55,15 @@ def record_id(smiles: str) -> int:
 
 
 def protein_sequence(target: str) -> str:
+    """Clipped target sequence, cached in data/msa/<target>.seq (the Kaggle notebook ships it)."""
+    cached = DATA_DIR / "msa" / f"{target}.seq"
+    if cached.exists():
+        return cached.read_text().strip()
     fasta = requests.get(f"https://rest.uniprot.org/uniprotkb/{target}.fasta", timeout=30).text
     seq = "".join(line.strip() for line in fasta.splitlines() if not line.startswith(">"))
     start, end = TARGETS[target]
+    cached.parent.mkdir(parents=True, exist_ok=True)
+    cached.write_text(seq[start:end])
     return seq[start:end]
 
 
