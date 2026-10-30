@@ -95,19 +95,26 @@ OUT = pathlib.Path("/kaggle/working")
 def step(msg):
     print(f"[{time.strftime('%H:%M:%S')}] +{(time.time() - T0) / 60:5.1f} min  {msg}", flush=True)
 
-def sh(cmd, **kw):
+def sh(cmd, check=True, **kw):
     # a string goes through the shell, a list does not
     res = subprocess.run(cmd, shell=isinstance(cmd, str), text=True, capture_output=True, **kw)
     out = (res.stdout + res.stderr).strip()
     if out:
         print(out[-3000:])
-    if res.returncode != 0:
+    if check and res.returncode != 0:
         raise RuntimeError(f"échec ({res.returncode}) : {cmd}")
     return res.stdout
 
 step("démarrage")
+# Un notebook réimporté repart avec l'accélérateur par défaut : sans GPU, BoltzGen
+# serait inutilisable, autant le dire tout de suite.
+import shutil
+if shutil.which("nvidia-smi") is None:
+    raise SystemExit("Aucun GPU : mettre 'Accelerator' sur 'GPU T4 x2' dans les "
+                     "paramètres du notebook (panneau de droite), puis relancer.")
 sh("nvidia-smi --query-gpu=name,memory.total --format=csv")
-sh("df -h /kaggle/temp | tail -1")
+TEMP.mkdir(parents=True, exist_ok=True)
+sh("df -h /kaggle/temp | tail -1", check=False)
 """),
         code("""
 step("test de l'accès Internet")
