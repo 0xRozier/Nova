@@ -9,3 +9,6 @@ lightgbm
 pytest
 joblib
 scipy
+abnumber==0.4.4
+anarci==2026.2.13.2
+biopython

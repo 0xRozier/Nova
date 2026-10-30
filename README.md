@@ -37,6 +37,7 @@ source .venv/bin/activate
 | Proposer 20 molécules pour une réaction | `python -m scripts.propose_molecules --reaction rxn:41` |
 | Noter un lot avec Boltz-2 comme les validateurs (GPU ; CPU trop lent : >1 h 30 par molécule) | `python -m scripts.boltz_score --file inputs/kaggle_batch.csv --accelerator gpu` |
 | Idem sur GPU Kaggle gratuit (recherche uniquement) : notebook autonome à importer dans Kaggle | `python -m scripts.build_kaggle_notebook` puis importer `notebooks/kaggle_boltz.ipynb` |
+| **Nanobodies** : vérifier des séquences candidates avant de soumettre (CPU) | `python -m scripts.check_nanobody --file candidats.txt` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -77,6 +78,31 @@ PAE d'interaction 14 contre 20). La règle de nouveauté est bien plus souple qu
 les molécules (rejet à ≥ 95 % d'identité globale ou ≥ 85 % sur le CDR3) : on peut
 optimiser localement autour des meilleures séquences connues, là où un modèle
 appris sur les 9 000 séquences notées de l'archive reste dans sa zone de validité.
+
+## Vérificateur de validité nanobody (`nova_lab/nanobodies.py`)
+
+52 % des soumissions nanobodies sont rejetées par les validateurs. Le
+vérificateur reproduit hors ligne, sur CPU, tous les contrôles qui ne demandent
+pas de prédiction de structure : jeton nul, longueur, acides aminés, homopolymères,
+di-répétitions, peptide signal, identité germinale humaine V/J (ANARCI),
+gène V imposé par l'époque, classification VHH avec les résidus marqueurs IMGT
+(H49 ∈ {E,Q}, H50 = R), cystéines canoniques H23/H104, longueur de CDR3 imposée,
+et les signaux rouges de développabilité calculables sur la séquence
+(longueur totale des CDR, longueur du CDR3).
+
+**Non couvert** : les contrôles de développabilité structuraux (TNP : surface
+hydrophobe, plaques de charge, compacité du CDR3 ; Aggrescan3D), qui exigent
+une prédiction de structure. Une séquence acceptée ici est donc « valide
+sauf rejet de développabilité ».
+
+**Nuance sur la similarité à l'archive** : nous comparons à toute l'archive,
+alors que le validateur ne compare qu'aux candidats retenus par son pré-filtre
+par k-mers. Nous sommes donc plus stricts que lui ; cette similarité est
+rapportée comme avertissement, pas comme rejet.
+
+Dépendances supplémentaires : `abnumber`, `anarci` et le binaire `hmmscan`
+(paquet HMMER). `tests/test_nanobody_parity.py` confronte le vérificateur aux
+verdicts réels des validateurs sur les soumissions déchiffrées.
 
 ## Limites
 

@@ -3,6 +3,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# ANARCI (nanobody numbering) needs the hmmscan binary
+command -v hmmscan >/dev/null || {
+  echo "Installing HMMER (needs sudo)..."
+  sudo apt-get update -qq && sudo apt-get install -y -qq hmmer
+}
+
 python3 -m venv .venv
 .venv/bin/pip install -q --upgrade pip
 .venv/bin/pip install -q -r requirements.txt
