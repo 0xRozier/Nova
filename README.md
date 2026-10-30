@@ -158,9 +158,30 @@ structure et le code ; la MSA vient de jsDelivr vérifiée par empreinte, les
 poids (~6 Go) de Hugging Face. Les noyaux cuEquivariance se désactivent d'eux-
 mêmes sur T4 (capacité 7.5 < 8). Les 103 dépendances épinglées se résolvent.
 
-**Jamais exécuté de bout en bout** : la durée par séquence et le comportement
-réel sur T4 restent à mesurer (cet environnement n'a ni GPU ni les ~6 Go
-d'espace nécessaires).
+**Exécuté sur Kaggle (2×T4) : 3,7 min/séquence.** Trois obstacles
+d'environnement levés au passage : `MPLBACKEND` imposé par Kaggle, l'import de
+`bittensor` par la BoltzGen de NOVA (substitut dans `kaggle/bittensor.py`), et
+le `TOP` qui ne prenait que les premières lignes du lot.
+
+**Fidélité mesurée** (`results/boltzgen_batch1_calibration.csv`, 2 séquences
+dont on connaît les métriques publiées) :
+
+| Métriques | Écart à la valeur publiée |
+|---|---|
+| `liability_score`, `liability_num_violations` | exact |
+| confiance (`design_ptm`, `design_to_target_iptm`, `interaction_pae`, PAE min) | 0,004 à 0,18 |
+| `design_iiptm` | ±0,02 à 0,05 |
+| `plip_hbonds_refolded` | −4 sur les deux séquences |
+| `plip_saltbridge_refolded`, `delta_sasa_refolded` | 0 à −3 ; −65 à +13 |
+
+Les métriques d'interaction se calculent sur la **structure prédite**, et
+l'étape de conception de BoltzGen est stochastique (aucune graine dans la
+config du subnet). Notre run est donc un tirage de la même distribution,
+là où les valeurs publiées sont une moyenne sur plusieurs validateurs — ce qui
+explique que les métriques robustes (confiance, développabilité) collent et que
+les métriques de comptage (PLIP, SASA) s'écartent. Ce sont précisément les
+trois que le modèle de substitution prédit le moins bien. Pour classer des
+candidats sérieusement, il faudra répliquer ou accepter ce bruit.
 
 ## Limites
 
