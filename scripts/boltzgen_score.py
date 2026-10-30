@@ -15,6 +15,7 @@ Usage:
 """
 import argparse
 import hashlib
+import os
 import shutil
 import subprocess
 import sys
@@ -44,6 +45,14 @@ METRIC_MODES = {"design_iiptm": "max", "design_ptm": "max", "design_to_target_ip
                 "plip_hbonds_refolded": "max", "plip_saltbridge_refolded": "max",
                 "delta_sasa_refolded": "max", "liability_score": "min",
                 "liability_num_violations": "min"}
+
+
+def subprocess_env() -> dict:
+    """BoltzGen imports matplotlib through biotite. A notebook host exports
+    MPLBACKEND=module://matplotlib_inline.backend_inline, which our separate
+    interpreter cannot provide, so matplotlib raises on import: pin a headless
+    backend instead."""
+    return {**os.environ, "MPLBACKEND": "Agg"}
 
 
 def seq_hash(seq: str) -> str:
@@ -132,8 +141,10 @@ def main():
                  "--protocol", PROTOCOL, "--num_designs", str(NUM_DESIGNS),
                  "--skip_inverse_folding", "--step_scale", str(STEP_SCALE),
                  "--noise_scale", str(NOISE_SCALE)]
-    subprocess.run(configure, check=True)
-    subprocess.run([args.boltzgen, "execute", str(base / "out"), "--steps", *EXECUTE_STEPS], check=True)
+    env = subprocess_env()
+    subprocess.run(configure, check=True, env=env)
+    subprocess.run([args.boltzgen, "execute", str(base / "out"), "--steps", *EXECUTE_STEPS],
+                   check=True, env=env)
     elapsed = time.time() - t
 
     res = read_metrics(base / "out", records)
