@@ -31,6 +31,7 @@ OUR_FILES = [
     "nova_lab/config.py",
     "scripts/__init__.py",
     "scripts/boltzgen_score.py",
+    "kaggle/bittensor.py",
 ]
 
 
@@ -93,7 +94,8 @@ def step(msg):
     print(f"[{time.strftime('%H:%M:%S')}] +{(time.time() - T0) / 60:5.1f} min  {msg}", flush=True)
 
 def sh(cmd, **kw):
-    res = subprocess.run(cmd, shell=True, text=True, capture_output=True, **kw)
+    # a string goes through the shell, a list does not
+    res = subprocess.run(cmd, shell=isinstance(cmd, str), text=True, capture_output=True, **kw)
     out = (res.stdout + res.stderr).strip()
     if out:
         print(out[-3000:])
@@ -150,7 +152,11 @@ step("installation de torch 2.7.1 CUDA")
 sh(f"uv pip install -q --python {py} torch==2.7.1 --index-url https://download.pytorch.org/whl/cu126")
 step("installation de la BoltzGen des validateurs (+ pandas, requests)")
 sh(f"uv pip install -q --python {py} {NOVA}/boltzgen pandas requests")
-sh(f'{py} -c "import torch, boltzgen; print(torch.__version__, torch.cuda.is_available(), '
+# La BoltzGen de NOVA importe bittensor pour neuf appels de journalisation ; un
+# substitut minimal evite d'installer ce paquet lourd dans l'environnement epingle.
+site = pathlib.Path(sh([py, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"]).strip())
+sh(["cp", str(WORK / "kaggle" / "bittensor.py"), str(site / "bittensor.py")])
+sh(f'{py} -c "import torch, boltzgen, bittensor; print(torch.__version__, torch.cuda.is_available(), '
    f'torch.cuda.get_device_capability(0))"')
 step("étape 2 terminée")
 """),
