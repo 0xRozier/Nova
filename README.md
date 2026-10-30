@@ -41,6 +41,8 @@ source .venv/bin/activate
 | **Nanobodies** : jeu d'entraînement depuis l'archive (~10 min) | `python -m scripts.build_nanobody_dataset` |
 | **Nanobodies** : entraîner le modèle et le backtester | `python -m scripts.train_nanobody_surrogate` |
 | **Nanobodies** : proposer des séquences pour l'époque | `python -m scripts.propose_nanobody` |
+| **Nanobodies** : noter un lot avec la BoltzGen des validateurs (GPU) | `python -m scripts.boltzgen_score --file inputs/kaggle_nanobody_batch.csv` |
+| Idem sur GPU Kaggle : notebook autonome (nécessite le clone amont) | `python -m scripts.build_boltzgen_notebook` puis importer `notebooks/kaggle_boltzgen.ipynb` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -143,7 +145,22 @@ comme rejets certains ; les règles plus subtiles restent des avertissements.
 **Non validé** : aucune séquence proposée n'a encore été notée par BoltzGen.
 Le classement affiché est une prédiction. `inputs/kaggle_nanobody_batch.csv`
 contient un lot prêt à noter (candidats + séquences de calibration dont on
-connaît le classement réel).
+connaît le classement réel), et `notebooks/kaggle_boltzgen.ipynb` le notebook
+pour le faire tourner.
+
+### Notebook BoltzGen (`scripts.build_boltzgen_notebook`)
+
+Le scoring utilise **la BoltzGen embarquée par les validateurs**, pas celle de
+PyPI, avec leur structure cible (8AOK, chaîne A, résidus 1..115), leur site de
+liaison, leur protocole `nanobody-anything` et leurs échelles (step 2.0,
+noise 0.88). Le notebook embarque cette source (~300 Ko compressés), la
+structure et le code ; la MSA vient de jsDelivr vérifiée par empreinte, les
+poids (~6 Go) de Hugging Face. Les noyaux cuEquivariance se désactivent d'eux-
+mêmes sur T4 (capacité 7.5 < 8). Les 103 dépendances épinglées se résolvent.
+
+**Jamais exécuté de bout en bout** : la durée par séquence et le comportement
+réel sur T4 restent à mesurer (cet environnement n'a ni GPU ni les ~6 Go
+d'espace nécessaires).
 
 ## Limites
 
