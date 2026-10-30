@@ -47,9 +47,20 @@ rapport à l'archive) à partir du code amont au commit indiqué dans
 sont identiques à ceux de l'archive publique des validateurs. **À revérifier à
 chaque mise à jour du subnet** (`nova_lab/config.py` reprend `config.yaml`).
 
+## Résultats Boltz-2 (Kaggle, `results/`)
+
+`kaggle_batch1` (T4, 32 bits, 4,2 min/molécule) :
+- **Calibration** : corrélation 0,976 (Spearman 0,988), écart moyen 0,012 avec les
+  scores publiés → notre Boltz reproduit fidèlement celui des validateurs.
+- **Proposition rxn:33 du générateur** : total réel **1,13** pour 2,93 prédit ;
+  moyenne 0,05 par molécule, sous la moyenne des molécules soumises (0,10).
+  Spearman prédiction/réel ≈ 0,08 sur les 40 candidats : hors de la zone des
+  données d'entraînement, le modèle de substitution ne vaut rien. Or la règle de
+  nouveauté (Tanimoto < 0,5 avec l'archive) oblige justement à sortir de cette zone.
+
 ## Limites
 
-- Le modèle de substitution n'est pas Boltz-2. Il trie, il ne remplace pas.
+- Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
 - Le concours nanobodies (40 %) n'est pas encore couvert.
