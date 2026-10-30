@@ -31,6 +31,7 @@ source .venv/bin/activate
 | Statistiques : niveau des gagnants, réactions favorables | `python -m scripts.analyze_scores` |
 | Déchiffrer les soumissions passées de chaque mineur (nœud archive + drand) | `python -m scripts.fetch_submissions --last 50` |
 | Scores exacts des gagnants par époque, qui gagne | `python -m scripts.analyze_winners` |
+| Idem pour les nanobodies (classement par somme de rangs BoltzGen) | `python -m scripts.analyze_nanobodies` |
 | Construire le jeu d'entraînement | `python -m scripts.build_dataset` |
 | Entraîner et backtester le modèle | `python -m scripts.train_surrogate` |
 | Proposer 20 molécules pour une réaction | `python -m scripts.propose_molecules --reaction rxn:41` |
@@ -58,9 +59,28 @@ chaque mise à jour du subnet** (`nova_lab/config.py` reprend `config.yaml`).
   données d'entraînement, le modèle de substitution ne vaut rien. Or la règle de
   nouveauté (Tanimoto < 0,5 avec l'archive) oblige justement à sortir de cette zone.
 
+## Stratégies observées (époques 25956–26025)
+
+**Molécules** (`scripts.analyze_winners`) : `zeromaj/nova` gagne 41 époques sur 51.
+Score moyen par molécule 0,132 contre 0,074 pour les autres, à taille égale
+(~24 atomes lourds) et à distance de l'archive égale (Tanimoto max ~0,35).
+Ni astuce de taille ni stratégie au bord de la limite de nouveauté : une bien
+meilleure sélection, vraisemblablement beaucoup d'évaluations Boltz par époque.
+
+**Nanobodies** (`scripts.analyze_nanobodies`) : `frankji-groundcontrol` gagne
+30 époques sur 56 (71 % des époques où il soumet), avec un seul hotkey et
+100 % de soumissions valides, alors que **52 % de toutes les soumissions sont
+invalides**. Il fait évoluer une même lignée (identité ~0,87 d'une victoire à la
+suivante, CDR2 conservé, CDR3 réadapté à la longueur imposée). Les gagnants se
+distinguent surtout sur les métriques de confiance (design_iiptm 0,48 contre 0,26,
+PAE d'interaction 14 contre 20). La règle de nouveauté est bien plus souple que pour
+les molécules (rejet à ≥ 95 % d'identité globale ou ≥ 85 % sur le CDR3) : on peut
+optimiser localement autour des meilleures séquences connues, là où un modèle
+appris sur les 9 000 séquences notées de l'archive reste dans sa zone de validité.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
-- Le concours nanobodies (40 %) n'est pas encore couvert.
+- Nanobodies : résultats et classement reconstitués, mais pas encore de validateur hors ligne ni de générateur.
