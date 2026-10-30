@@ -199,19 +199,24 @@ def whole_identity(a: str, b: str) -> float:
     return SequenceMatcher(None, a, b).ratio()
 
 
-def is_duplicate(identity: float, cdr_sim: dict | None) -> tuple[bool, str]:
-    """The archive-duplicate rule of NOVA-nanobody-filter's search engine."""
+def is_duplicate(identity: float, cdr_sim: dict | None) -> tuple[bool, str, bool]:
+    """The archive-duplicate rule of NOVA-nanobody-filter's search engine.
+
+    Returns (hit, reason, certain). `certain` marks the cases a near-identical
+    sequence cannot escape: the validator's k-mer prefilter is bound to retrieve
+    such a close neighbour, so these are rejections rather than warnings.
+    """
     if identity >= 0.95:
-        return True, f"whole-sequence identity {identity:.0%}"
+        return True, f"whole-sequence identity {identity:.0%}", True
     if cdr_sim is not None:
         if cdr_sim.get("CDR3", 0.0) >= 0.85:
-            return True, f"CDR3 identity {cdr_sim['CDR3']:.0%} (same clonotype)"
+            return True, f"CDR3 identity {cdr_sim['CDR3']:.0%} (same clonotype)", identity >= 0.85
         if (cdr_sim.get("CDR3", 0.0) >= 0.80
                 and cdr_sim.get("CDR1", 0.0) >= 0.90 and cdr_sim.get("CDR2", 0.0) >= 0.90):
-            return True, "CDR3 >= 80% with CDR1 and CDR2 >= 90%"
+            return True, "CDR3 >= 80% with CDR1 and CDR2 >= 90%", False
     elif identity >= 0.90:
-        return True, f"identity {identity:.0%} without CDR data"
-    return False, ""
+        return True, f"identity {identity:.0%} without CDR data", False
+    return False, "", False
 
 
 def sequence_red_flags(seq: str) -> list[str]:
@@ -237,7 +242,8 @@ def check_sequence(seq: str, allowed_v: str | None = None, allowed_cdr3_length: 
     """Every problem found, in the validator's order. Empty list = valid so far.
 
     A structure-based developability rejection cannot be ruled out here.
-    Archive similarity goes to `warnings`, not to the returned problems: we
+    Near-identical archive matches (>= 95% whole sequence, or an exact
+    duplicate) are rejections. The subtler CDR-based rules go to `warnings`: we
     compare against the whole archive while the validator only compares against
     the candidates its k-mer filter retrieves, so we are stricter than it is.
     """
@@ -277,11 +283,11 @@ def check_sequence(seq: str, allowed_v: str | None = None, allowed_cdr3_length: 
     problems += sequence_red_flags(seq)
 
     if archive is not None:
-        hit, reason = archive.duplicate_of(seq, archive_exclude)
-        if hit and warnings is not None:
-            warnings.append(f"too similar to an archived sequence: {reason}")
-        elif hit:
+        hit, reason, certain = archive.duplicate_of(seq, archive_exclude)
+        if hit and (certain or warnings is None):
             problems.append(f"too similar to an archived sequence: {reason}")
+        elif hit:
+            warnings.append(f"too similar to an archived sequence: {reason}")
     return problems
 
 
@@ -314,13 +320,15 @@ class NanobodyArchive:
         pd.DataFrame([r or {k: "" for k in keys} for r in out]).to_csv(cache, index=False)
         return out
 
-    def duplicate_of(self, seq: str, exclude: set[str] | None = None) -> tuple[bool, str]:
-        """`exclude` holds sequences to ignore, to replay an epoch whose own
-        submissions are already archived (the validator's exclude_ids)."""
+    def duplicate_of(self, seq: str, exclude: set[str] | None = None) -> tuple[bool, str, bool]:
+        """(hit, reason, certain). `exclude` holds sequences to ignore, to replay
+        an epoch whose own submissions are already archived (the validator's
+        exclude_ids)."""
         exclude = exclude or set()
         if seq not in exclude and seq_hash(seq) in self.hashes:
-            return True, "already submitted (exact duplicate)"
+            return True, "already submitted (exact duplicate)", True
         mine = regions(seq)
+        best = (False, "", False)
         for other, other_regions in zip(self.sequences, self.regions):
             if other in exclude:
                 continue
@@ -328,7 +336,9 @@ class NanobodyArchive:
             if identity < 0.70:  # cheap gate: no rule can trigger this far away
                 continue
             sim = cdr_similarity(mine, other_regions) if mine and other_regions else None
-            hit, reason = is_duplicate(identity, sim)
-            if hit:
-                return True, reason
-        return False, ""
+            hit, reason, certain = is_duplicate(identity, sim)
+            if certain:
+                return True, reason, True
+            if hit and not best[0]:
+                best = (True, reason, False)
+        return best

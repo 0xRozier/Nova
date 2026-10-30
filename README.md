@@ -38,6 +38,9 @@ source .venv/bin/activate
 | Noter un lot avec Boltz-2 comme les validateurs (GPU ; CPU trop lent : >1 h 30 par molécule) | `python -m scripts.boltz_score --file inputs/kaggle_batch.csv --accelerator gpu` |
 | Idem sur GPU Kaggle gratuit (recherche uniquement) : notebook autonome à importer dans Kaggle | `python -m scripts.build_kaggle_notebook` puis importer `notebooks/kaggle_boltz.ipynb` |
 | **Nanobodies** : vérifier des séquences candidates avant de soumettre (CPU) | `python -m scripts.check_nanobody --file candidats.txt` |
+| **Nanobodies** : jeu d'entraînement depuis l'archive (~10 min) | `python -m scripts.build_nanobody_dataset` |
+| **Nanobodies** : entraîner le modèle et le backtester | `python -m scripts.train_nanobody_surrogate` |
+| **Nanobodies** : proposer des séquences pour l'époque | `python -m scripts.propose_nanobody` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -104,9 +107,48 @@ Dépendances supplémentaires : `abnumber`, `anarci` et le binaire `hmmscan`
 (paquet HMMER). `tests/test_nanobody_parity.py` confronte le vérificateur aux
 verdicts réels des validateurs sur les soumissions déchiffrées.
 
+## Générateur de nanobodies
+
+**Le modèle a du signal, contrairement au cas des molécules.** Un modèle
+LightGBM par métrique, sur des descripteurs par région IMGT (composition,
+hydropathie, charge, identité germinale) :
+
+| Évaluation | Spearman sur la somme de rangs |
+|---|---|
+| Aléatoire (optimiste) | 0,94 |
+| **Au sein d'une lignée** (régime du générateur) | **0,70** |
+| Temporelle stricte, dans l'époque | 0,55 |
+
+En test temporel, choisir par prédiction aurait désigné le gagnant réel de
+**8 époques sur 14** (place médiane 1 sur 22 ; au hasard : place 10,5).
+**Nuance capitale** : le modèle choisit la séquence de frankji dans 10 époques
+sur 10 où il soumet. Il reconnaît donc d'abord une bonne lignée. Les 0,70
+au sein d'une lignée disent qu'il discrimine aussi à l'intérieur, ce dont le
+générateur a besoin, mais c'est plus faible.
+
+**Le générateur** (`scripts.propose_nanobody`) part de charpentes d'archive
+appelant le gène V de l'époque, y greffe des CDR3 de la longueur imposée issus
+des meilleures séquences, mute les CDR, puis filtre et classe. Deux
+enseignements tirés des mesures :
+
+- **L'archive est trompeuse.** 6 227 des 8 578 séquences non datées sont sous
+  les seuils germinaux actuels (antérieures à la règle) et scorent mieux que les
+  conformes. Les charpentes doivent venir des ~1 000 séquences conformes.
+- **La fin du CDR3 est codée par le gène J.** La muter faisait échouer 285
+  candidats sur 800 ; en la protégeant, le rendement passe de 48 % à 79 %.
+
+Les quasi-doublons (≥ 95 % d'identité globale, ou CDR3 ≥ 85 %) sont écartés
+comme rejets certains ; les règles plus subtiles restent des avertissements.
+
+**Non validé** : aucune séquence proposée n'a encore été notée par BoltzGen.
+Le classement affiché est une prédiction. `inputs/kaggle_nanobody_batch.csv`
+contient un lot prêt à noter (candidats + séquences de calibration dont on
+connaît le classement réel).
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
-- Nanobodies : résultats et classement reconstitués, mais pas encore de validateur hors ligne ni de générateur.
+- Nanobodies : le générateur n'est pas encore confronté à BoltzGen ; sa sortie est une prédiction, pas un score.
+- La développabilité structurale reste hors de portée hors ligne (prédiction de structure requise).
