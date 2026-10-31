@@ -1,0 +1,12 @@
+group,true_rank_sum,predicted_rank_sum,rank_sum,design_iiptm,interaction_pae
+calibration,31.0,,27,0.7207,10.23118
+calibration,34.0,,33,0.67373,10.56307
+candidate,,733.0,36,0.58322,12.38875
+calibration,45.0,,36,0.64521,10.52257
+candidate,,686.0,39,0.53396,12.0627
+candidate,,656.0,46,0.46315,13.43999
+candidate,,797.0,51,0.51851,14.39365
+calibration,79.0,,62,0.31217,18.90508
+candidate,,733.0,64,0.16135,23.16862
+calibration,106.0,,77,0.21804,21.50487
+calibration,111.0,,80,0.16427,22.87693

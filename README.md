@@ -142,11 +142,35 @@ enseignements tirés des mesures :
 Les quasi-doublons (≥ 95 % d'identité globale, ou CDR3 ≥ 85 %) sont écartés
 comme rejets certains ; les règles plus subtiles restent des avertissements.
 
-**Non validé** : aucune séquence proposée n'a encore été notée par BoltzGen.
-Le classement affiché est une prédiction. `inputs/kaggle_nanobody_batch.csv`
-contient un lot prêt à noter (candidats + séquences de calibration dont on
-connaît le classement réel), et `notebooks/kaggle_boltzgen.ipynb` le notebook
-pour le faire tourner.
+**Validé par BoltzGen** (`results/boltzgen_batch2_epoch26025.csv`, 11 séquences
+notées sur 2×T4 en 21 min, soit **1,9 min/séquence** — le coût par séquence
+baisse avec la taille du lot) :
+
+| | |
+|---|---|
+| Fidélité : notre classement contre celui des validateurs (6 séquences de calibration) | **Spearman 1,00** |
+| Nos 5 candidats, dans un panier de 11 | rangs **36 à 64** |
+| Les 6 soumissions réelles de l'époque 26025 | rangs **27 à 80** |
+| Notre meilleur candidat | **3ᵉ sur 11**, 9 points derrière le gagnant réel |
+| Prédiction du modèle contre rang BoltzGen réel, sur ces 5 candidats | **Spearman 0,31** |
+
+Trois conclusions nettes :
+
+1. **L'outil de mesure est bon.** Notre BoltzGen ordonne les 6 séquences de
+   calibration exactement comme les validateurs. Ce qu'il dit d'une séquence est
+   fiable.
+2. **Les candidats sont compétitifs, pas gagnants.** Ils battent 3 des
+   6 soumissions réelles, mais pas les deux meilleures (`design_iiptm` 0,58 au
+   mieux contre 0,72). Nous aurions perdu cette époque de peu.
+3. **Le modèle de substitution ne sait pas classer ses propres candidats**
+   (0,31 sur 5 points, donc peu concluant mais loin du 0,70 intra-lignée). Il
+   amène dans la bonne zone ; il ne désigne pas le meilleur. C'est le même mode
+   d'échec que pour les molécules, en moins brutal.
+
+**Conséquence pour la suite** : c'est BoltzGen lui-même qui doit classer, pas le
+modèle. À 1,9 min/séquence sur 2×T4, une époque de 72 min laisse la place à une
+trentaine d'évaluations, et le quota Kaggle (~30 h/semaine) à environ
+900 séquences. Le modèle garde son rôle de pré-filtre pour choisir quoi noter.
 
 ### Notebook BoltzGen (`scripts.build_boltzgen_notebook`)
 
