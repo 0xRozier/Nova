@@ -72,7 +72,7 @@ Note des séquences avec **la version de BoltzGen embarquée par les validateurs
 Notebook **autonome** : la source BoltzGen, la structure, le lot (`{batch}`) et le code de scoring sont intégrés. La MSA est téléchargée via jsDelivr et vérifiée par empreinte SHA-256 ; les poids (~6 Go) viennent de Hugging Face.
 
 **Réglages Kaggle :** *Accelerator* **GPU T4 x2**, *Internet* **On**.
-- Lot complet (11 séquences, ~40 min à 3,7 min/séquence sur T4) : **Save Version → Save & Run All (Commit)**.
+- Lot complet (46 séquences, ~1 h 30 à 1,9 min/séquence sur 2×T4) : **Save Version → Save & Run All (Commit)**.
 - Test rapide : `TOP = 2` puis **Run All** dans l'éditeur.
 
 Le lot alterne candidats et séquences de calibration, donc même un run interrompu compare les deux.
@@ -81,8 +81,8 @@ Les noyaux cuEquivariance se désactivent d'eux-mêmes sur T4 (capacité 7.5 < 8
 """),
         code("""
 # Paramètres
-TOP = None          # None = tout le lot (11 sequences, ~40 min) ; 2 pour un test rapide
-RUN = "nanobody_batch1"
+TOP = None          # None = tout le lot (46 sequences, ~1 h 30) ; 2 pour un test rapide
+RUN = "nanobody_batch3"
 
 import base64, io, os, pathlib, subprocess, sys, tarfile, time
 T0 = time.time()
@@ -223,7 +223,7 @@ df
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch", default="inputs/kaggle_nanobody_batch.csv")
+    parser.add_argument("--batch", default="inputs/kaggle_nanobody_batch3.csv")
     parser.add_argument("--target", default="Q9NZQ7")
     parser.add_argument("--nova-dir", type=Path, default=REPO_ROOT.parent / "nova-upstream")
     parser.add_argument("--out", default="notebooks/kaggle_boltzgen.ipynb")
