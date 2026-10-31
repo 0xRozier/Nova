@@ -167,10 +167,41 @@ Trois conclusions nettes :
    amène dans la bonne zone ; il ne désigne pas le meilleur. C'est le même mode
    d'échec que pour les molécules, en moins brutal.
 
-**Conséquence pour la suite** : c'est BoltzGen lui-même qui doit classer, pas le
-modèle. À 1,9 min/séquence sur 2×T4, une époque de 72 min laisse la place à une
-trentaine d'évaluations, et le quota Kaggle (~30 h/semaine) à environ
-900 séquences. Le modèle garde son rôle de pré-filtre pour choisir quoi noter.
+**Expérience du volume** (`results/boltzgen_batch3_epoch26025.csv`, 40 candidats
+échantillonnés sur 5 strates de prédiction + les 6 mêmes ancres,
+46 séquences en 74 min soit **1,6 min/séquence**) :
+
+| | |
+|---|---|
+| Meilleur candidat sur 40 | **rang 33** |
+| Meilleure soumission réelle de l'époque | rang 45 |
+| Candidats battant la meilleure soumission réelle | **1 sur 40** |
+| Candidats battant la soumission réelle médiane | 13 sur 40 |
+| `design_iiptm` : notre meilleur / le leur | 0,683 / 0,707 |
+| `interaction_pae` de notre meilleur | **10,02, le plus bas du lot** |
+
+**Le meilleur d'un lot de 40 atteint le niveau des gagnants** : il bat les
+6 soumissions réelles, dont celle qui a gagné l'époque 26025. Sa lignée est
+une variante évoluée de celle de QTTECH (CDR3 `AKFMHRIKDFDY` contre
+`AKFPHRYKDFDY`), ce qui valide la stratégie de mutation locale.
+
+**Trois réserves, à ne pas perdre de vue :**
+
+1. **Un seul tirage.** La fidélité de calibration tombe à 0,94 ici, et les deux
+   meilleures séquences de QTTECH se sont inversées (rang réel 31 → notre 52,
+   34 → notre 45). Notre avance de 12 points est du même ordre que ce bruit :
+   « aurait gagné » est plausible, pas établi. Il faut des répliques.
+2. **Un sur 40, c'est mince.** La médiane des candidats est à 119, loin derrière.
+   Le pipeline ne produit pas des gagnants, il produit un gagnant *possible*
+   par lot de 40 — à rejouer sur plusieurs époques pour savoir si ça tient.
+3. **Le modèle de substitution ne sert pas à choisir** (Spearman 0,26 sur
+   40 points ; le meilleur candidat venait de la strate médiane). Les 40 points
+   mesurés sont en revanche de quoi le réentraîner sur son angle mort.
+
+**Conséquence opérationnelle** : 40 évaluations tiennent dans une époque de
+72 min sur 2 GPU modestes (1,6 min/séquence, et le coût baisse encore avec la
+taille du lot). Le concours nanobody est donc techniquement jouable avec un
+matériel accessible — ce qui n'était pas le cas des molécules.
 
 ### Notebook BoltzGen (`scripts.build_boltzgen_notebook`)
 
