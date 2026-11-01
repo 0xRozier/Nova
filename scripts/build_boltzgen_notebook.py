@@ -83,6 +83,9 @@ Les noyaux cuEquivariance se désactivent d'eux-mêmes sur T4 (capacité 7.5 < 8
 # Paramètres
 TOP = None          # None = tout le lot (46 sequences, ~1 h 30) ; 2 pour un test rapide
 RUN = "nanobody_batch3"
+REPLICATE = 1       # incrémenter pour une réplique : BoltzGen est stochastique, mais il
+                    # REPREND les résultats déjà présents, donc un nom de run neuf est
+                    # indispensable pour obtenir un vrai second tirage.
 
 import base64, io, os, pathlib, subprocess, sys, tarfile, time
 T0 = time.time()
@@ -91,6 +94,8 @@ WORK = TEMP / "Nova"
 NOVA = TEMP / "nova"
 VENV = TEMP / "bgvenv"
 OUT = pathlib.Path("/kaggle/working")
+
+RUN = RUN if REPLICATE == 1 else f"{RUN}_rep{REPLICATE}"
 
 def step(msg):
     print(f"[{time.strftime('%H:%M:%S')}] +{(time.time() - T0) / 60:5.1f} min  {msg}", flush=True)
@@ -188,7 +193,11 @@ def last_log_line():
     lines = [l.strip() for l in log_path.read_text(errors="replace").replace("\\r", "\\n").splitlines() if l.strip()]
     return lines[-1][:200] if lines else "(journal vide)"
 
-step(f"lancement de BoltzGen sur {{n_total}} séquences")
+out_dir = WORK / f"data/boltzgen/{{RUN}}/out"
+if out_dir.exists():
+    raise SystemExit(f"{{out_dir}} existe déjà : BoltzGen reprendrait les résultats au lieu de "
+                     f"recalculer. Incrémenter REPLICATE pour un nouveau tirage.")
+step(f"lancement de BoltzGen sur {{n_total}} séquences (run {{RUN}})")
 with open(log_path, "w") as log:
     proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
     while proc.poll() is None:
