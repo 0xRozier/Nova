@@ -238,6 +238,46 @@ les métriques de comptage (PLIP, SASA) s'écartent. Ce sont précisément les
 trois que le modèle de substitution prédit le moins bien. Pour classer des
 candidats sérieusement, il faudra répliquer ou accepter ce bruit.
 
+## Économie du subnet (`results/economics.txt`, mesuré le 1ᵉʳ nov. 2026)
+
+Chiffres on-chain : 1 alpha émis par bloc, répartition 41 % mineurs / 41 %
+validateurs / 18 % propriétaire (confirmée par le métagraphe, mineurs et
+validateurs exactement à égalité), alpha à 0,0166 TAO, enregistrement à
+0,026 TAO.
+
+| | Par époque (72 min) |
+|---|---|
+| Pool des mineurs | 148 alpha |
+| **Gagnant nanobody (40 %)** | **59,2 alpha = 0,985 TAO** |
+| Gagnant molécules (60 %) | 88,8 alpha = 1,477 TAO |
+
+Revenu du concours nanobody selon le taux de victoire, et coût GPU (40 évaluations
+BoltzGen par époque demandent ~64 min de 2×T4, donc 2 GPU en continu) :
+
+| Taux de victoire | TAO/jour | Coût GPU 2×RTX4090 | Coût GPU 2×A100 |
+|---|---|---|---|
+| 10 % | 2,0 | 0,06 TAO/jour | 0,19 TAO/jour |
+| 30 % | 5,9 | idem | idem |
+| 71 % (niveau de frankji) | 13,9 | idem | idem |
+
+**Le seuil de rentabilité est à 0,3 % de victoires** (2×RTX4090) ou **1 %**
+(2×A100) : une victoire tous les trois jours suffit à payer le calcul. Le coût
+GPU est négligeable devant la récompense, quel que soit le prix du TAO.
+
+**Trois réserves sérieuses :**
+
+1. **La valeur est au prix de marché, pas garantie.** Le subnet émet
+   7 184 alpha/jour mais ne reçoit que 16,5 TAO/jour. Le prix tient parce que
+   les détenteurs conservent leur alpha, pas grâce à un flux entrant. Vendre une
+   victoire (59 alpha) ne déplace le prix que de 0,0025 %, mais l'ensemble des
+   mineurs vendant chaque jour représenterait 0,3 % du pool par jour.
+2. **Le prix du TAO est incertain** : mes recherches donnent 250–260 $ fin
+   octobre 2026, sans cotation fiable du jour. À vérifier avant de décider.
+3. **Les versements passent par une API** (`payout.enabled`, UID 42) : les
+   validateurs mettent tout le poids sur un UID relais, et Metanova reverse
+   ensuite l'alpha à la coldkey du gagnant. Cela ajoute une dépendance à un
+   tiers que nous n'avons pas auditée.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).

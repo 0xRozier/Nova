@@ -1,0 +1,32 @@
+=== Revenue (mark-to-market) ===
+nanobody win: 59.2 alpha = 0.985 TAO = $251 per epoch
+molecule win: 88.8 alpha = 1.477 TAO = $377 per epoch
+
+=== Nanobody track, by win rate (24h) ===
+ win rate  wins/day   TAO/day    USD/day   USD/month
+     10%       2.0      1.96        500      14,991
+     20%       4.0      3.92        999      29,982
+     30%       6.0      5.88      1,499      44,973
+     50%       9.9      9.80      2,499      74,955
+     71%      14.1     13.91      3,548     106,437
+    100%      19.9     19.60      4,997     149,911
+
+=== Cost: 2 GPUs running 24/7 (40 BoltzGen evals per epoch needs ~64 min of 2xT4) ===
+  2x RTX4090 (cheap): $0.62/h = $15/day = $446/month
+      2x A100 (safe): $2.00/h = $48/day = $1,440/month
+
+=== Break-even win rate ===
+2x RTX4090: $15/day = 0.058 TAO = 0.06 wins/day = 0.3% win rate
+2x A100: $48/day = 0.188 TAO = 0.19 wins/day = 1.0% win rate
+
+=== Sensitivity to the TAO price (2x RTX4090, 30% win rate) ===
+TAO $ 100: revenue $    588/day vs cost $15/day -> margin $     573/day
+TAO $ 150: revenue $    882/day vs cost $15/day -> margin $     867/day
+TAO $ 200: revenue $  1,176/day vs cost $15/day -> margin $   1,161/day
+TAO $ 255: revenue $  1,499/day vs cost $15/day -> margin $   1,484/day
+TAO $ 300: revenue $  1,764/day vs cost $15/day -> margin $   1,749/day
+
+=== Reality check on the alpha pool ===
+subnet emits 7,184 alpha/day; TAO actually injected: 16.5 TAO/day
+pool: 2,385,540 alpha / 39,682 TAO. Selling one nanobody win (59 alpha) moves the price by ~0.0025%
+but if every miner sold daily (7,184 alpha), that is 0.30% of the pool per day
