@@ -198,6 +198,35 @@ une variante évoluée de celle de QTTECH (CDR3 `AKFMHRIKDFDY` contre
    40 points ; le meilleur candidat venait de la strate médiane). Les 40 points
    mesurés sont en revanche de quoi le réentraîner sur son angle mort.
 
+**Réplique indépendante** (`results/boltzgen_batch3_rep2_epoch26025.csv`,
+même lot de 46, nouveau tirage, 67,9 min soit 1,5 min/séquence) :
+
+| | Tirage 1 | Tirage 2 |
+|---|---|---|
+| Fidélité au classement des validateurs (6 ancres) | 0,94 | **1,00** |
+| Meilleure soumission réelle | 45 | 45 |
+| **Notre meilleur candidat** | **33** | **34** |
+| Candidats devant *toutes* les soumissions réelles | 1 | **2** |
+| `design_iiptm` de notre meilleur | 0,683 | 0,719 |
+
+**Le résultat tient.** Notre meilleur candidat (CDR3 `AKFMHRIKDFDY`) reste
+premier du lot aux deux tirages, devant les six soumissions réelles dont celle
+qui a gagné l'époque. Au second tirage son `design_iiptm` monte à 0,719, soit
+le niveau du gagnant (0,714), et un deuxième candidat passe aussi devant tout
+le monde.
+
+**L'inversion du tirage 1 était bien du bruit** : au tirage 2, notre classement
+reproduit exactement celui des validateurs sur les ancres (Spearman 1,00).
+
+**Bruit de BoltzGen mesuré** sur les 46 séquences : Spearman 0,95 entre les deux
+tirages, écart moyen de 14,5 places sur la somme de rangs, 0,028 sur
+`design_iiptm` (jusqu'à 0,25 dans les cas extrêmes). C'est pourquoi les
+validateurs moyennent plusieurs runs ; pour choisir entre candidats proches, il
+faudra répliquer.
+
+**Le modèle de substitution reste inutile pour trier** : Spearman 0,26 aux deux
+tirages, à l'identique. Ce n'est donc pas du bruit, c'est une limite réelle.
+
 **Conséquence opérationnelle** : 40 évaluations tiennent dans une époque de
 72 min sur 2 GPU modestes (1,6 min/séquence, et le coût baisse encore avec la
 taille du lot). Le concours nanobody est donc techniquement jouable avec un
