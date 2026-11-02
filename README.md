@@ -355,10 +355,36 @@ Deux différences réelles apparaissent en revanche :
   d'identité V, pour un seuil à 82. Les charpentes IGHV3-43 de l'archive sont
   elles-mêmes à la limite, donc la moindre mutation fait basculer.
 
-Le classement prédit reste comparable (4ᵉ sur 201 contre 3ᵉ pour l'époque
-26025), mais le modèle n'étant pas fiable pour trier, **seul BoltzGen peut
-trancher** : `inputs/kaggle_nanobody_batch4.csv` (20 candidats + 4 ancres de
-cette époque, dont la soumission gagnante de frankji à 0,540 de `design_iiptm`).
+**Verdict BoltzGen** (`results/boltzgen_batch4_epoch25989.csv`, 24 séquences
+en 40,6 min) :
+
+| | |
+|---|---|
+| Gagnant réel (frankji, rang vrai 15) | rang 27, `design_iiptm` 0,561 |
+| **Notre meilleur candidat** | **rang 25**, `design_iiptm` 0,588 |
+| Candidats devant *toutes* les soumissions réelles | 1 sur 20 |
+| Candidats devant la médiane réelle | 14 sur 20 |
+
+**C'est une égalité, pas une victoire.** Notre candidat passe devant, mais de
+**2 places**, alors que le bruit de BoltzGen mesuré sur deux tirages est de
+14,5 places en moyenne. Sur l'époque 26025 l'avance était de 11 à 12 places et
+se reproduisait sur deux tirages ; ici nous n'avons qu'un tirage et un écart
+dans le bruit. La conclusion honnête : **à parité avec le gagnant sur une époque
+mal couverte**, ce qui reste un bon résultat mais n'est pas une victoire
+démontrée.
+
+Trois observations utiles :
+
+- **La tâche était dure pour tout le monde** : frankji gagne cette époque avec
+  0,561 de `design_iiptm`, contre 0,714 pour le gagnant de l'époque 26025. Le
+  niveau requis baisse avec la difficulté, donc s'abstenir serait une erreur.
+- **Diversité de charpente très faible** : 18 de nos 20 candidats partagent la
+  même charpente (3 distinctes sur 4 disponibles). Si cette charpente avait été
+  mauvaise, tout le lot l'aurait été. C'est le vrai risque de ces époques, et il
+  ne se voit pas dans le rendement de validité.
+- **Aucune marge germinale** : 82,8–83,8 % d'identité V pour un seuil à 82.
+- Le modèle de substitution tombe à Spearman 0,13 ici (contre 0,26), confirmant
+  qu'il ne sert pas à trier.
 
 ## Limites
 
