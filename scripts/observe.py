@@ -135,6 +135,48 @@ def report(target: str) -> None:
           "score the batches, then scripts.review_observation.")
 
 
+def combined_batch(target: str, depth: int = 2) -> None:
+    """One batch for every journalled epoch, since the target never changes.
+
+    BoltzGen scores against the same structure at every epoch, so 21 separate
+    Kaggle runs are a waste: one batch covers them all. Rows are ordered by
+    depth, not by epoch — round 1 holds each epoch's best candidate and best
+    rival, round 2 the second of each, and so on. An interrupted run therefore
+    gives a shallow verdict on every epoch instead of a deep one on the first.
+    """
+    if not JOURNAL.exists():
+        raise SystemExit("nothing journalled yet")
+    rows = [json.loads(l) for l in JOURNAL.open() if l.strip()]
+    seen, entries = set(), []
+    for entry in reversed(rows):  # last observation of each epoch wins
+        if entry.get("target") == target and "batch" in entry and entry["epoch"] not in seen:
+            seen.add(entry["epoch"])
+            entries.append(entry)
+    entries.sort(key=lambda e: e["epoch"])
+
+    frames = []
+    for entry in entries:
+        path = BATCH_DIR / f"{target}_epoch{entry['epoch']}.csv"
+        if not path.exists():
+            continue
+        part = pd.read_csv(path)
+        part["epoch"] = entry["epoch"]
+        part["allowed_v"] = entry["allowed_v"]
+        # slot = depth within the epoch, counted separately for both sides
+        part["slot"] = part.groupby("group").cumcount()
+        frames.append(part[part["slot"] < depth])
+    if not frames:
+        raise SystemExit("no per-epoch batch found; run scripts.observe first")
+    batch = pd.concat(frames, ignore_index=True).sort_values(["slot", "epoch", "stratum"])
+    batch = batch.drop(columns="slot").reset_index(drop=True)
+    out = BATCH_DIR / f"{target}_combined.csv"
+    batch.to_csv(out, index=False)
+    per_epoch = batch.groupby("group").size().to_dict()
+    print(f"{len(batch)} sequences over {batch['epoch'].nunique()} epochs -> {out}")
+    print(f"  {per_epoch} ; about {len(batch) * 3.7 / 60:.1f} h on 2x T4 at 3.7 min/sequence")
+    print("  rows are ordered by depth: an interrupted run still covers every epoch")
+
+
 def rebuild_batches(target: str) -> None:
     """Re-write journalled batches now that more rivals are decrypted.
 
@@ -222,11 +264,18 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--redo", action="store_true", help="re-observe epochs already journalled")
     parser.add_argument("--report", action="store_true", help="print the journal and stop")
+    parser.add_argument("--combined-batch", action="store_true",
+                        help="one GPU batch covering every journalled epoch, and stop")
+    parser.add_argument("--depth", type=int, default=2,
+                        help="candidates and rivals per epoch in the combined batch")
     parser.add_argument("--rebuild-batches", action="store_true",
                         help="put newly decrypted rivals into the journalled batches and stop")
     args = parser.parse_args()
     if args.report:
         report(args.target)
+        return
+    if args.combined_batch:
+        combined_batch(args.target, args.depth)
         return
     if args.rebuild_batches:
         rebuild_batches(args.target)

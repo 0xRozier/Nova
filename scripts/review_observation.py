@@ -47,8 +47,25 @@ def epoch_of(path: Path, journal: list[dict]) -> int | None:
     return None
 
 
-def review(path: Path, journal: list[dict], epoch: int | None = None) -> dict:
+def review_all(path: Path, journal: list[dict], epoch: int | None = None) -> list[dict]:
+    """A combined batch carries its own epoch column: rank each epoch on its own,
+    the way a validator does, instead of pooling epochs together."""
     scored = pd.read_csv(path)
+    if "epoch" not in scored.columns or scored["epoch"].nunique() <= 1:
+        return [review(path, journal, epoch, scored)]
+    out = []
+    for ep, part in scored.groupby("epoch"):
+        try:
+            out.append(review(path, journal, int(ep), part))
+        except SystemExit as err:
+            print(f"epoch {int(ep)}: skipped ({err})\n")
+        print()
+    return out
+
+
+def review(path: Path, journal: list[dict], epoch: int | None = None,
+           scored: pd.DataFrame | None = None) -> dict:
+    scored = pd.read_csv(path) if scored is None else scored
     missing = [m for m in METRICS if m not in scored.columns]
     if missing:
         raise SystemExit(f"{path} lacks the metrics {missing}: score it with the BoltzGen notebook")
@@ -62,7 +79,7 @@ def review(path: Path, journal: list[dict], epoch: int | None = None) -> dict:
     ours = ranked[ranked["group"] == "candidate"]
     theirs = ranked[ranked["group"] != "candidate"]
     if ours.empty or theirs.empty:
-        raise SystemExit(f"{path} needs both our candidates and real submissions scored together")
+        raise SystemExit("needs both our candidates and real submissions scored together")
 
     best_ours = ours.iloc[0]
     beaten = int((theirs["pool_rank_sum"] > best_ours["pool_rank_sum"]).sum())
@@ -122,10 +139,9 @@ def main():
         journal = [json.loads(l) for l in JOURNAL.open() if l.strip()] if JOURNAL.exists() else []
         OBS_DIR.mkdir(parents=True, exist_ok=True)
         for path in args.scores:
-            result = review(path, journal, args.epoch)
-            with REVIEWS.open("a") as f:
-                f.write(json.dumps(result) + "\n")
-            print()
+            for result in review_all(path, journal, args.epoch):
+                with REVIEWS.open("a") as f:
+                    f.write(json.dumps(result) + "\n")
     if args.summary or not args.scores:
         summary()
 

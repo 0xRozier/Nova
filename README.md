@@ -46,6 +46,7 @@ source .venv/bin/activate
 | **Mineur en mode observation** : journaliser à chaque époque ce qu'on *aurait* soumis | `python -m scripts.observe --watch` |
 | Rejouer des époques passées en observation | `python -m scripts.observe --epochs 25996-26006` |
 | État du journal d'observation | `python -m scripts.observe --report` |
+| Lot GPU unique couvrant toutes les époques journalisées | `python -m scripts.observe --combined-batch` |
 | Verdict réel d'un lot d'observation noté par BoltzGen | `python -m scripts.review_observation data/observation/batches/...` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
@@ -410,10 +411,40 @@ chiffrés : le lot part avec nos seuls candidats, et
 `scripts.observe --rebuild-batches` y réinjecte les rivaux une fois
 `scripts.fetch_submissions` et `scripts.analyze_nanobodies` passés.
 
+La cible ne change jamais (Q9NZQ7 / 8AOK), donc 21 runs Kaggle séparés seraient
+du gâchis : `--combined-batch` réunit toutes les époques journalisées en un seul
+lot, avec une colonne `epoch` que le scorer conserve. Les lignes y sont rangées
+par profondeur et non par époque — premier tour : le meilleur candidat et le
+meilleur rival de chaque époque ; deuxième tour : les deuxièmes. Un run
+interrompu donne donc un verdict peu profond sur **toutes** les époques plutôt
+qu'un verdict complet sur les premières. À profondeur 2, les 21 époques tiennent
+en 84 séquences, soit ~5 h sur 2×T4 : une seule session Kaggle.
+
 `scripts.review_observation` prend les scores BoltzGen d'un lot, applique le
 classement du validateur (rang dense par métrique, somme des rangs) sur le pool
-réellement noté, et dit à quelle place notre candidat serait arrivé.
-`--summary` agrège les époques déjà jugées.
+réellement noté, et dit à quelle place notre candidat serait arrivé. Il classe
+**chaque époque séparément** quand le lot en couvre plusieurs, comme le fait un
+validateur. `--summary` agrège les époques déjà jugées.
+
+### Marche à suivre sur Kaggle
+
+1. `python -m scripts.observe --combined-batch` puis
+   `python -m scripts.build_boltzgen_notebook --batch data/observation/batches/Q9NZQ7_combined.csv --run observation_combined`
+2. Importer `notebooks/kaggle_boltzgen.ipynb` dans Kaggle, régler *Accelerator*
+   sur **GPU T4 x2** et *Internet* sur **On**.
+3. Test rapide dans l'éditeur : mettre `TOP = 4` et **Run All** (~15 min, vérifie
+   que les poids se téléchargent et que BoltzGen tourne).
+4. Lot complet : remettre `TOP = None`, puis **Save Version → Save & Run All
+   (Commit)**. Compter ~5 h ; le quota Kaggle est de 30 h de GPU par semaine et
+   12 h par session, donc le lot passe en une fois.
+5. Récupérer `scores_nanobody_observation_combined.csv` dans les *Output* du run,
+   le placer dans `results/`, puis
+   `python -m scripts.review_observation results/scores_nanobody_observation_combined.csv`
+   et `python -m scripts.review_observation --summary`.
+
+Pour approfondir ensuite : `--depth 4` donne 168 séquences (~10 h, deux
+sessions) et un `RUN` différent est **obligatoire** à chaque lot, BoltzGen
+reprenant sinon les résultats du répertoire existant au lieu de recalculer.
 
 Ce que cette boucle ne peut pas dire :
 
