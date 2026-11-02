@@ -43,6 +43,10 @@ source .venv/bin/activate
 | **Nanobodies** : proposer des séquences pour l'époque | `python -m scripts.propose_nanobody` |
 | **Nanobodies** : noter un lot avec la BoltzGen des validateurs (GPU) | `python -m scripts.boltzgen_score --file inputs/kaggle_nanobody_batch.csv` |
 | Idem sur GPU Kaggle : notebook autonome (nécessite le clone amont) | `python -m scripts.build_boltzgen_notebook` puis importer `notebooks/kaggle_boltzgen.ipynb` |
+| **Mineur en mode observation** : journaliser à chaque époque ce qu'on *aurait* soumis | `python -m scripts.observe --watch` |
+| Rejouer des époques passées en observation | `python -m scripts.observe --epochs 25996-26006` |
+| État du journal d'observation | `python -m scripts.observe --report` |
+| Verdict réel d'un lot d'observation noté par BoltzGen | `python -m scripts.review_observation data/observation/batches/...` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -386,10 +390,47 @@ Trois observations utiles :
 - Le modèle de substitution tombe à Spearman 0,13 ici (contre 0,26), confirmant
   qu'il ne sert pas à trier.
 
+## Mineur en mode observation (`scripts.observe`)
+
+Avant d'engager du TAO, le mineur tourne à vide. `scripts.observe` ne touche
+**ni portefeuille, ni chaîne, ni dépôt GitHub** : il lit les paramètres de
+l'époque, fait tourner le générateur sur CPU, et écrit dans
+`data/observation/journal.jsonl` ce qu'il aurait soumis (séquence, empreinte,
+gène V imposé, rendement de validité, causes de rejet). Le champ `submitted`
+vaut toujours `false` ; le chiffrement, la publication GitHub et l'ancrage sur
+la chaîne ne sont volontairement pas dans ce fichier.
+
+Chaque époque produit aussi un lot GPU (`data/observation/batches/`) qui
+**entrelace nos candidats et les soumissions réelles de cette époque**. C'est le
+point clé : BoltzGen est stochastique, et l'écart mesuré entre deux tirages des
+mêmes séquences atteint une quinzaine de places sur 46 — des métriques venant de
+deux runs différents ne sont pas comparables. Il faut donc noter les deux camps
+dans le même run. Pour une époque en cours, les concurrents sont encore
+chiffrés : le lot part avec nos seuls candidats, et
+`scripts.observe --rebuild-batches` y réinjecte les rivaux une fois
+`scripts.fetch_submissions` et `scripts.analyze_nanobodies` passés.
+
+`scripts.review_observation` prend les scores BoltzGen d'un lot, applique le
+classement du validateur (rang dense par métrique, somme des rangs) sur le pool
+réellement noté, et dit à quelle place notre candidat serait arrivé.
+`--summary` agrège les époques déjà jugées.
+
+Ce que cette boucle ne peut pas dire :
+
+- la présélection dans le lot vient du modèle de substitution, qui ne trie pas
+  (Spearman ~0,2) : notre meilleur candidat n'est probablement pas dans les
+  4 envoyés au GPU ;
+- seuls les rivaux portés dans le lot sont dans le pool, et seulement ceux que
+  le validateur a lui-même acceptés ;
+- la développabilité structurale reste invisible hors ligne, donc un candidat
+  « valide » peut encore être refusé.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
-- Nanobodies : le générateur n'est pas encore confronté à BoltzGen ; sa sortie est une prédiction, pas un score.
+- Nanobodies : hors des lots déjà notés, la sortie du générateur est une
+  prédiction, pas un score. Le mode observation existe pour transformer cela en
+  taux de victoire mesuré, mais il faut d'abord noter les lots sur GPU.
 - La développabilité structurale reste hors de portée hors ligne (prédiction de structure requise).

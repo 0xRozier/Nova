@@ -58,7 +58,11 @@ def code(text):
             "source": text.strip("\n").splitlines(True)}
 
 
-def build(batch: str, nova_dir: Path, target: str) -> dict:
+def build(batch: str, nova_dir: Path, target: str, run: str | None = None) -> dict:
+    # One run name per batch: BoltzGen resumes an existing run directory, so a
+    # stale name silently returns the previous results instead of scoring.
+    run = run or Path(batch).stem
+    n_seq = sum(1 for _ in (REPO_ROOT / batch).open()) - 1
     msa_path = nova_dir / "data" / "msa_files" / f"{target}.a3m"
     msa_sha = hashlib.sha256(msa_path.read_bytes()).hexdigest()
     msa_urls = [u.format(commit=UPSTREAM_COMMIT, target=target) for u in MSA_URLS]
@@ -72,7 +76,7 @@ Note des séquences avec **la version de BoltzGen embarquée par les validateurs
 Notebook **autonome** : la source BoltzGen, la structure, le lot (`{batch}`) et le code de scoring sont intégrés. La MSA est téléchargée via jsDelivr et vérifiée par empreinte SHA-256 ; les poids (~6 Go) viennent de Hugging Face.
 
 **Réglages Kaggle :** *Accelerator* **GPU T4 x2**, *Internet* **On**.
-- Lot complet (24 séquences, ~40 min à 1,5 min/séquence sur 2×T4) : **Save Version → Save & Run All (Commit)**.
+- Lot complet ({n_seq} séquences, ~{n_seq * 3.7 / 60:.1f} h à 3,7 min/séquence sur 2×T4) : **Save Version → Save & Run All (Commit)**.
 - Test rapide : `TOP = 2` puis **Run All** dans l'éditeur.
 
 Le lot alterne candidats et séquences de calibration, donc même un run interrompu compare les deux.
@@ -81,8 +85,8 @@ Les noyaux cuEquivariance se désactivent d'eux-mêmes sur T4 (capacité 7.5 < 8
 """),
         code("""
 # Paramètres
-TOP = None          # None = tout le lot (24 sequences, ~40 min) ; 2 pour un test rapide
-RUN = "nanobody_batch4"
+TOP = None          # None = tout le lot ; 2 pour un test rapide
+RUN = "__RUN__"
 REPLICATE = 1       # incrémenter pour une réplique : BoltzGen est stochastique, mais il
                     # REPREND les résultats déjà présents, donc un nom de run neuf est
                     # indispensable pour obtenir un vrai second tirage.
@@ -120,7 +124,7 @@ if shutil.which("nvidia-smi") is None:
 sh("nvidia-smi --query-gpu=name,memory.total --format=csv")
 TEMP.mkdir(parents=True, exist_ok=True)
 sh("df -h /kaggle/temp | tail -1", check=False)
-"""),
+""".replace("__RUN__", run)),
         code("""
 step("test de l'accès Internet")
 for url in ["https://huggingface.co", "https://pypi.org", "https://cdn.jsdelivr.net"]:
@@ -233,6 +237,7 @@ df
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch", default="inputs/kaggle_nanobody_batch4.csv")
+    parser.add_argument("--run", help="run name (default: the batch file's stem)")
     parser.add_argument("--target", default="Q9NZQ7")
     parser.add_argument("--nova-dir", type=Path, default=REPO_ROOT.parent / "nova-upstream")
     parser.add_argument("--out", default="notebooks/kaggle_boltzgen.ipynb")
@@ -240,7 +245,7 @@ def main():
     if not (args.nova_dir / "external_tools" / "boltzgen" / "src").is_dir():
         raise SystemExit(f"upstream clone not found at {args.nova_dir}; pass --nova-dir")
 
-    nb = build(args.batch, args.nova_dir, args.target)
+    nb = build(args.batch, args.nova_dir, args.target, args.run)
     path = REPO_ROOT / args.out
     path.write_text(json.dumps(nb, indent=1, ensure_ascii=False))
     size = path.stat().st_size

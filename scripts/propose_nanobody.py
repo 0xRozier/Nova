@@ -121,36 +121,39 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
     return out.sort_values("predicted_rank_sum"), all_ranks[:len(reference)]
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--epoch", type=int)
-    parser.add_argument("--target", default=NANOBODY_TARGET[0])
-    parser.add_argument("--candidates", type=int, default=3000)
-    parser.add_argument("--donors", type=int, default=40, help="framework donors to draw from")
-    parser.add_argument("--cdr3-pool", type=int, default=60, help="CDR3 donors of the right length")
-    parser.add_argument("--shortlist", type=int, default=10)
-    parser.add_argument("--seed", type=int, default=0)
-    args = parser.parse_args()
+def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
+            n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
+            log=print) -> dict:
+    """Build and rank candidates for one epoch. Pure CPU, no chain write.
 
-    p = resolve_epoch(args.epoch)
-    allowed_v, cdr3_len = p["allowed_v"], p["allowed_cdr3_length"]
-    print(f"epoch {p['epoch']}: V gene {allowed_v}, CDR3 length {cdr3_len}")
+    `params` is what scripts.check_nanobody.resolve_epoch returns: it must carry
+    `allowed_v` and `allowed_cdr3_length`. Returns a dict with the shortlist and
+    the diagnostics the observation log needs; `shortlist` is empty whenever the
+    archive cannot supply the epoch's gene or CDR3 length.
+    """
+    allowed_v, cdr3_len = params["allowed_v"], params["allowed_cdr3_length"]
+    out: dict = {"epoch": params.get("epoch"), "allowed_v": allowed_v,
+                 "allowed_cdr3_length": cdr3_len, "shortlist": pd.DataFrame(),
+                 "generated": 0, "valid": 0, "reasons": {}, "status": "ok",
+                 "reference_size": 0, "place": None, "best_rank_sum": None}
+    log(f"epoch {params.get('epoch')}: V gene {allowed_v}, CDR3 length {cdr3_len}")
 
     ds = DATA_DIR / "dataset"
-    df = pd.read_parquet(ds / f"{args.target}_nanobodies.parquet")
+    df = pd.read_parquet(ds / f"{target}_nanobodies.parquet")
     df["true_rank_sum"] = rank_sum(df)
-    models = Surrogate.load(f"{args.target}_nanobody").main
+    models = Surrogate.load(f"{target}_nanobody").main
 
     compliant = df[(df["v_identity"] >= MIN_HUMAN_V_IDENTITY + GERMLINE_MARGIN)
                    & (df["j_identity"] >= MIN_HUMAN_J_IDENTITY)]
-    print(f"{len(compliant)} of {len(df)} archived sequences clear today's germline floors with margin")
+    log(f"{len(compliant)} of {len(df)} archived sequences clear today's germline floors with margin")
 
     # Framework donors: the right V gene, best archived rank sum first.
     donors = compliant[compliant["v_genes"].str.split(",").apply(lambda g: allowed_v in g)]
-    donors = donors.nsmallest(args.donors, "true_rank_sum").copy()
+    donors = donors.nsmallest(n_donors, "true_rank_sum").copy()
     if donors.empty:
-        print(f"no archived sequence calls {allowed_v}; cannot build a framework")
-        return
+        log(f"no archived sequence calls {allowed_v}; cannot build a framework")
+        out["status"] = "no_framework_donor"
+        return out
     donors["regions"] = [regions(s) for s in donors["sequence"]]
     donors = donors[donors["regions"].notna()]
 
@@ -158,16 +161,20 @@ def main():
     right_length = compliant[compliant["cdr3"].str.len() == cdr3_len]
     if right_length.empty:
         right_length = df[df["cdr3"].str.len() == cdr3_len]
-        print(f"no compliant CDR3 of length {cdr3_len}; falling back to the whole archive")
-    cdr3_pool = list(right_length.nsmallest(args.cdr3_pool, "true_rank_sum")["cdr3"])
-    if not cdr3_pool:
-        print(f"no archived CDR3 of length {cdr3_len}; cannot graft")
-        return
-    print(f"{len(donors)} framework donors ({allowed_v}), {len(cdr3_pool)} CDR3 donors of length {cdr3_len}")
+        log(f"no compliant CDR3 of length {cdr3_len}; falling back to the whole archive")
+    cdr3_donors = list(right_length.nsmallest(n_cdr3, "true_rank_sum")["cdr3"])
+    if not cdr3_donors:
+        log(f"no archived CDR3 of length {cdr3_len}; cannot graft")
+        out["status"] = "no_cdr3_donor"
+        return out
+    out["framework_donors"] = len(donors)
+    out["cdr3_donors"] = len(cdr3_donors)
+    log(f"{len(donors)} framework donors ({allowed_v}), {len(cdr3_donors)} CDR3 donors of length {cdr3_len}")
 
-    rng = random.Random(args.seed)
-    candidates = generate(donors, cdr3_pool, args.candidates, rng)
-    print(f"generated {len(candidates)} distinct candidates; checking validity...")
+    rng = random.Random(seed)
+    generated = generate(donors, cdr3_donors, candidates, rng)
+    out["generated"] = len(generated)
+    log(f"generated {len(generated)} distinct candidates; checking validity...")
 
     archived_cdr3 = [c for c in df["cdr3"] if len(c) == cdr3_len]
 
@@ -180,7 +187,7 @@ def main():
                    for other in archived_cdr3)
 
     valid, reasons = [], {}
-    for seq in candidates:
+    for seq in generated:
         problems = check_sequence(seq, allowed_v, cdr3_len)  # archive checked later
         if not problems and not cdr3_is_novel(seq):
             problems = [f"CDR3 >= {MAX_CDR3_IDENTITY:.0%} identical to an archived CDR3"]
@@ -189,39 +196,69 @@ def main():
             reasons[key] = reasons.get(key, 0) + 1
         else:
             valid.append(seq)
-    print(f"{len(valid)} pass the offline checks. Main rejection causes:")
+    out["valid"], out["reasons"] = len(valid), reasons
+    log(f"{len(valid)} pass the offline checks. Main rejection causes:")
     for reason, n in sorted(reasons.items(), key=lambda kv: -kv[1])[:6]:
-        print(f"  {n:5d}  {reason}")
+        log(f"  {n:5d}  {reason}")
     if not valid:
-        return
+        out["status"] = "no_valid_candidate"
+        return out
 
     # The real competition: the most recent dated submissions, which all comply.
     dated = df[df["epoch"].notna()]
     reference = dated.nlargest(REFERENCE_POOL, "epoch") if len(dated) else compliant.head(REFERENCE_POOL)
     ranked, reference_ranks = score(valid, models, reference)
-    print(f"\nranking {len(ranked)} candidates against {len(reference)} recent archived sequences")
+    out["reference_size"] = len(reference)
+    log(f"\nranking {len(ranked)} candidates against {len(reference)} recent archived sequences")
 
-    archive = NanobodyArchive(args.target)
-    shortlist = []
+    archive = NanobodyArchive(target)
+    rows = []
     for row in ranked.itertuples():
         warnings = []
         if check_sequence(row.sequence, allowed_v, cdr3_len, archive, warnings=warnings):
             continue
-        shortlist.append({"sequence": row.sequence, "cdr3": row.cdr3,
-                          "predicted_rank_sum": row.predicted_rank_sum,
-                          "v_identity": row.v_identity,
-                          "design_iiptm": row.design_iiptm, "interaction_pae": row.interaction_pae,
-                          "archive_warning": "; ".join(warnings)})
-        if len(shortlist) >= args.shortlist:
+        rows.append({"sequence": row.sequence, "cdr3": row.cdr3,
+                     "predicted_rank_sum": row.predicted_rank_sum,
+                     "v_identity": row.v_identity,
+                     "design_iiptm": row.design_iiptm, "interaction_pae": row.interaction_pae,
+                     "archive_warning": "; ".join(warnings)})
+        if len(rows) >= shortlist:
             break
-    out = pd.DataFrame(shortlist)
+    if not rows:
+        out["status"] = "all_duplicates"
+        return out
+    table = pd.DataFrame(rows)
+    out["shortlist"] = table
+    best = table["predicted_rank_sum"].iat[0]
+    out["best_rank_sum"] = float(best)
+    out["place"] = int((reference_ranks < best).sum()) + 1
+    out["reference_best"] = float(reference_ranks.min())
+    out["reference_median"] = float(np.median(reference_ranks))
+    log(f"\nranked in one pool with {len(reference)} recent real submissions "
+        f"(which score {reference_ranks.min():.0f} best, {np.median(reference_ranks):.0f} median):")
+    log(f"  our best candidate scores {best:.0f} -> place {out['place']} of {len(reference) + 1}")
+    log("  predicted only: confirm with BoltzGen before trusting it")
+    return out
 
-    best = out["predicted_rank_sum"].iat[0]
-    place = int((reference_ranks < best).sum()) + 1
-    print(f"\nranked in one pool with {len(reference)} recent real submissions "
-          f"(which score {reference_ranks.min():.0f} best, {np.median(reference_ranks):.0f} median):")
-    print(f"  our best candidate scores {best:.0f} -> place {place} of {len(reference) + 1}")
-    print("  predicted only: confirm with BoltzGen before trusting it")
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--epoch", type=int)
+    parser.add_argument("--target", default=NANOBODY_TARGET[0])
+    parser.add_argument("--candidates", type=int, default=3000)
+    parser.add_argument("--donors", type=int, default=40, help="framework donors to draw from")
+    parser.add_argument("--cdr3-pool", type=int, default=60, help="CDR3 donors of the right length")
+    parser.add_argument("--shortlist", type=int, default=10)
+    parser.add_argument("--seed", type=int, default=0)
+    args = parser.parse_args()
+
+    p = resolve_epoch(args.epoch)
+    result = propose(p, args.target, args.candidates, args.donors, args.cdr3_pool,
+                     args.shortlist, args.seed)
+    out = result["shortlist"]
+    if out.empty:
+        print(f"nothing to propose ({result['status']})")
+        return
     with pd.option_context("display.width", 200, "display.max_colwidth", 30):
         print(out[["cdr3", "predicted_rank_sum", "v_identity", "design_iiptm",
                    "interaction_pae", "archive_warning"]].to_string(index=False))
