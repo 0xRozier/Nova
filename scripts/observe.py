@@ -163,8 +163,13 @@ def rebuild_batches(target: str) -> None:
 
 def observe_epoch(params: dict, target: str, args) -> dict:
     epoch = params["epoch"]
+    # The seed must carry the epoch. Two epochs drawing the same (V gene, CDR3
+    # length) are otherwise generated identically: the 21-epoch sweep proposed
+    # one sequence three times for (IGHV3-23, 19), and in production the second
+    # submission would be an exact archive duplicate, rejected outright.
     result = propose(params, target, candidates=args.candidates, n_donors=args.donors,
-                     n_cdr3=args.cdr3_pool, shortlist=args.shortlist, seed=args.seed)
+                     n_cdr3=args.cdr3_pool, shortlist=args.shortlist,
+                     seed=args.seed + epoch)
     shortlist = result["shortlist"]
     rivals = real_submissions(epoch, target)
 
