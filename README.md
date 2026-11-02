@@ -338,6 +338,28 @@ IGHV3-43 une seule).
 
 Table complète par combinaison : `data/submissions/Q9NZQ7_epoch_coverage.csv`.
 
+### Test sur le pire cas (époque 25989, IGHV3-43, CDR3 de 15)
+
+4 charpentes seulement, combinaison marquée « non équipée ». Résultat :
+**1 658 candidats valides sur 4 000** (41 %, contre 81 % sur une époque bien
+couverte). **Le nombre de charpentes n'est donc pas la contrainte** : la
+variation vient du CDR3, et 4 charpentes suffisent à en produire des milliers.
+Mon seuil de 10 charpentes était mal choisi.
+
+Deux différences réelles apparaissent en revanche :
+
+- **Plus de collisions de CDR3** : 1 110 rejets pour CDR3 ≥ 85 % identique à
+  l'archive, parce que seuls 79 CDR3 de longueur 15 existent et que les muter
+  les ramène souvent sur un voisin connu.
+- **Aucune marge germinale** : tous les candidats sortent à 82,8–83,8 %
+  d'identité V, pour un seuil à 82. Les charpentes IGHV3-43 de l'archive sont
+  elles-mêmes à la limite, donc la moindre mutation fait basculer.
+
+Le classement prédit reste comparable (4ᵉ sur 201 contre 3ᵉ pour l'époque
+26025), mais le modèle n'étant pas fiable pour trier, **seul BoltzGen peut
+trancher** : `inputs/kaggle_nanobody_batch4.csv` (20 candidats + 4 ancres de
+cette époque, dont la soumission gagnante de frankji à 0,540 de `design_iiptm`).
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
