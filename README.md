@@ -48,6 +48,7 @@ source .venv/bin/activate
 | État du journal d'observation | `python -m scripts.observe --report` |
 | Lot GPU unique couvrant toutes les époques journalisées | `python -m scripts.observe --combined-batch` |
 | Verdict réel d'un lot d'observation noté par BoltzGen | `python -m scripts.review_observation data/observation/batches/...` |
+| **Les règles ont-elles bougé ?** (cible, seuils, catégories V vs dépôt amont) | `python -m scripts.check_config` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -390,6 +391,42 @@ Trois observations utiles :
 - **Aucune marge germinale** : 82,8–83,8 % d'identité V pour un seuil à 82.
 - Le modèle de substitution tombe à Spearman 0,13 ici (contre 0,26), confirmant
   qu'il ne sert pas à trier.
+
+## Quand la configuration et la cible changent (`scripts.check_config`)
+
+La cible **n'est pas tirée par époque** : elle est écrite en dur dans
+`config/config.yaml` du dépôt amont, et seule l'équipe du subnet la change.
+Les validateurs tournent avec un auto-updater qui tire `main` **toutes les
+heures** (`auto_updater.py`, `UPDATE_INTERVAL = 3600`), donc un commit amont
+devient la règle en vigueur dans l'heure, sans vote ni annonce on-chain.
+
+Ce qui tourne par époque, c'est seulement la réaction imposée, le gène V et la
+longueur du CDR3, dérivés du hash du premier bloc.
+
+Historique réel des changements de cible nanobody (`git log` de
+`config/config.yaml`, avril → octobre 2026) :
+
+| Date | Cible nanobody | Jours depuis le précédent |
+|---|---|---|
+| 2026-04-10 | Q9NZQ7 | — |
+| 2026-05-18 | P05231 | 38 |
+| 2026-06-08 | P20809 | 21 |
+| 2026-07-06 | P01584 | 28 |
+| 2026-07-20 | P20809 | 14 |
+| 2026-07-27 | P05231 | 7 |
+| 2026-09-01 | P20809 | 36 |
+| 2026-10-24 | **Q9NZQ7** (actuelle) | 53 |
+
+Médiane 28 jours, extrêmes 7 et 53. La cible actuelle est en place depuis le
+24 octobre 2026. La clé s'appelait `weekly_target` à l'origine et `docs/MINER.md`
+dit « announced approximately 24 hours before change on NOVA's Discord channel
+and are kept until further notice » : le rythme hebdomadaire d'origine s'est
+nettement relâché, mais **le préavis utile reste le Discord, pas le dépôt**.
+
+`scripts.check_config` compare notre configuration épinglée à celle du dépôt
+amont et sort en code 1 dès qu'une valeur dont nous dépendons a bougé. À lancer
+avant toute session GPU : si la cible nanobody change, l'archive, la MSA, le jeu
+de données et tous les lots deviennent du matériel pour la mauvaise protéine.
 
 ## Mineur en mode observation (`scripts.observe`)
 
