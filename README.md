@@ -307,6 +307,37 @@ GPU est négligeable devant la récompense, quel que soit le prix du TAO.
    ensuite l'alpha à la coldkey du gagnant. Cela ajoute une dépendance à un
    tiers que nous n'avons pas auditée.
 
+## Quelles tâches le subnet tire-t-il ? (`scripts.epoch_tasks`)
+
+Le couple (gène V, longueur CDR3) sort du hash de bloc via `random.Random`, donc
+sa loi découle de l'algorithme : une catégorie parmi quatre, puis un gène dans
+la catégorie, puis une longueur uniforme dans 5..23. Vérifié sur 200 000 tirages
+simulés.
+
+| Gène V imposé | Fréquence | Charpentes conformes en archive |
+|---|---|---|
+| IGHV3-23 | 25 % | 392 |
+| IGHV3-66 | 25 % | 298 |
+| IGHV3-74 | 25 % | 177 |
+| IGHV3-53 | 4,2 % | 77 |
+| IGHV3-7 | 4,2 % | 50 |
+| IGHV3-11 | 4,2 % | 52 |
+| IGHV3-48 | 4,2 % | 44 |
+| IGHV3-64 | 4,2 % | 23 |
+| **IGHV3-43** | **4,2 %** | **4** |
+
+Trois gènes occupent chacun une catégorie entière et sortent donc un quart du
+temps ; les six de la catégorie V4 se partagent le dernier quart. La longueur de
+CDR3 est uniforme (5,26 % par valeur).
+
+**Nous sommes équipés pour 95,8 % des époques** (au moins 10 charpentes et
+5 CDR3 de la bonne longueur). Le seul trou est **IGHV3-43**, tiré une époque sur
+24, pour lequel l'archive ne contient que 4 séquences conformes. La fréquence
+réelle observée sur mes 56 époques colle à la théorie (IGHV3-23 18 fois,
+IGHV3-43 une seule).
+
+Table complète par combinaison : `data/submissions/Q9NZQ7_epoch_coverage.csv`.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
