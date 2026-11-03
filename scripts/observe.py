@@ -209,9 +209,14 @@ def observe_epoch(params: dict, target: str, args) -> dict:
     # length) are otherwise generated identically: the 21-epoch sweep proposed
     # one sequence three times for (IGHV3-23, 19), and in production the second
     # submission would be an exact archive duplicate, rejected outright.
+    # Replaying an epoch with today's archive is look-ahead: the generator would
+    # graft from sequences submitted at that epoch or later, which it could not
+    # have seen. Restricting the archive is what makes a replayed win mean
+    # anything; --no-cutoff reproduces the biased measurement on purpose.
+    cutoff = None if args.no_cutoff else epoch
     result = propose(params, target, candidates=args.candidates, n_donors=args.donors,
                      n_cdr3=args.cdr3_pool, shortlist=args.shortlist,
-                     seed=args.seed + epoch)
+                     seed=args.seed + epoch, archive_cutoff=cutoff)
     shortlist = result["shortlist"]
     rivals = real_submissions(epoch, target)
 
@@ -231,6 +236,7 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         "reference_size": result["reference_size"],
         "predicted_rank_sum": result["best_rank_sum"],
         "real_submissions_known": int(len(rivals)),
+        "archive_cutoff": cutoff,
         "submitted": SUBMIT,  # always false: this miner only observes
     }
     if not shortlist.empty:
@@ -262,6 +268,8 @@ def main():
     parser.add_argument("--cdr3-pool", type=int, default=60)
     parser.add_argument("--shortlist", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--no-cutoff", action="store_true",
+                        help="let the generator see the whole archive (look-ahead; for comparison only)")
     parser.add_argument("--redo", action="store_true", help="re-observe epochs already journalled")
     parser.add_argument("--report", action="store_true", help="print the journal and stop")
     parser.add_argument("--combined-batch", action="store_true",

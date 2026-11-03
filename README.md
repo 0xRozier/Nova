@@ -493,12 +493,60 @@ Ce que cette boucle ne peut pas dire :
 - la développabilité structurale reste invisible hors ligne, donc un candidat
   « valide » peut encore être refusé.
 
+## Premier verdict BoltzGen sur 20 époques (`results/scores_nanobody_observation_combined.csv`)
+
+84 séquences (2 candidats + les 2 meilleures soumissions réelles par époque),
+notées en un seul run de 126 min sur 2×T4. BoltzGen a dédupliqué 2 séquences
+identiques, d'où 82 notées et 20 époques jugeables.
+
+**La mesure elle-même est fiable.** Chaque époque portait ses deux meilleures
+soumissions réelles avec leur rang officiel : notre run les ordonne comme les
+validateurs sur **17 paires sur 20 (85 %, p = 0,001)**. La ligne « Spearman
+0,23 » du journal est un artefact de la calibration de `scripts.boltzgen_score`,
+qui compare des sommes de rangs d'époques différentes, donc incomparables.
+
+**Chiffres bruts :** 5 victoires nettes, 1 égalité, 14 défaites — 25 %,
+IC 95 % [9 %, 49 %].
+
+**Et ils sont faux.** En rejeu, le générateur voyait l'archive d'aujourd'hui,
+donc des séquences soumises *après* l'époque observée :
+
+- médiane ~40 % des donneurs de charpente réellement sélectionnés venaient de
+  l'époque observée ou plus tard ;
+- **23 des 40 candidats portent un CDR3 à 0,70–0,84 d'identité avec une séquence
+  qui n'existait pas encore**, et plus proche du futur que de tout le passé. À
+  0,84 on est juste sous le seuil de doublon de 0,85 : c'est de la copie.
+
+Pour les cinq victoires :
+
+| Époque | CDR3 du candidat | Identité au futur | Au passé | Verdict |
+|---|---|---|---|---|
+| 25998 | AGPSKGNTNFQH | 0,75 (ép. 25998) | 0,33 | contaminée |
+| 25999 | GRLNIWIHQNMDV | 0,69 (ép. 25999) | 0,38 | contaminée |
+| 26000 | SQTPFRYTPQFSFDY | 0,80 (ép. 26022) | 0,47 | contaminée |
+| 26017 | DRYPYRYFPTQGMHEHFDY | 0,84 (ép. 26017) | 0,63 | contaminée |
+| 26022 | AGPYYEGNRHNYFDY | 0,40 | 0,80 | **propre** |
+
+**Taux de victoire honnête : 1 sur 20, soit 5 %, IC 95 % [0,2 %, 25 %].** La
+mesure ne tranche plus rien : elle chevauche le seuil de rentabilité (0,3–1 %)
+au lieu de le dominer. `propose()` prend désormais un `archive_cutoff` que
+`scripts.observe` applique automatiquement en rejeu, et il faut une seconde
+session GPU sur le lot non biaisé avant de conclure quoi que ce soit.
+
+Deux détails trouvés au passage : une seconde collision d'époques (25998 et
+26025 partagent aussi IGHV3-23/12, donc 26025 a perdu ses candidats à la
+déduplication) ; et une fausse alerte sur `filter_cysteine`, les soumissions
+réelles acceptées portant aussi des cystéines surnuméraires.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
 - Nanobodies : hors des lots déjà notés, la sortie du générateur est une
-  prédiction, pas un score. Le mode observation existe pour transformer cela en
-  taux de victoire mesuré, mais il faut d'abord noter les lots sur GPU.
+  prédiction, pas un score.
+- **Tout rejeu sans `archive_cutoff` est optimiste** : le générateur grafte alors
+  depuis des séquences postérieures à l'époque, ce qui a produit 4 des 5
+  victoires apparentes du premier lot. Le seul taux de victoire exploitable est
+  mesuré avec la troncature.
 - La développabilité structurale reste hors de portée hors ligne (prédiction de structure requise).

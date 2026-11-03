@@ -123,13 +123,19 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
 
 def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
             n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
-            log=print) -> dict:
+            archive_cutoff: int | None = None, log=print) -> dict:
     """Build and rank candidates for one epoch. Pure CPU, no chain write.
 
     `params` is what scripts.check_nanobody.resolve_epoch returns: it must carry
     `allowed_v` and `allowed_cdr3_length`. Returns a dict with the shortlist and
     the diagnostics the observation log needs; `shortlist` is empty whenever the
     archive cannot supply the epoch's gene or CDR3 length.
+
+    `archive_cutoff` is mandatory for an honest replay: without it the generator
+    grafts from sequences submitted at the replayed epoch or later. Measured on
+    the first 21-epoch sweep, that let 23 of 40 candidates carry a CDR3 at
+    0.70-0.84 identity to a sequence that did not exist yet — just under the
+    0.85 duplicate threshold — and it accounted for 4 of 5 apparent wins.
     """
     allowed_v, cdr3_len = params["allowed_v"], params["allowed_cdr3_length"]
     out: dict = {"epoch": params.get("epoch"), "allowed_v": allowed_v,
@@ -140,6 +146,10 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
 
     ds = DATA_DIR / "dataset"
     df = pd.read_parquet(ds / f"{target}_nanobodies.parquet")
+    if archive_cutoff is not None:
+        before = len(df)
+        df = df[df["epoch"].isna() | (df["epoch"] < archive_cutoff)].copy()
+        log(f"archive restricted to before epoch {archive_cutoff}: {len(df)} of {before} sequences")
     df["true_rank_sum"] = rank_sum(df)
     models = Surrogate.load(f"{target}_nanobody").main
 
@@ -250,11 +260,13 @@ def main():
     parser.add_argument("--cdr3-pool", type=int, default=60, help="CDR3 donors of the right length")
     parser.add_argument("--shortlist", type=int, default=10)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--archive-cutoff", type=int,
+                        help="ignore archived sequences from this epoch onward (replays)")
     args = parser.parse_args()
 
     p = resolve_epoch(args.epoch)
     result = propose(p, args.target, args.candidates, args.donors, args.cdr3_pool,
-                     args.shortlist, args.seed)
+                     args.shortlist, args.seed, args.archive_cutoff)
     out = result["shortlist"]
     if out.empty:
         print(f"nothing to propose ({result['status']})")
