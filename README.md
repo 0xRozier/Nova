@@ -533,6 +533,15 @@ au lieu de le dominer. `propose()` prend désormais un `archive_cutoff` que
 `scripts.observe` applique automatiquement en rejeu, et il faut une seconde
 session GPU sur le lot non biaisé avant de conclure quoi que ce soit.
 
+Effet mesuré de la troncature sur le second balayage des mêmes 21 époques :
+candidats plus proches d'une séquence future que de tout le passé **3 sur 42
+contre 24 sur 40** auparavant, et identité médiane au futur 0,38 contre 0,79 au
+passé. Les trois restants ne peuvent plus être de la copie — le générateur
+n'avait pas accès à ces séquences — c'est de la convergence fortuite. Le vivier
+se resserre comme prévu : les donneurs de CDR3 de longueur 23 de l'époque 25997
+tombent de 11 à 3, et le rendement de validité médian de 743 à 789 sur 1500
+(stable), mais sur une base de donneurs bien plus étroite.
+
 Deux détails trouvés au passage : une seconde collision d'époques (25998 et
 26025 partagent aussi IGHV3-23/12, donc 26025 a perdu ses candidats à la
 déduplication) ; et une fausse alerte sur `filter_cysteine`, les soumissions
