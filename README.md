@@ -597,6 +597,75 @@ Ce que ce chiffre ne prouve pas :
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
 
+## Plusieurs hotkeys sous un même coldkey : quel avantage ?
+
+**Mécaniquement, chaque hotkey est une entrée de plus.** `num_sequences: 1` et
+les séquences en trop sont tronquées (`nanobody_validity.py`), l'engagement est
+par hotkey, et le coldkey n'apparaît **que** comme destination de paiement
+(`payouts.py`, résolu depuis le hotkey gagnant). Aucune déduplication ni
+pénalité par coldkey. Donc k hotkeys = k séquences par époque = k tickets dans
+un tirage où le gagnant prend tout.
+
+**Et la valeur marginale est réelle, mesurée sur nos propres scores BoltzGen :**
+
+| Entrées | Victoires | Taux |
+|---|---|---|
+| 1 (le choix du modèle de substitution) | 2/21 | 10 % |
+| 2 (le meilleur des deux) | 5/21 | 24 % |
+
++14 points pour une seule entrée de plus. La raison est notre faiblesse, pas
+notre force : la présélection est aveugle (Spearman 0,2), donc le choix du
+modèle n'est souvent pas notre meilleur candidat. **Un second hotkey achète une
+assurance contre notre propre erreur de classement.**
+
+**Mais sur le subnet réel, la quantité ne paie pas.** Mesuré sur 61 époques
+déchiffrées et 56 gagnants identifiés :
+
+| Opérateur | Hotkeys simultanés | Soumissions | Victoires | Par soumission |
+|---|---|---|---|---|
+| uchiha0818 | 20 | 587 | 1 | 0,17 % |
+| thomasvangurp | 13 | 384 | 5 | 1,3 % |
+| bitty-labs | 9 | 194 | 2 | 1,0 % |
+| saon-miner | 8 | 302 | 3 | 1,0 % |
+| QTTECH2023 | 5 | 103 | 10 | 9,7 % |
+| bboldpilot | 1 | 41 | 3 | 7,3 % |
+| **frankji-groundcontrol** | **1** | **54** | **30** | **55,6 %** |
+
+Corrélation entre hotkeys par époque et victoires : **−0,38**.
+
+Ce n'est pas que leurs entrées soient gaspillées : vérifié, **tous les
+opérateurs soumettent des séquences distinctes sur chaque hotkey** (ratio
+unique/soumissions = 1,00 partout). Les 10 tirages par époque d'uchiha0818 sont
+dix vrais tirages — et donnent une victoire en 58 époques. L'écart de qualité
+par entrée face à frankji est d'un facteur **326**. Pour égaler par le volume
+seul, il faudrait **476 entrées par époque** là où le subnet n'offre que
+57 places de mineur.
+
+Attention à la causalité : cette corrélation négative est confondue. Ceux qui
+multiplient les hotkeys sont ceux qui n'ont pas de bon générateur et compensent
+par le volume. Cela ne veut **pas** dire qu'ajouter un hotkey à un bon mineur
+nuit — pour un mineur donné, k entrées valent toujours mieux qu'une.
+
+**La vraie contrainte est que le subnet est plein.** `MaxAllowedUids = 64`,
+`SubnetworkN = 64`, dont 7 validateurs, soit ~57 places de mineur.
+S'enregistrer coûte **τ0,04** (trivial) mais déloge quelqu'un. L'immunité est de
+5000 blocs ≈ 16,7 h ≈ 14 époques ; passé ce délai, comme le gagnant prend tout,
+**une seule UID sur 64 a une incentive non nulle à un instant donné** (mesuré),
+donc un hotkey qui ne gagne pas est une cible de désenregistrement. Le churn
+observé le confirme : uchiha0818 n'a que 20 hotkeys mais a occupé 36 UIDs
+distinctes, et même le hotkey unique de frankji est passé par 3 UIDs. (Le
+tie-break exact du pruning est de la logique Bittensor cœur, non vérifiée ici.)
+
+**Ce qui borne vraiment, c'est le GPU.** Une époque fait 361 blocs × 12 s ≈
+72 min, moins la fenêtre de 10 blocs sans soumission. À 1,5 min/séquence sur
+2×T4, on note ~40 candidats par époque. Des hotkeys en plus ne servent que si
+l'on a autant de **bons candidats distincts** à y mettre, et ça s'achète en GPU,
+pas en enregistrements. Nos candidats étant corrélés (mêmes donneurs, même
+lignée), le k-ième meilleur rapporte de moins en moins.
+
+Conclusion : 2 à 4 hotkeys, là où le gain marginal est mesuré. Le lot `--depth 4`
+en cours donnera directement la valeur de la 3ᵉ et de la 4ᵉ entrée.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
