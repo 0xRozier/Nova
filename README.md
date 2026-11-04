@@ -597,6 +597,63 @@ Ce que ce chiffre ne prouve pas :
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
 
+## Confirmation à profondeur 4 : le goulot est le tri, pas la génération
+
+168 séquences (4 candidats + les **4 meilleures** soumissions réelles par
+époque), 267 min sur 2×T4, 168 sur 168 notées, 21 époques jugées.
+`results/scores_nanobody_observation_depth4.csv`.
+
+**L'accord avec les validateurs est maintenant solidement établi :** 4 rivaux
+par époque donnent 118 paires comparables, et notre run les ordonne comme eux
+sur **102, soit 86 % (p = 1,7×10⁻¹⁶, IC 95 % [79 %, 92 %])**. Troisième run
+indépendant à donner 85–86 %.
+
+**Taux de victoire selon le nombre de hotkeys** (pool re-classé à chaque fois,
+candidats pris dans l'ordre du modèle de substitution, face aux 4 meilleurs
+réels) :
+
+| Entrées | Victoires | Taux | IC 95 % |
+|---|---|---|---|
+| 1 | 3/21 | 14 % | [3 %, 36 %] |
+| 2 | 7/21 | 33 % | [15 %, 57 %] |
+| 3 | 7/21 | 33 % | — |
+| 4 | 10/21 | **48 %** | [26 %, 70 %] |
+
+Et ce, **face à plus de rivaux qu'à profondeur 2** (top-4 au lieu du top-2) :
+le taux monte de 24 % à 48 % alors que l'opposition s'est durcie. Le plateau à
+k=3 est du bruit d'échantillon (±10 points à n=21) ; l'énoncé robuste est une
+croissance monotone de 14 % à 48 % entre 1 et 4 entrées, **sans signe de
+saturation**.
+
+Les 10 victoires sont propres : chaque CDR3 gagnant est à 0,73–0,84 d'identité
+de l'archive antérieure et à 0,23–0,58 de tout ce qui suit. La signature
+« variation serrée sur une lignée existante » tient maintenant sur dix cas.
+
+**Le résultat le plus important n'est pas le 48 %.** En décomposant :
+
+| Sélecteur d'un candidat unique | Victoires |
+|---|---|
+| modèle de substitution | 14 % |
+| tirage au hasard parmi nos 4 | 23 % |
+| le meilleur des 4 selon BoltzGen | 48 % |
+
+Le modèle de substitution choisit **moins bien que le hasard** : son n°1 est
+notre meilleur candidat 4 fois sur 21 (19 %, contre 25 % attendu au hasard), et
+le Spearman médian entre sa prédiction et la vérité au sein des 4 candidats est
+**−0,20**. Il est légèrement nuisible comme sélecteur.
+
+Donc **le générateur produit un candidat gagnant dans 48 % des époques, et notre
+tri n'en trouve que 14.** L'écart n'est pas un problème de génération mais de
+classement — et il se répare avec du GPU, pas avec des hotkeys : noter 4
+candidats coûte 4 × 1,6 = 6,4 min de 2×T4 sur un budget d'époque de ~72 min, et
+le budget permet d'en noter une quarantaine.
+
+Ce que ça ne prouve toujours pas : le pool ne contient que les **4 meilleures**
+soumissions réelles, pas le champ complet d'environ 30 ; la somme des rangs sur
+8 séquences n'est pas celle du champ complet ; les 4 candidats sortent toujours
+d'une présélection aveugle parmi ~800 valides ; la développabilité structurale
+reste invérifiable hors ligne ; et 21 époques restent peu.
+
 ## Plusieurs hotkeys sous un même coldkey : quel avantage ?
 
 **Mécaniquement, chaque hotkey est une entrée de plus.** `num_sequences: 1` et
@@ -663,8 +720,12 @@ l'on a autant de **bons candidats distincts** à y mettre, et ça s'achète en G
 pas en enregistrements. Nos candidats étant corrélés (mêmes donneurs, même
 lignée), le k-ième meilleur rapporte de moins en moins.
 
-Conclusion : 2 à 4 hotkeys, là où le gain marginal est mesuré. Le lot `--depth 4`
-en cours donnera directement la valeur de la 3ᵉ et de la 4ᵉ entrée.
+Conclusion, maintenant que le lot `--depth 4` a répondu : la courbe monte de
+14 % à 48 % entre 1 et 4 entrées sans saturer, donc les hotkeys supplémentaires
+paient. **Mais ils ne font que contourner un sélecteur cassé.** Noter les
+candidats sur GPU au lieu de les trier avec le modèle de substitution porte une
+entrée unique de 14 % à 48 % pour 6,4 min de 2×T4 par époque. Réparer le tri
+d'abord, multiplier les hotkeys ensuite — pas l'inverse.
 
 ## Limites
 
