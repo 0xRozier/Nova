@@ -74,6 +74,10 @@ def run(fasta: Path, ncores: int, out_dir: Path) -> str:
     if not TNP.exists():
         sys.exit(f"TNP not installed at {TNP}")
     out_dir.mkdir(parents=True, exist_ok=True)
+    # TNP resolves --file at parse time and then chdirs into --output, so a
+    # relative path would be looked up from the wrong directory — and its bare
+    # `except` reports that as "not FASTA format".
+    fasta = fasta.resolve()
     cmd = [str(TNP), "--file", str(fasta), "--ncores", str(ncores),
            "--output", str(out_dir / "TNP_output")]
     # TNP shells out to a bare `NanoBodyBuilder2`, so the venv's bin must be on PATH.
