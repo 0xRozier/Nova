@@ -20,6 +20,7 @@ Usage:
     python -m scripts.tnp_developability --parse data/tnp/tnp_stdout.log   # re-read a finished run
 """
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -75,8 +76,10 @@ def run(fasta: Path, ncores: int, out_dir: Path) -> str:
     out_dir.mkdir(parents=True, exist_ok=True)
     cmd = [str(TNP), "--file", str(fasta), "--ncores", str(ncores),
            "--output", str(out_dir / "TNP_output")]
+    # TNP shells out to a bare `NanoBodyBuilder2`, so the venv's bin must be on PATH.
+    env = {**os.environ, "PATH": f"{TNP.parent}:{os.environ.get('PATH', '')}"}
     print(" ".join(cmd), flush=True)
-    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=out_dir)
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=out_dir, env=env)
     text = proc.stdout + "\n" + proc.stderr
     (out_dir / "tnp_stdout.log").write_text(text)
     print(f"TNP exit {proc.returncode}; log -> {out_dir / 'tnp_stdout.log'}")
