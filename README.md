@@ -547,6 +547,53 @@ Deux détails trouvés au passage : une seconde collision d'époques (25998 et
 déduplication) ; et une fausse alerte sur `filter_cysteine`, les soumissions
 réelles acceptées portant aussi des cystéines surnuméraires.
 
+## Verdict sans biais sur 21 époques (`results/scores_nanobody_observation_cutoff.csv`)
+
+Même protocole, archive tronquée à l'époque observée. 84 séquences notées en
+127,8 min sur 2×T4, 84 sur 84 métriques calculées, 21 époques jugées.
+
+**L'accord avec les validateurs se reproduit à l'identique : 17 paires sur 20
+(85 %, p = 0,001)**, exactement comme sur le lot contaminé. L'outil de mesure
+est stable.
+
+**Victoires nettes : 5 sur 21, soit 24 %** (6 sur 21, 29 %, en comptant
+l'égalité de l'époque 26019). IC 95 % [8,2 %, 47 %].
+
+Le point décisif : **ce chiffre est le même que les 25 % du lot contaminé.**
+La contamination gonflait les CDR3 individuels, pas le taux de victoire. Et les
+cinq victoires sont propres, chacune plus proche de l'archive antérieure que de
+toute séquence postérieure :
+
+| Époque | CDR3 du candidat | Identité au passé | Au futur |
+|---|---|---|---|
+| 25998 | FTGRRGYQYFDY | 0,83 | 0,42 |
+| 26003 | ARYGRPDIAVDRFDY | 0,73 | 0,47 |
+| 26016 | ARQSSGTASANTETKFNQNFDY | 0,82 | 0,27 |
+| 26020 | ATTGIFKSTGHTENGFDY | 0,78 | 0,33 |
+| 26022 | LHGRYPHEKAEHFDY | 0,73 | 0,40 |
+| 26019 (égalité) | SRYAYRYQPNQGSHHHFDY | 0,84 | 0,47 |
+
+**Ce que gagne le générateur, c'est la variation serrée sur une lignée
+existante** : 0,73 à 0,84 d'identité au passé, jamais une conception nouvelle.
+C'était l'hypothèse formulée après la première victoire propre ; elle est
+maintenant mesurée sur cinq.
+
+Face au seuil de rentabilité de 0,3–1 % (`results/economics.txt`), même la
+borne basse de l'intervalle, 8,2 %, est huit fois au-dessus.
+
+Ce que ce chiffre ne prouve pas :
+
+- le pool noté par époque ne contient que les **deux meilleures** soumissions
+  réelles, pas le champ complet d'environ 30. Battre le n°1 et le n°2 au sens
+  des rangs est un bon indice de victoire — nos métriques ordonnent comme les
+  validateurs 85 % du temps, et les ~28 autres sont moins bien classés par les
+  validateurs eux-mêmes — mais ce n'est pas une preuve ;
+- la somme des rangs dans un pool de 4 n'est pas celle du champ complet ;
+- c'est un **plancher** : 2 candidats sur ~800 valides, choisis par un modèle à
+  Spearman 0,2 ;
+- la développabilité structurale reste invérifiable hors ligne ;
+- 21 époques, c'est peu.
+
 ## Limites
 
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
