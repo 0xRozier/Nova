@@ -173,7 +173,7 @@ def combined_batch(target: str, depth: int = 2) -> None:
     batch.to_csv(out, index=False)
     per_epoch = batch.groupby("group").size().to_dict()
     print(f"{len(batch)} sequences over {batch['epoch'].nunique()} epochs -> {out}")
-    print(f"  {per_epoch} ; about {len(batch) * 3.7 / 60:.1f} h on 2x T4 at 3.7 min/sequence")
+    print(f"  {per_epoch} ; about {len(batch) * 1.52 / 60:.1f} h on 2x T4 at 1.5 min/sequence (measured on 84)")
     print("  rows are ordered by depth: an interrupted run still covers every epoch")
 
 

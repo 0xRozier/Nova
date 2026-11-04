@@ -76,7 +76,7 @@ Note des séquences avec **la version de BoltzGen embarquée par les validateurs
 Notebook **autonome** : la source BoltzGen, la structure, le lot (`{batch}`) et le code de scoring sont intégrés. La MSA est téléchargée via jsDelivr et vérifiée par empreinte SHA-256 ; les poids (~6 Go) viennent de Hugging Face.
 
 **Réglages Kaggle :** *Accelerator* **GPU T4 x2**, *Internet* **On**.
-- Lot complet ({n_seq} séquences, ~{n_seq * 3.7 / 60:.1f} h à 3,7 min/séquence sur 2×T4) : **Save Version → Save & Run All (Commit)**.
+- Lot complet ({n_seq} séquences, ~{n_seq * 1.52 / 60:.1f} h à 1,5 min/séquence (mesuré sur 84) sur 2×T4) : **Save Version → Save & Run All (Commit)**.
 - Test rapide : `TOP = 2` puis **Run All** dans l'éditeur.
 
 Le lot alterne candidats et séquences de calibration, donc même un run interrompu compare les deux.

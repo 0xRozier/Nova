@@ -479,9 +479,12 @@ validateur. `--summary` agrège les époques déjà jugées.
    `python -m scripts.review_observation results/scores_nanobody_observation_combined.csv`
    et `python -m scripts.review_observation --summary`.
 
-Pour approfondir ensuite : `--depth 4` donne 168 séquences (~10 h, deux
-sessions) et un `RUN` différent est **obligatoire** à chaque lot, BoltzGen
-reprenant sinon les résultats du répertoire existant au lieu de recalculer.
+Pour approfondir : `--depth 4` donne 168 séquences. Le débit réel mesuré est
+**1,5 min/séquence** (127,8 min pour 84 sur 2×T4) et non les 3,7 min d'un test
+à 2 séquences dominé par le démarrage, donc le lot complet tient en **~4 h 20,
+une seule session**. Un `RUN` différent est **obligatoire** à chaque lot,
+BoltzGen reprenant sinon les résultats du répertoire existant au lieu de
+recalculer.
 
 Ce que cette boucle ne peut pas dire :
 
