@@ -597,6 +597,49 @@ Ce que ce chiffre ne prouve pas :
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
 
+## La porte de développabilité : testée, et elle ne nous bloque pas (`data/tnp/tnp_results.csv`)
+
+**Correction d'une affirmation que j'ai répétée tout au long de ce dépôt.**
+J'ai écrit que cette porte était « invérifiable hors ligne » et « nécessitait un
+pipeline GPU ». C'est faux. Le filtre du validateur appelle TNP (Therapeutic
+Nanobody Profiler, OPIG Oxford, BSD-3-Clause, installable par pip), qui prédit
+la structure dont il a besoin avec NanoBodyBuilder2 — sur CPU, quelques secondes
+par séquence. Les 168 séquences ont été profilées ici en une dizaine de minutes
+sur 4 cœurs. Cette vérification était possible depuis le début, et les « 52 % de
+rejets inconnaissables » que j'invoquais étaient mesurables tout du long.
+
+Les seuils rouges de TNP correspondent exactement à la configuration du
+validateur (L 20/39, L3 5/23, C 0,5634/1,6132, PSH 73,4039/155,4699, PPC 1,1853,
+PNC 1,8838) : c'est la porte réelle, pas une approximation.
+
+**Contrôle positif — les 84 soumissions réelles que les validateurs ont
+acceptées : 0 rejet sur 84.** Le dispositif est donc valide, et ce qui suit veut
+dire quelque chose.
+
+**Nos 84 candidats : 2 rejets, soit 2,4 %.**
+
+| Métrique | Drapeaux rouges (candidats) | (réels) | Médiane (candidats) | (réels) |
+|---|---|---|---|---|
+| Longueur CDR totale | 0 % | 0 % | 31 | 31 |
+| Longueur CDR3 | 0 % | 0 % | 15 | 15 |
+| Compacité CDR3 | 1,2 % | 0 % | 1,21 | 1,25 |
+| Patches hydrophobes | 1,2 % | 0 % | 98,1 | 90,0 |
+| Charge positive | 0 % | 0 % | 0,00 | 0,02 |
+| Charge négative | 0 % | 0 % | 0,04 | 0,00 |
+
+Les deux rejets sont `ARTHTGCASQGRGTTSNQQFDY` (compacité 1,65 > 1,61) et
+`ARYPTYHERQRSFDY` (PSH 69,7 < 73,4). **Ni l'un ni l'autre n'était le meilleur
+candidat de son époque**, donc le taux de victoire est inchangé : **48 % avant
+comme après la porte**.
+
+Le seul signal à surveiller est l'hydrophobicité de surface : notre médiane est
+à 98,1 contre 90,0 pour les soumissions réelles, et 11 % de nos candidats sont à
+moins de 10 % du seuil rouge contre 6 % des réels. La marge est réelle mais plus
+mince que celle des concurrents.
+
+Conséquence pratique : **passer les candidats par TNP avant de soumettre**, pour
+4 s de CPU par séquence. Ça élimine gratuitement les ~2,4 % qui seraient rejetés.
+
 ## Confirmation à profondeur 4 : le goulot est le tri, pas la génération
 
 168 séquences (4 candidats + les **4 meilleures** soumissions réelles par
