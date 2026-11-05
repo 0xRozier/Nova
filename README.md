@@ -631,6 +631,42 @@ Variables d'environnement, mêmes noms que le mineur de référence :
 `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`, `GITHUB_REPO_BRANCH`,
 `GITHUB_REPO_PATH`, `GITHUB_TOKEN`.
 
+### Quel GPU louer (`results/economics.txt`)
+
+Mesuré : 3,18 GPU-min par séquence sur 2×T4. La capability du T4 est 7,5, donc
+les noyaux cuEquivariance de BoltzGen se désactivent d'eux-mêmes (« Using
+kernels: False ») ; à partir de 8.0 ils s'activent. BoltzGen prend **toutes** les
+cartes visibles (`devices = torch.cuda.device_count()`) et les séquences sont
+indépendantes, donc le débit monte linéairement avec le nombre de GPU.
+
+Une époque fait 72 min, dont 66 utilisables après génération et marge de
+soumission. Les facteurs de vitesse ci-dessous sont des **estimations** (FLOPs +
+noyaux), pas des mesures : la première machine louée doit les mesurer.
+
+| Configuration | Facteur | Candidats/époque | $/h | $/jour |
+|---|---|---|---|---|
+| 2×T4 (mesuré) | 1× | 41 | — | — |
+| 2×RTX 4090 | 3× | 124 | 0,68 | 16 |
+| 4×RTX 4090 | 3× | 248 | 1,36 | 33 |
+| 2×L40S | 4× | 166 | 1,98 | 48 |
+| 2×A100 80 Go | 4× | 166 | 2,38 | 57 |
+| 2×H100 SXM | 8× | 331 | 4,80 | 115 |
+
+À 48 % de victoires, 20 époques par jour donnent ~2 400 $/jour : **la facture GPU
+pèse de 0,7 % à 4,8 % du revenu.** Le coût par séquence n'est donc pas la bonne
+variable à optimiser.
+
+Ce qui compte, c'est la fiabilité : **une époque manquée coûte 120 $ en
+espérance**, plus qu'une journée entière de l'écart de prix entre un hôte
+bon marché non vérifié et un hôte fiable.
+
+Et la vraie inconnue n'est pas le débit mais si les candidats au-delà du
+quatrième servent. La courbe mesurée (meilleur de N contre les 4 meilleures
+soumissions réelles) fait 14 % à N=1, 33 % à N=2, 33 % à N=3, 48 % à N=4 —
+encore croissante, mais nos candidats partagent donneurs et lignée, donc elle
+s'aplatit quelque part qu'on n'a pas mesuré. Acheter 331 candidats par époque
+peut ne rien rapporter par rapport à 40.
+
 ### Le format de soumission, vérifié
 
 `bittensor_drand.encrypt_at_round` renvoie l'enveloppe SCALE `UserData` complète

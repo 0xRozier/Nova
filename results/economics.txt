@@ -30,3 +30,37 @@ TAO $ 300: revenue $  1,764/day vs cost $15/day -> margin $   1,749/day
 subnet emits 7,184 alpha/day; TAO actually injected: 16.5 TAO/day
 pool: 2,385,540 alpha / 39,682 TAO. Selling one nanobody win (59 alpha) moves the price by ~0.0025%
 but if every miner sold daily (7,184 alpha), that is 0.30% of the pool per day
+
+=== GPU sizing (measured 2026-11-05) ===
+Measured on the depth-4 run: 168 sequences in 267 min on 2x T4 = 3.18 GPU-min
+per sequence. The T4's compute capability is 7.5, so BoltzGen's cuEquivariance
+kernels switch themselves off ("Using kernels: False"); capability 8.0+ (4090
+8.9, A100 8.0, L40S 8.9, H100 9.0) enables them. BoltzGen takes every visible
+GPU (devices = torch.cuda.device_count()) and the sequences are independent, so
+throughput scales with GPU count.
+
+An epoch is 72 min; after generation and the 22-block submission margin, 66 min
+are usable for scoring. Speed factors below are ESTIMATES from FLOPs plus the
+kernels, not measurements — the first rented box must measure them.
+
+config            factor  candidates/epoch   $/h   $/day
+2x T4 (measured)      1x                41     -       -
+2x RTX 4090           3x               124  0.68      16
+4x RTX 4090           3x               248  1.36      33
+2x L40S               4x               166  1.98      48
+2x A100 80GB          4x               166  2.38      57
+2x H100 SXM           8x               331  4.80     115
+
+20 epochs/day. At the measured 48% win rate: 9.6 wins/day = $2,403/day, so the
+GPU bill is 0.7% to 4.8% of revenue. Cost per sequence is therefore the wrong
+thing to optimise.
+
+What matters instead is reliability: one missed epoch costs $120 in expectation,
+more than a day of the price difference between a cheap unverified host and a
+reliable one.
+
+And the open question is not throughput but whether candidates past the fourth
+help at all. The measured curve (best-of-N against the top four real
+submissions) is 14% at N=1, 33% at N=2, 33% at N=3, 48% at N=4 — still rising,
+but our candidates share donors and lineage, so it must flatten somewhere
+unmeasured. Buying 331 candidates per epoch may buy nothing over 40.
