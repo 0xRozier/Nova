@@ -1,4 +1,4 @@
-"""Decrypt NOVA miner submissions once their drand round has passed.
+"""Timelock encryption and decryption for NOVA submissions (drand quicknet).
 
 Miners encrypt with ideal-lab's `timelock` (drand quicknet). bittensor_drand
 wraps the same ciphertext format in a SCALE-encoded `UserData {encrypted_data:
@@ -63,6 +63,66 @@ def parse_file(path: str, content: bytes) -> tuple[int, bytes] | None:
     if isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], int) and isinstance(value[1], bytes):
         return value
     return None
+
+
+# utils/btdr.py: quicknet genesis and period, and the block/round conversion the
+# validator's own encrypt uses (one 12 s block is four 3 s drand rounds).
+NET_START = 1692803367
+ROUND_DURATION = 3
+ROUNDS_PER_BLOCK = 4
+
+
+def current_round() -> int:
+    """The round drand is on now, from the clock rather than the network."""
+    import time
+    return int(time.time() - NET_START) // ROUND_DURATION
+
+
+def reveal_round(current_block: int, epoch_length: int, no_submission_blocks: int) -> int:
+    """The round that unlocks where the epoch stops accepting submissions.
+
+    Mirrors utils/btdr.py: the target block is the next epoch boundary minus the
+    no-submission window, and the round is scaled from the current one.
+    """
+    next_boundary = ((current_block // epoch_length) + 1) * epoch_length
+    target_block = next_boundary - no_submission_blocks
+    return current_round() + (target_block - current_block) * ROUNDS_PER_BLOCK
+
+
+def encrypt(uid: int, round_number: int, message: str) -> bytes:
+    """The raw ciphertext a submission file carries, for `{uid}:{message}`.
+
+    bittensor_drand returns the SCALE `UserData` envelope, while the file holds
+    the bare ciphertext — the same thing `decrypt` below takes and wraps again.
+    Stripping the envelope here is what keeps the two sides symmetric, and what
+    makes our files parse like the real submissions we decrypted.
+    """
+    import bittensor_drand
+
+    blob, got = bittensor_drand.encrypt_at_round(f"{uid}:{message}".encode("ascii"), round_number)
+    if got != round_number:
+        raise RuntimeError(f"asked for round {round_number}, got {got}")
+    blob = bytes(blob)
+    body = blob[:-8]  # trailing u64 reveal_round
+    first = body[0] & 0b11
+    header = {0: 1, 1: 2, 2: 4}.get(first)
+    if header is None:
+        raise RuntimeError("unexpected SCALE length prefix in the ciphertext envelope")
+    length = int.from_bytes(body[:header], "little") >> 2
+    ciphertext = body[header:]
+    if len(ciphertext) != length:
+        raise RuntimeError(f"envelope says {length} bytes, found {len(ciphertext)}")
+    return ciphertext
+
+
+def submission_file(uid: int, round_number: int, message: str) -> tuple[str, str]:
+    """`(filename, content)` for the GitHub file the commitment points at.
+
+    The validator reads the file as a literal `(round, bytes)` tuple and demands
+    the name be the first 20 hex characters of the content's SHA-256.
+    """
+    content = repr((round_number, encrypt(uid, round_number, message)))
+    return f"{hashlib.sha256(content.encode('utf-8')).hexdigest()[:20]}.txt", content
 
 
 def decrypt(uid: int, round_number: int, ciphertext: bytes) -> str | None:
