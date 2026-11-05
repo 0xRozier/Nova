@@ -49,6 +49,8 @@ source .venv/bin/activate
 | Lot GPU unique couvrant toutes les époques journalisées | `python -m scripts.observe --combined-batch` |
 | Verdict réel d'un lot d'observation noté par BoltzGen | `python -m scripts.review_observation data/observation/batches/...` |
 | **Les règles ont-elles bougé ?** (cible, seuils, catégories V vs dépôt amont) | `python -m scripts.check_config` |
+| **Le mineur** (essai à blanc : rien n'est envoyé) | `python -m scripts.mine --once --wallet mon --hotkey default` |
+| Le mineur, pour de vrai | `python -m scripts.mine --wallet mon --hotkey default --live` |
 | Vérifier la parité avec le validateur | `python -m pytest tests -q` |
 
 ## Fidélité au validateur
@@ -596,6 +598,52 @@ Ce que ce chiffre ne prouve pas :
   Spearman 0,2 ;
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
+
+## Le mineur (`scripts.mine`)
+
+La boucle, dans l'ordre que les mesures imposent :
+
+1. résoudre le gène V et la longueur de CDR3 de l'époque depuis la chaîne ;
+2. **refuser de soumettre si la configuration du subnet a bougé**
+   (`scripts.check_config`) — une cible changée rend tout candidat sans valeur,
+   et les validateurs se mettent à jour toutes les heures ;
+3. générer et garder ce que le vérificateur hors ligne accepte ;
+4. écrémer par TNP, la porte de développabilité que le validateur applique
+   avant de noter ;
+5. **classer avec BoltzGen, pas avec le modèle de substitution.** `--scorer
+   surrogate` reste possible mais journalise son coût : 14 % de victoires contre
+   48 %, et 23 % pour un tirage au hasard ;
+6. chiffrer en timelock vers le round qui s'ouvre à la limite de soumission,
+   engager le pointeur sur la chaîne, puis publier le fichier sur GitHub.
+
+**Le temps est une barrière dure** : la limite est la fin d'époque moins les 10
+blocs sans soumission, moins 12 blocs de marge pour le chiffrement, le PUT
+GitHub et l'extrinsic. Passé ce point l'époque est sautée, pas soumise dans le
+vide.
+
+**Rien ne quitte la machine sans `--live`.** Par défaut le mineur exécute tout,
+écrit le fichier qu'il publierait, et s'arrête avant la chaîne et GitHub. En
+mode réel il engage le pointeur *avant* de publier, comme le mineur de
+référence, pour qu'un push raté laisse un pointeur orphelin plutôt qu'un fichier
+non référencé.
+
+Variables d'environnement, mêmes noms que le mineur de référence :
+`GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`, `GITHUB_REPO_BRANCH`,
+`GITHUB_REPO_PATH`, `GITHUB_TOKEN`.
+
+### Le format de soumission, vérifié
+
+`bittensor_drand.encrypt_at_round` renvoie l'enveloppe SCALE `UserData` complète
+alors que le fichier doit contenir le ciphertext **nu** ; `nova_lab.timelock.encrypt`
+retire donc l'enveloppe, ce qui le rend symétrique de `decrypt` — la fonction
+qui a déjà ouvert de vraies soumissions de mineurs. `tests/test_timelock.py`
+fait l'aller-retour complet : `ast.literal_eval`, `parse_file` (notre
+reproduction de la validation du validateur), puis déchiffrement.
+
+Essai à blanc sur l'époque 26133 : 600 candidats générés, 268 valides, 0 rejet
+TNP, pointeur `.../bfd7e87d97281e67749a.txt` produit. Et le verrou tient —
+drand répond **HTTP 425 « trop tôt »** sur le round de révélation, donc la
+soumission est illisible par quiconque avant la limite.
 
 ## La porte de développabilité : testée, et elle ne nous bloque pas (`data/tnp/tnp_results.csv`)
 
