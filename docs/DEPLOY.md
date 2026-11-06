@@ -81,9 +81,18 @@ et les deux premiers coûtent cher en silence.
    | jeu de données | 1,6 Mo | ~10 min | oui, à refaire quotidiennement |
    | modèle de substitution | 23 Mo | minutes | oui |
 
-   Soit **~29 Mo** à copier au lieu de ~20 min de calcul. La MSA et la structure
-   viennent déjà avec le clone amont, les poids BoltzGen (~6 Go) avec
-   HuggingFace.
+   **Les deux premiers sont dans le dépôt**, sous `data/prebuilt/` — 3,9 Mo pour
+   ~20 min économisées :
+
+   ```sh
+   python -m scripts.bootstrap --install-prebuilt
+   python -m scripts.bootstrap --build        # le reste, dont le modele
+   ```
+
+   Le modèle de substitution n'y est **pas**, et c'est volontaire : 23 Mo pour
+   1 min 45 d'entraînement, il se refait plus vite qu'il ne se télécharge.
+   L'archive non plus : elle doit être fraîche. La MSA et la structure viennent
+   avec le clone amont, les poids BoltzGen (~6 Go) avec HuggingFace.
 
    Le cache des régions est désormais **indexé par séquence** et non par
    position : un rafraîchissement de 50 nouvelles soumissions coûte **0,6 s**

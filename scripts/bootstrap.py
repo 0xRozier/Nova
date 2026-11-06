@@ -46,7 +46,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", default=NANOBODY_TARGET[0])
     parser.add_argument("--build", action="store_true", help="build what is missing")
+    parser.add_argument("--install-prebuilt", action="store_true",
+                        help="copy data/prebuilt into place first (the 20 minutes that travel)")
     args = parser.parse_args()
+
+    if args.install_prebuilt:
+        import shutil
+        src = DATA_DIR / "prebuilt"
+        for name, dest in ((f"{args.target}_regions.csv", DATA_DIR / "archive"),
+                           (f"{args.target}_nanobodies.parquet", DATA_DIR / "dataset")):
+            if (src / name).exists():
+                dest.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(src / name, dest / name)
+                print(f"installed {name} -> {dest / name}")
 
     rows = state(args.target)
     missing = [(name, path, note) for name, path, note in rows if not path.exists()]
