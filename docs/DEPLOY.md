@@ -18,6 +18,46 @@
 | `boltzgen_rank` dans le mineur | le chemin GPU du mineur n'a jamais tourné faute de carte |
 | le budget temps réel d'une époque | estimé à ~20 min pour 8 candidats, jamais mesuré d'un bout à l'autre |
 
+## Le dépôt GitHub des soumissions
+
+**Rien n'a été créé.** Le `0xRozier/nova-submissions` visible dans les journaux
+d'essai est un nom inventé pour l'essai à blanc : sans `--live`, le mineur
+s'arrête avant tout appel à GitHub. Aucun dépôt, aucun jeton n'existe.
+
+À faire, et c'est à vous : un jeton d'accès est un secret et ne doit jamais
+passer par cette conversation.
+
+1. **Créer un dépôt public.** Il doit être public : le validateur lit le fichier
+   via `raw.githubusercontent.com` avec **son propre** jeton
+   (`decrypt_submissions`, `github_headers`), qui n'a aucun accès à un dépôt
+   privé — il recevrait un 404 et l'époque serait perdue.
+2. **Garder les noms courts.** Le pointeur engagé est
+   `owner/repo/branch[/chemin]/<hash20>.txt` et la chaîne **plafonne le
+   commitment à 100 caractères**. Le mineur refuse de démarrer au-delà.
+3. **Créer un jeton fin (fine-grained PAT)** limité à ce seul dépôt, avec la
+   permission **Contents: write** et rien d'autre. Le mineur ne fait qu'un PUT
+   sur l'API contents.
+4. Renseigner sur la machine de minage : `GITHUB_REPO_OWNER`,
+   `GITHUB_REPO_NAME`, `GITHUB_REPO_BRANCH`, `GITHUB_REPO_PATH` (vide convient),
+   `GITHUB_TOKEN`.
+
+Le validateur interroge aussi l'API des commits pour le chemin du fichier, afin
+d'en lire l'horodatage. Le fichier doit donc être **commité sur la branche
+annoncée**, pas seulement présent : un PUT par l'API contents crée bien un
+commit, donc c'est satisfait, mais une branche ou un chemin qui ne correspond
+pas au pointeur donne un horodatage vide.
+
+### Le départage favorise le plus rapide
+
+`ranking.py` départage les nanobodies dans cet ordre : somme de rangs →
+sommes par catégorie → **bloc d'engagement** → **horodatage du push GitHub** →
+UID. Le plus tôt gagne.
+
+Cela crée un arbitrage réel : noter plus de candidats améliore notre rang mais
+retarde la soumission, et nous fait perdre les égalités. Des égalités de somme
+de rangs apparaissent dans nos données, donc ce n'est pas théorique. À budget
+GPU donné, soumettre tôt n'est pas gratuit.
+
 ## À installer sur la machine louée
 
 Dans cet ordre. **Si l'un manque, le mineur tourne quand même mais dégradé** —
