@@ -181,6 +181,21 @@ def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
     return df.sort_values("rank_sum")
 
 
+def donor_pool_lag(target: str, epoch: int) -> int | None:
+    """How many epochs behind the generator's donor pool is, or None if unknown.
+
+    The pool is the training dataset, not the live archive: it only refreshes
+    when scripts.build_nanobody_dataset runs. A stale pool is invisible at
+    every other checkpoint, which is how production ran a week behind.
+    """
+    import pandas as pd
+    path = DATA_DIR / "dataset" / f"{target}_nanobodies.parquet"
+    if not path.exists():
+        return None
+    dated = pd.read_parquet(path, columns=["epoch"])["epoch"].dropna()
+    return None if dated.empty else int(epoch - dated.max())
+
+
 def mine_epoch(st, args, params: dict) -> dict:
     """One epoch, start to finish. Returns the journal entry."""
     from scripts.propose_nanobody import propose
@@ -203,6 +218,19 @@ def mine_epoch(st, args, params: dict) -> dict:
     if not config_unchanged():
         entry["status"] = "config_drift"
         return entry
+
+    stale = donor_pool_lag(args.target, epoch)
+    entry["donor_lag_epochs"] = stale
+    if stale is not None and stale > args.max_donor_lag:
+        # Measured in production: at epoch 26174 the pool stopped at 26025, and
+        # none of the 55 scored submissions of 26173-26174 were in it. The
+        # generator then grafts from a generation the competition has moved past.
+        log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days); "
+            f"rebuild it with scripts.build_nanobody_dataset. Refusing to submit.")
+        entry["status"] = "donor_pool_stale"
+        return entry
+    if stale:
+        log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days)")
 
     result = propose(params, args.target, candidates=args.candidates,
                      n_donors=args.donors, n_cdr3=args.cdr3_pool,
@@ -306,6 +334,9 @@ def main():
     parser.add_argument("--shortlist", type=int, default=8,
                         help="candidates sent to BoltzGen; ~1.6 min each on 2x T4")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--max-donor-lag", type=int, default=40,
+                        help="refuse to submit if the donor pool is older than this "
+                             "many epochs (40 ~= 2 days)")
     args = parser.parse_args()
 
     import bittensor as bt

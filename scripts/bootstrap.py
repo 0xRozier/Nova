@@ -64,7 +64,14 @@ def main():
     missing = [(name, path, note) for name, path, note in rows if not path.exists()]
     for name, path, note in rows:
         size = f"{path.stat().st_size / 1e6:.1f} MB" if path.exists() else "MISSING"
-        print(f"  {'ok ' if path.exists() else '-- '}{name:<22}{size:>10}   {note}")
+        mark = "ok " if path.exists() else "-- "
+        if path.exists() and "dataset" in name:
+            import pandas as pd
+            dated = pd.read_parquet(path, columns=["epoch"])["epoch"].dropna()
+            if not dated.empty:
+                note = f"covers up to epoch {dated.max():.0f} — REBUILD if that is days old"
+                mark = "ok?"
+        print(f"  {mark}{name:<22}{size:>10}   {note}")
     if not missing:
         print("\neverything the miner needs is present")
     elif not args.build:

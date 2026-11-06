@@ -13,6 +13,12 @@ pas ce qui est gros. Mesuré :
 `python -m scripts.bootstrap --install-prebuilt` les met en place, puis
 `python -m scripts.bootstrap --build` fabrique ce qui reste.
 
+> **Le parquet livré ici est un instantané et il périme.** En production, le
+> vivier de donneurs est resté 149 époques (7,5 jours) en retard, et aucune des
+> 55 soumissions notées des époques 26173-26174 ne s'y trouvait. Reconstruisez-le
+> avec `scripts.build_nanobody_dataset` avant de miner, puis quotidiennement.
+> Le mineur refuse désormais de soumettre au-delà de `--max-donor-lag` époques.
+
 Le cache des régions est indexé par séquence, donc il reste valable quand
 l'archive grossit : seules les nouvelles soumissions sont numérotées (0,6 s
 pour 50). Le parquet est un instantané du jeu d'entraînement ; reconstruisez-le
