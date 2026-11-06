@@ -190,3 +190,78 @@ correspondait.
   plus tôt gagne, donc noter 40 candidats au lieu de 8 retarde la soumission et
   perd les égalités. Ce n'est pas gratuit.
 - **delta_sasa (axe C)** : cohérent avec nos mesures hors ligne.
+
+
+---
+
+# Correction du 2026-11-06 (plus tard) — l'explication PSH est RÉFUTÉE
+
+J'ai écrit plus haut que le verrou `psh_strict_rejection_threshold: 89`
+expliquait nos rejets. **C'est faux**, et le test qui le montre est le bon
+contrôle, celui que j'aurais dû faire d'emblée : la PSH des soumissions
+**acceptées dans la même époque que notre rejet**.
+
+Époque 26174, 36 acceptées + nous :
+
+| | PSH médiane | Au-dessus de 89 |
+|---|---|---|
+| acceptées | 87,8 | **16 sur 36 (44 %)** |
+| nous (rejeté) | 92,1 | 1 sur 1 |
+
+Seize soumissions dépassent 89 et ont été acceptées. Le verrou existe dans le
+code, mais il ne porte pas sur la valeur que je calcule, et il n'explique pas
+notre rejet.
+
+Aggrescan3D non plus : nous passons (moyenne −0,715, pic 1,239) et **une
+acceptée échoue** sur mon calcul (moyenne −0,679 contre un plafond à −0,680).
+
+Et parmi les 37 séquences de cette époque, la nôtre n'a **aucun drapeau rouge**
+et se tient en milieu de peloton partout : compacité 17ᵉ/37, PSH 28ᵉ/37,
+charges 26ᵉ/37.
+
+## Ce que je ne sais pas expliquer
+
+Tout est écarté : règles de séquence, gène V, identités germinales, VHH,
+cystéines, longueur de CDR3, unicité, similarité, les six drapeaux de TNP, le
+seuil strict de PSH, Aggrescan3D. Et la récupération GitHub fonctionne — nos
+fichiers des époques 26173, 26174 et 26175 répondent HTTP 200 en public.
+(L'API des commits ne m'est pas accessible depuis cette machine, donc ce
+chemin-là reste non testé.)
+
+**Je n'ai pas la cause.**
+
+## La vraie découverte
+
+Le rejet n'est pas une exception, c'est la norme — et c'est ce qui sépare les
+mineurs. Sur 61 époques avec métriques publiées : **taux de rejet médian 50 %**,
+et seulement 2 époques sur 61 passent sous 10 %.
+
+| Mineur | Soumissions | Notées | Victoires |
+|---|---|---|---|
+| frankji-groundcontrol | 54 | **83 %** | 30 |
+| thomasvangurp | 384 | 78 % | 5 |
+| QTTECH2023 | 156 | 73 % | 13 |
+| bitty-labs | 205 | 68 % | 2 |
+| saon-miner | 338 | 59 % | 5 |
+| cczulaika | 97 | 40 % | 2 |
+| uchiha0818 | 599 | **26 %** | 1 |
+| aichorx | 91 | **5 %** | 0 |
+| **nous** | **2** | **0 %** | 0 |
+
+uchiha0818 a soumis 599 fois pour une victoire, avec 26 % de notation.
+frankji a soumis 54 fois pour 30 victoires, avec 83 %. **Être admis est la
+compétence qui compte**, et toutes mes estimations mesuraient le classement
+*parmi les soumissions déjà admises*.
+
+C'est la réponse à l'écart entre les estimations et le réel : 29 % était un
+taux de victoire conditionnel à l'admission, multiplié par une probabilité
+d'admission que je n'ai jamais mesurée et qui varie de 5 % à 83 % selon le
+mineur.
+
+## Un bug confirmé en production
+
+L'époque 26172 a engagé un pointeur vers un fichier qui **renvoie 404** : le
+fichier n'a jamais été publié. C'est exactement le mode d'échec « pointeur
+orphelin » que le code signale — l'engagement réussit, le push échoue, l'époque
+est perdue. Il s'est produit à la première époque. Le `status` du journal du
+mineur devrait le montrer comme `upload_failed`.
