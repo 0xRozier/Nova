@@ -599,6 +599,33 @@ Ce que ce chiffre ne prouve pas :
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
 
+## Le piège du modèle de substitution : il généralise dans le temps, pas d'un générateur à l'autre
+
+Coûts d'entraînement mesurés : **1 min 45 s**, les deux backtests compris. Ce
+n'était donc jamais le goulot — les ~20 min venaient du jeu de données (~10 min)
+et du cache des régions (~10 min, désormais 0,6 s par rafraîchissement).
+
+Et son backtest est très flatteur. Sur le **découpage temporel strict**
+(entraînement sur les 9181 séquences d'avant l'époque 26002) :
+
+- Spearman de 0,30 à 0,84 par époque, moyenne **0,55**
+- son choix arrive en **place médiane 1 sur 22**
+- il gagne **8 époques sur 14**, là où un tirage au hasard tomberait en place 10,5
+
+Sur **nos candidats générés**, c'est l'inverse : Spearman **−0,20**, et son n°1
+est notre meilleur candidat 4 fois sur 21 — moins bien que le hasard.
+
+Les deux mesures sont justes, et la réconciliation est le point important : le
+découpage temporel teste sur **les soumissions d'autres mineurs**, qui viennent
+de la même distribution que l'entraînement. Nos candidats sont des greffes
+mutées avec des CDR3 nouveaux, donc une autre distribution. Le modèle
+**généralise dans le temps mais pas d'un générateur à l'autre**, exactement le
+mode d'échec que le docstring du script signalait déjà pour les molécules
+(« looked fine on a backtest and collapsed out of distribution »).
+
+Conséquence : **ne jamais juger ce modèle sur son backtest.** Il reste un
+pré-filtre de validité ; BoltzGen classe.
+
 ## Trois tests avant d'engager de l'argent — et le chiffre tombe de 48 % à 14–29 %
 
 ### 1. Aggrescan3D : le dernier verrou, et il mord (`data/aggrescan/aggrescan_results.csv`)
