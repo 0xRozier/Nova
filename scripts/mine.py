@@ -242,10 +242,27 @@ def mine_epoch(st, args, params: dict) -> dict:
     # The reference miner commits first and uploads after, so a failed upload
     # leaves a dangling pointer rather than an unreferenced file.
     log("committing the pointer on chain...")
-    resp = st.set_commitment(wallet=args.wallet_obj, netuid=args.netuid, data=pointer)
+    try:
+        resp = st.set_commitment(wallet=args.wallet_obj, netuid=args.netuid, data=pointer)
+    except Exception as error:
+        # The chain rate-limits commitments, so committing again too soon raises
+        # rather than returning. A miner that must run for weeks cannot die here.
+        entry.update({"status": "commit_failed", "error": f"{type(error).__name__}: {error}"})
+        log(f"commitment failed: {type(error).__name__}: {error}")
+        log("not uploading, since nothing points at the file")
+        return entry
+    entry["commitment"] = str(resp)
     log(f"commitment: {resp}")
+
     log("uploading the encrypted file to GitHub...")
-    upload(filename, content)
+    try:
+        upload(filename, content)
+    except Exception as error:
+        entry.update({"status": "upload_failed", "error": f"{type(error).__name__}: {error}"})
+        log(f"upload failed: {error}")
+        log("the pointer is committed but the file is missing: this epoch is lost, "
+            "and the validator will read a dangling pointer")
+        return entry
     entry.update({"status": "submitted", "submitted": True})
     log("submitted")
     return entry
@@ -297,7 +314,14 @@ def main():
             if args.once:
                 return
             continue
-        entry = mine_epoch(st, args, params)
+        try:
+            entry = mine_epoch(st, args, params)
+        except Exception as error:
+            # Journal the failure and carry on: one bad epoch must not end the run.
+            entry = {"epoch": params["epoch"], "status": "crashed", "submitted": False,
+                     "error": f"{type(error).__name__}: {error}",
+                     "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+            log(f"epoch {params['epoch']} crashed: {type(error).__name__}: {error}")
         with JOURNAL.open("a") as f:
             f.write(json.dumps(entry) + "\n")
         done.add(params["epoch"])
