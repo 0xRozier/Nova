@@ -29,6 +29,7 @@ from pathlib import Path
 import pandas as pd
 
 from nova_lab import DATA_DIR
+from nova_lab.config import PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT
 
 TNP = Path("/home/user/venv-tnp/bin/TNP")
 METRICS = ["L", "L3", "C", "PSH", "PPC", "PNC"]
@@ -110,6 +111,16 @@ def report(df: pd.DataFrame, meta: pd.DataFrame) -> None:
     print("\n=== Our candidates ===")
     print(f"{len(ours)} profiled, {int(ours['rejected'].sum())} would be rejected "
           f"({ours['rejected'].mean():.0%})")
+
+    print(f"\nstrict PSH rejection (validator: PSH > {PSH_STRICT} is refused, "
+          f"whatever TNP's own flag says):")
+    for group, sub in scored.groupby("group"):
+        over = sub["PSH"] > PSH_STRICT
+        print(f"  {group:<10} {int(over.sum())}/{len(sub)} over {PSH_STRICT} "
+              f"({over.mean():.0%}), median {sub['PSH'].median():.1f}")
+    print("  caution: our PSH is not calibrated to the validator's — 62% of the real")
+    print("  submissions it accepted are over 89 here, so read the comparison between")
+    print("  groups, not the absolute value.")
 
     print("\nred flags by metric (share of each group):")
     table = pd.DataFrame({

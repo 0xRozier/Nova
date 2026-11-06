@@ -70,6 +70,12 @@ MAX_DI_REPEAT_PAIRS = 4
 SP_WINDOW = 12
 SP_HYDRO_MIN_IN_WINDOW = 8
 SP_SCAN_PREFIX = 30
+# config.yaml: a rejection far stricter than TNP's own red threshold of 155.47,
+# added upstream on 2026-10-20 and missing from this lab until production hit it.
+# Our reproduction of the input value is NOT calibrated: 62% of real submissions
+# the validators accepted exceed 89 on the PSH we compute, so treat a breach as
+# a warning rather than a verdict.
+PSH_STRICT_REJECTION_THRESHOLD = 89
 MIN_HUMAN_V_IDENTITY = 82
 MIN_HUMAN_J_IDENTITY = 86
 PSH_STRICT_REJECTION_THRESHOLD = 89

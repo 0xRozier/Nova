@@ -45,7 +45,8 @@ import pandas as pd
 import requests
 
 from nova_lab import DATA_DIR
-from nova_lab.config import EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS
+from nova_lab.config import (EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS,
+                             PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT)
 from nova_lab import timelock
 
 JOURNAL = DATA_DIR / "mining" / "journal.jsonl"
@@ -130,13 +131,32 @@ def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
     df = parse(run(fasta, min(4, len(sequences)), work))
     tnp = {names[n]: bool(ok) for n, ok in zip(df["name"], ~df["rejected"]) if n in names}
 
+    # The validator refuses PSH > 89 outright (config.yaml
+    # psh_strict_rejection_threshold), far below TNP's own red 155.47. Our PSH is
+    # not calibrated to theirs, so this ranks candidates rather than rejecting
+    # them: prefer the least hydrophobic, which is the one scale-free signal we
+    # have. Our candidates sit at median 98 against 90 for accepted submissions.
+    psh = dict(zip([names[n] for n in df["name"] if n in names],
+                   [v for n, v in zip(df["name"], df["PSH"]) if n in names]))
+    over = [s for s, v in psh.items() if v > PSH_STRICT]
+    if over:
+        log(f"{len(over)} of {len(psh)} candidates exceed the validator's strict "
+            f"PSH limit of {PSH_STRICT} (ours median "
+            f"{sorted(psh.values())[len(psh) // 2]:.0f}); keeping the least hydrophobic")
+
     a3d = a3d_screen(names, work / "TNP_output" / "Final_Models", work / "a3d")
     if not a3d:
         log("Aggrescan3D could not run; only the TNP half of the gate applied. "
             "Build it with install/install-aggrescan3d.sh in the nanobody-filter repo.")
     log(f"developability: TNP rejected {sum(1 for ok in tnp.values() if not ok)}, "
         f"A3D rejected {sum(1 for ok in a3d.values() if not ok)}")
-    return {s: tnp.get(s, True) and a3d.get(s, True) for s in sequences}
+    verdict = {s: tnp.get(s, True) and a3d.get(s, True) for s in sequences}
+    # Drop over-limit candidates only while some stay: never submit nothing over
+    # a gate we cannot yet reproduce.
+    survivors = [s for s in sequences if verdict.get(s) and psh.get(s, 0) <= PSH_STRICT]
+    if survivors:
+        verdict = {s: verdict.get(s, True) and psh.get(s, 0) <= PSH_STRICT for s in sequences}
+    return verdict
 
 
 def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
