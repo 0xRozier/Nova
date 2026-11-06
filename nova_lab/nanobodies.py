@@ -307,18 +307,40 @@ class NanobodyArchive:
         self.hashes = set(df["sequence_hash"])
         self.regions = self._cached_regions(target, path) if with_regions else [None] * len(self.sequences)
 
+    REGION_KEYS = ("CDR1", "CDR2", "CDR3", "FR1", "FR2", "FR3", "FR4")
+
     def _cached_regions(self, target: str, source) -> list:
-        """Numbering the whole archive takes minutes, so keep it on disk."""
+        """Numbering the whole archive takes minutes, so keep it on disk.
+
+        The cache is keyed by sequence rather than by row, so a refreshed
+        archive only costs the numbering of its new sequences. Keying it by
+        position instead meant every refresh renumbered all ~9500, which is the
+        ten minutes that made a fresh miner slow to start.
+        """
         import pandas as pd
         cache = DATA_DIR / "archive" / f"{target}_regions.csv"
-        keys = ("CDR1", "CDR2", "CDR3", "FR1", "FR2", "FR3", "FR4")
-        if cache.exists() and cache.stat().st_mtime >= source.stat().st_mtime:
+        keys = self.REGION_KEYS
+        known: dict[str, dict | None] = {}
+        if cache.exists():
             df = pd.read_csv(cache, keep_default_na=False)
-            if len(df) == len(self.sequences):
-                return [None if not r["CDR3"] else {k: r[k] for k in keys} for _, r in df.iterrows()]
-        out = regions_batch(self.sequences)
-        pd.DataFrame([r or {k: "" for k in keys} for r in out]).to_csv(cache, index=False)
-        return out
+            # Zip the columns rather than iterate rows: iterrows over ~9500
+            # rows costs more than numbering the handful of new sequences.
+            cols = [df[k].tolist() for k in keys]
+            seqs = (df["sequence"].tolist() if "sequence" in df.columns
+                    else self.sequences if len(df) == len(self.sequences) else [])
+            for seq, values in zip(seqs, zip(*cols)):
+                record = dict(zip(keys, values))
+                known[seq] = None if not record["CDR3"] else record
+
+        missing = [s for s in dict.fromkeys(self.sequences) if s not in known]
+        if missing:
+            for seq, reg in zip(missing, regions_batch(missing)):
+                known[seq] = reg
+            rows = [{"sequence": s, **(known[s] or {k: "" for k in keys})}
+                    for s in dict.fromkeys(self.sequences)]
+            cache.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(rows, columns=("sequence", *keys)).to_csv(cache, index=False)
+        return [known.get(s) for s in self.sequences]
 
     def duplicate_of(self, seq: str, exclude: set[str] | None = None) -> tuple[bool, str, bool]:
         """(hit, reason, certain). `exclude` holds sequences to ignore, to replay

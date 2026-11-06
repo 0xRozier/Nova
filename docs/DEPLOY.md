@@ -71,7 +71,24 @@ et les deux premiers coûtent cher en silence.
    à `refine.py:346` où `{'Threads', str(n)}` doit devenir
    `{'Threads': str(n)}`. Puis `sh install/install-aggrescan3d.sh` dans le dépôt
    du filtre. Sans eux, 39 % des soumissions partent au rejet silencieux.
-3. L'archive, le jeu de données et la MSA (`scripts.build_nanobody_dataset`).
+3. L'archive, le jeu de données et la MSA. **Ne reconstruisez pas à froid** :
+   `python -m scripts.bootstrap` dit ce qui manque et ce que ça coûte.
+
+   | Élément | Taille | Coût à froid | Transportable ? |
+   |---|---|---|---|
+   | archive des soumissions | 2,5 Mo | secondes (HuggingFace) | **non**, elle grossit à chaque époque |
+   | cache des régions IMGT | 2,3 Mo | ~10 min | **oui**, et c'est le gain principal |
+   | jeu de données | 1,6 Mo | ~10 min | oui, à refaire quotidiennement |
+   | modèle de substitution | 23 Mo | minutes | oui |
+
+   Soit **~29 Mo** à copier au lieu de ~20 min de calcul. La MSA et la structure
+   viennent déjà avec le clone amont, les poids BoltzGen (~6 Go) avec
+   HuggingFace.
+
+   Le cache des régions est désormais **indexé par séquence** et non par
+   position : un rafraîchissement de 50 nouvelles soumissions coûte **0,6 s**
+   au lieu de renuméroter les 9466. C'est ce qui rend viable un rafraîchissement
+   à chaque époque.
 4. Les variables GitHub et le portefeuille bittensor.
 
 ## Ordre de mise en service
