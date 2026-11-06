@@ -599,6 +599,66 @@ Ce que ce chiffre ne prouve pas :
 - la développabilité structurale reste invérifiable hors ligne ;
 - 21 époques, c'est peu.
 
+## Trois tests avant d'engager de l'argent — et le chiffre tombe de 48 % à 14–29 %
+
+### 1. Aggrescan3D : le dernier verrou, et il mord (`data/aggrescan/aggrescan_results.csv`)
+
+L'étape de développabilité du validateur exige **TNP *et* Aggrescan3D**
+(`aggrescan_rejection` dans `utils/aggrescan3d.py`). A3D note la structure que
+TNP a déjà produite, avec deux bornes : `a3d_average <= -0,68002724866200` et
+`a3d_maximum <= 1,58023066762925`. Le scorer est celui vendu dans le dépôt du
+filtre, compilé avec son FreeSASA 2.0.1 épinglé.
+
+| | Rejets | Moyenne médiane | Pic médian | Pire pic |
+|---|---|---|---|---|
+| Soumissions réelles (contrôle) | **3/84 = 4 %** | −0,815 | 1,256 | 1,586 |
+| Nos candidats | **33/84 = 39 %** | −0,790 | 1,342 | **3,209** |
+
+Le contrôle est propre, donc le test est valide. **Nous échouons presque toujours
+sur le pic** (31 cas sur 33), avec un pire cas à 3,209 contre un plafond à 1,580,
+là où les soumissions réelles frôlent la borne sans la franchir. C'est la porte
+que j'avais laissée non testée, et c'est la plus coûteuse.
+
+### 2. Le champ complet, pas les quatre meilleurs
+
+Les 48 % venaient d'un pool de 8 séquences. Le validateur classe le champ entier
+— médiane 17 soumissions valides par époque, jusqu'à 35. Les métriques
+officielles de **342 soumissions** sur nos 21 époques sont en cache, donc le
+test est faisable hors ligne.
+
+Le biais run-à-run est mesurable, puisque 84 rivaux ont été notés des deux
+côtés : **quasi nul sur les métriques de confiance** (iptm, ptm, pae) et
+légèrement **à notre désavantage** sur les liaisons hydrogène (−1 en médiane).
+
+| Protocole | Victoires | IC 95 % |
+|---|---|---|
+| Pool de 8, sans porte (le chiffre précédent) | 10/21 = 48 % | [26 %, 70 %] |
+| Champ complet, sans porte, brut | 7/21 = 33 % | [15 %, 57 %] |
+| Champ complet, sans porte, biais corrigé | 9/21 = 43 % | [22 %, 66 %] |
+| **Champ complet + les 2 portes, brut** | **3/21 = 14 %** | [3 %, 36 %] |
+| **Champ complet + les 2 portes, biais corrigé** | **6/21 = 29 %** | [11 %, 52 %] |
+
+**Le chiffre défendable est 14 à 29 %**, pas 48 %. Place médiane : 2ᵉ sur 18, et
+**top 3 du champ dans 81 % des époques** — la compétitivité est systématique,
+mais la première place ne suit pas toujours. Une époque sur 21 ne laisse aucun
+candidat passer les deux portes.
+
+Face au seuil de rentabilité de 0,3–1 %, même la borne basse de 14 % reste 14
+fois au-dessus. Le projet tient, mais l'espérance de revenu se divise par deux
+à trois.
+
+### 3. Où nous perdons : les CDR3 courts
+
+| Longueur CDR3 | Époques | Victoires | Place médiane |
+|---|---|---|---|
+| Court (≤8) | 3 | 1 | **9** |
+| Moyen (9–16) | 9 | 2 | 2 |
+| Long (≥17) | 9 | 6 | **1** |
+
+Corrélation longueur/place : **−0,53**. Les CDR3 courts sont tirés environ une
+époque sur cinq et nous y sommes mauvais. C'est la piste d'amélioration la plus
+claire, et elle se mesure sans GPU.
+
 ## Le mineur (`scripts.mine`)
 
 La boucle, dans l'ordre que les mesures imposent :

@@ -7,8 +7,11 @@ The loop per epoch, in order:
      (scripts.check_config) — a changed target makes every candidate worthless;
   3. generate and keep what the offline checker accepts
      (scripts.propose_nanobody);
-  4. screen the shortlist through TNP, the developability gate the validator
-     applies before scoring (measured: it rejects about 2.4% of our output);
+  4. screen the shortlist through both halves of the validator's developability
+     stage: TNP (measured: rejects ~2.4% of our output) and Aggrescan3D, which
+     requires a3d_average <= -0.680 and a3d_maximum <= 1.580 and rejects ~39%
+     of it, almost always on the peak. Skipping this screen is what turns a
+     generated winner into a silent rejection;
   5. rank the survivors with BoltzGen, not the surrogate. Measured over 21
      epochs: picking by BoltzGen wins 48% of them, picking by the surrogate
      14% — worse than picking at random, which wins 23%. The surrogate is a
@@ -106,20 +109,34 @@ def config_unchanged() -> bool:
     return proc.returncode == 0
 
 
-def tnp_screen(sequences: list[str], work: Path) -> dict[str, bool]:
-    """True per sequence if TNP raises no red flag. Empty when TNP is absent."""
+def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
+    """True per sequence if both halves of the validator's gate pass.
+
+    TNP builds the structure; Aggrescan3D then scores that same structure, so
+    the two run in one pass. Measured on 84 candidates: TNP rejects 2.4% and
+    A3D 39%, against 0% and 4% of the real submissions the validators accepted.
+    """
+    from scripts.aggrescan_gate import screen as a3d_screen
     from scripts.tnp_developability import TNP, parse, run
     if not TNP.exists():
-        log(f"TNP not installed at {TNP}; skipping the developability screen "
-            f"(measured: it rejects ~2.4% of our candidates)")
+        log(f"TNP not installed at {TNP}; skipping the developability screen. "
+            f"Measured, it and Aggrescan3D reject 39% of our candidates, so "
+            f"submitting unscreened throws away roughly two epochs in five.")
         return {}
     work.mkdir(parents=True, exist_ok=True)
     fasta = work / "candidates.fasta"
     names = {f"cand{i}": s for i, s in enumerate(sequences)}
     fasta.write_text("".join(f">{n}\n{s}\n" for n, s in names.items()))
     df = parse(run(fasta, min(4, len(sequences)), work))
-    verdict = dict(zip(df["name"], ~df["rejected"]))
-    return {names[n]: bool(ok) for n, ok in verdict.items() if n in names}
+    tnp = {names[n]: bool(ok) for n, ok in zip(df["name"], ~df["rejected"]) if n in names}
+
+    a3d = a3d_screen(names, work / "TNP_output" / "Final_Models", work / "a3d")
+    if not a3d:
+        log("Aggrescan3D could not run; only the TNP half of the gate applied. "
+            "Build it with install/install-aggrescan3d.sh in the nanobody-filter repo.")
+    log(f"developability: TNP rejected {sum(1 for ok in tnp.values() if not ok)}, "
+        f"A3D rejected {sum(1 for ok in a3d.values() if not ok)}")
+    return {s: tnp.get(s, True) and a3d.get(s, True) for s in sequences}
 
 
 def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
@@ -179,11 +196,11 @@ def mine_epoch(st, args, params: dict) -> dict:
 
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
-    verdict = tnp_screen(sequences, work / "tnp")
+    verdict = developability_screen(sequences, work / "tnp")
     if verdict:
         kept = [s for s in sequences if verdict.get(s, True)]
-        entry["tnp_rejected"] = len(sequences) - len(kept)
-        log(f"TNP: {len(kept)} of {len(sequences)} clear the developability gate")
+        entry["developability_rejected"] = len(sequences) - len(kept)
+        log(f"{len(kept)} of {len(sequences)} clear the developability gate")
         sequences = kept or sequences  # never submit nothing over a screen
         if not kept:
             log("every candidate is red; submitting the best anyway rather than skipping")
