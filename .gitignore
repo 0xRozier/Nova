@@ -4,3 +4,8 @@ __pycache__/
 *.pyc
 .venv/
 .env
+.env.txt
+lium_ed25519
+lium_ed25519:Zone.Identifier
+*:Zone.Identifier
+*.sqlite

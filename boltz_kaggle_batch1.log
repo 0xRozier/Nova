@@ -1,0 +1,225 @@
+Seed set to 68
+Downloading the CCD data to /root/.boltz/mols.tar. This may take a bit of time. You may change the cache directory with the --cache flag.
+Extracting the CCD data to /root/.boltz/mols. This may take a bit of time. You may change the cache directory with the --cache flag.
+Downloading the Boltz-2 weights to /root/.boltz/boltz2_conf.ckpt. You may change the cache directory with the --cache flag.
+Downloading the Boltz-2 affinity weights to /root/.boltz/boltz2_aff.ckpt. You may change the cache directory with the --cache flag.
+Checking input data.
+Processing 50 inputs with 4 threads.
+
+  0%|          | 0/50 [00:00<?, ?it/s]
+  2%|▏         | 1/50 [00:03<02:56,  3.59s/it]
+  6%|▌         | 3/50 [00:03<00:47,  1.01s/it]
+ 10%|█         | 5/50 [00:06<00:50,  1.13s/it]
+ 18%|█▊        | 9/50 [00:08<00:33,  1.23it/s]
+ 20%|██        | 10/50 [00:08<00:28,  1.41it/s]
+ 26%|██▌       | 13/50 [00:11<00:26,  1.39it/s]
+ 28%|██▊       | 14/50 [00:11<00:22,  1.57it/s]
+ 34%|███▍      | 17/50 [00:13<00:20,  1.57it/s]
+ 36%|███▌      | 18/50 [00:13<00:19,  1.67it/s]
+ 42%|████▏     | 21/50 [00:15<00:17,  1.65it/s]
+ 44%|████▍     | 22/50 [00:15<00:16,  1.74it/s]
+ 48%|████▊     | 24/50 [00:16<00:10,  2.45it/s]
+ 50%|█████     | 25/50 [00:17<00:16,  1.48it/s]
+ 52%|█████▏    | 26/50 [00:18<00:14,  1.61it/s]
+ 54%|█████▍    | 27/50 [00:18<00:11,  1.98it/s]
+ 58%|█████▊    | 29/50 [00:20<00:13,  1.51it/s]
+ 60%|██████    | 30/50 [00:20<00:11,  1.69it/s]
+ 62%|██████▏   | 31/50 [00:20<00:09,  1.96it/s]
+ 66%|██████▌   | 33/50 [00:22<00:11,  1.42it/s]
+ 68%|██████▊   | 34/50 [00:23<00:09,  1.65it/s]
+ 70%|███████   | 35/50 [00:23<00:07,  2.04it/s]
+ 74%|███████▍  | 37/50 [00:25<00:08,  1.47it/s]
+ 76%|███████▌  | 38/50 [00:25<00:07,  1.56it/s]
+ 82%|████████▏ | 41/50 [00:27<00:05,  1.63it/s]
+ 84%|████████▍ | 42/50 [00:27<00:04,  1.68it/s]
+ 90%|█████████ | 45/50 [00:29<00:02,  1.68it/s]
+ 92%|█████████▏| 46/50 [00:30<00:02,  1.71it/s]
+ 94%|█████████▍| 47/50 [00:30<00:01,  1.94it/s]
+ 98%|█████████▊| 49/50 [00:31<00:00,  2.04it/s]
+100%|██████████| 50/50 [00:31<00:00,  2.06it/s]
+100%|██████████| 50/50 [00:31<00:00,  1.57it/s]
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+/kaggle/temp/bvenv/lib/python3.12/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:76: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+Running structure prediction for 50 inputs.
+/kaggle/temp/bvenv/lib/python3.12/site-packages/pytorch_lightning/utilities/migration/utils.py:56: The loaded checkpoint was produced with Lightning v2.5.0.post0, which is newer than your current Lightning version: v2.5.0
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1]
+/kaggle/temp/bvenv/lib/python3.12/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:425: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting:   0%|          | 0/50 [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/50 [00:00<?, ?it/s]
+Predicting DataLoader 0:   2%|▏         | 1/50 [03:03<2:29:38,  0.01it/s]
+Predicting DataLoader 0:   4%|▍         | 2/50 [06:11<2:28:35,  0.01it/s]
+Predicting DataLoader 0:   6%|▌         | 3/50 [09:21<2:26:38,  0.01it/s]
+Predicting DataLoader 0:   8%|▊         | 4/50 [12:31<2:23:57,  0.01it/s]
+Predicting DataLoader 0:  10%|█         | 5/50 [15:39<2:20:53,  0.01it/s]
+Predicting DataLoader 0:  12%|█▏        | 6/50 [19:03<2:19:43,  0.01it/s]
+Predicting DataLoader 0:  14%|█▍        | 7/50 [22:11<2:16:19,  0.01it/s]
+Predicting DataLoader 0:  16%|█▌        | 8/50 [25:20<2:13:03,  0.01it/s]
+Predicting DataLoader 0:  18%|█▊        | 9/50 [28:29<2:09:49,  0.01it/s]
+Predicting DataLoader 0:  20%|██        | 10/50 [31:41<2:06:45,  0.01it/s]
+Predicting DataLoader 0:  22%|██▏       | 11/50 [34:42<2:03:05,  0.01it/s]
+Predicting DataLoader 0:  24%|██▍       | 12/50 [37:52<1:59:55,  0.01it/s]
+Predicting DataLoader 0:  26%|██▌       | 13/50 [41:01<1:56:45,  0.01it/s]
+Predicting DataLoader 0:  28%|██▊       | 14/50 [44:09<1:53:33,  0.01it/s]
+Predicting DataLoader 0:  30%|███       | 15/50 [47:17<1:50:21,  0.01it/s]
+Predicting DataLoader 0:  32%|███▏      | 16/50 [50:24<1:47:07,  0.01it/s]
+Predicting DataLoader 0:  34%|███▍      | 17/50 [53:32<1:43:56,  0.01it/s]
+Predicting DataLoader 0:  36%|███▌      | 18/50 [56:40<1:40:45,  0.01it/s]
+Predicting DataLoader 0:  38%|███▊      | 19/50 [59:52<1:37:41,  0.01it/s]
+Predicting DataLoader 0:  40%|████      | 20/50 [1:03:01<1:34:32,  0.01it/s]
+Predicting DataLoader 0:  42%|████▏     | 21/50 [1:06:08<1:31:19,  0.01it/s]
+Predicting DataLoader 0:  44%|████▍     | 22/50 [1:09:24<1:28:20,  0.01it/s]
+Predicting DataLoader 0:  46%|████▌     | 23/50 [1:12:32<1:25:09,  0.01it/s]
+Predicting DataLoader 0:  48%|████▊     | 24/50 [1:15:46<1:22:05,  0.01it/s]
+Predicting DataLoader 0:  50%|█████     | 25/50 [1:18:53<1:18:53,  0.01it/s]
+Predicting DataLoader 0:  52%|█████▏    | 26/50 [1:22:01<1:15:42,  0.01it/s]
+Predicting DataLoader 0:  54%|█████▍    | 27/50 [1:25:11<1:12:34,  0.01it/s]
+Predicting DataLoader 0:  56%|█████▌    | 28/50 [1:28:17<1:09:22,  0.01it/s]
+Predicting DataLoader 0:  58%|█████▊    | 29/50 [1:31:21<1:06:09,  0.01it/s]
+Predicting DataLoader 0:  60%|██████    | 30/50 [1:34:30<1:03:00,  0.01it/s]
+Predicting DataLoader 0:  62%|██████▏   | 31/50 [1:37:40<59:51,  0.01it/s]  
+Predicting DataLoader 0:  64%|██████▍   | 32/50 [1:40:58<56:48,  0.01it/s]
+Predicting DataLoader 0:  66%|██████▌   | 33/50 [1:44:15<53:42,  0.01it/s]
+Predicting DataLoader 0:  68%|██████▊   | 34/50 [1:47:23<50:32,  0.01it/s]
+Predicting DataLoader 0:  70%|███████   | 35/50 [1:50:31<47:22,  0.01it/s]
+Predicting DataLoader 0:  72%|███████▏  | 36/50 [1:53:39<44:11,  0.01it/s]
+Predicting DataLoader 0:  74%|███████▍  | 37/50 [1:56:49<41:02,  0.01it/s]
+Predicting DataLoader 0:  76%|███████▌  | 38/50 [1:59:57<37:52,  0.01it/s]
+Predicting DataLoader 0:  78%|███████▊  | 39/50 [2:03:06<34:43,  0.01it/s]
+Predicting DataLoader 0:  80%|████████  | 40/50 [2:06:14<31:33,  0.01it/s]
+Predicting DataLoader 0:  82%|████████▏ | 41/50 [2:09:23<28:24,  0.01it/s]
+Predicting DataLoader 0:  84%|████████▍ | 42/50 [2:12:37<25:15,  0.01it/s]
+Predicting DataLoader 0:  86%|████████▌ | 43/50 [2:15:46<22:06,  0.01it/s]
+Predicting DataLoader 0:  88%|████████▊ | 44/50 [2:18:52<18:56,  0.01it/s]
+Predicting DataLoader 0:  90%|█████████ | 45/50 [2:22:00<15:46,  0.01it/s]
+Predicting DataLoader 0:  92%|█████████▏| 46/50 [2:25:16<12:37,  0.01it/s]
+Predicting DataLoader 0:  94%|█████████▍| 47/50 [2:28:24<09:28,  0.01it/s]
+Predicting DataLoader 0:  96%|█████████▌| 48/50 [2:31:34<06:18,  0.01it/s]
+Predicting DataLoader 0:  98%|█████████▊| 49/50 [2:34:55<03:09,  0.01it/s]
+Predicting DataLoader 0: 100%|██████████| 50/50 [2:38:05<00:00,  0.01it/s]Number of failed examples: 0
+
+Predicting DataLoader 0: 100%|██████████| 50/50 [2:38:05<00:00,  0.01it/s]
+
+Predicting property: affinity
+
+Checking input data for affinity.
+Running affinity prediction for 50 inputs.
+/kaggle/temp/bvenv/lib/python3.12/site-packages/pytorch_lightning/utilities/migration/utils.py:56: The loaded checkpoint was produced with Lightning v2.5.0.post0, which is newer than your current Lightning version: v2.5.0
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1]
+/kaggle/temp/bvenv/lib/python3.12/site-packages/pytorch_lightning/trainer/connectors/data_connector.py:425: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=3` in the `DataLoader` to improve performance.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting:   0%|          | 0/50 [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/50 [00:00<?, ?it/s]
+Predicting DataLoader 0:   2%|▏         | 1/50 [00:59<48:23,  0.02it/s]
+Predicting DataLoader 0:   4%|▍         | 2/50 [02:00<48:23,  0.02it/s]
+Predicting DataLoader 0:   6%|▌         | 3/50 [03:02<47:37,  0.02it/s]
+Predicting DataLoader 0:   8%|▊         | 4/50 [04:03<46:42,  0.02it/s]
+Predicting DataLoader 0:  10%|█         | 5/50 [05:05<45:48,  0.02it/s]
+Predicting DataLoader 0:  12%|█▏        | 6/50 [06:07<44:55,  0.02it/s]
+Predicting DataLoader 0:  14%|█▍        | 7/50 [07:09<43:56,  0.02it/s]
+Predicting DataLoader 0:  16%|█▌        | 8/50 [08:09<42:49,  0.02it/s]
+Predicting DataLoader 0:  18%|█▊        | 9/50 [09:09<41:43,  0.02it/s]
+Predicting DataLoader 0:  20%|██        | 10/50 [10:11<40:46,  0.02it/s]
+Predicting DataLoader 0:  22%|██▏       | 11/50 [11:06<39:22,  0.02it/s]
+Predicting DataLoader 0:  24%|██▍       | 12/50 [12:06<38:19,  0.02it/s]
+Predicting DataLoader 0:  26%|██▌       | 13/50 [13:06<37:18,  0.02it/s]
+Predicting DataLoader 0:  28%|██▊       | 14/50 [14:06<36:16,  0.02it/s]
+Predicting DataLoader 0:  30%|███       | 15/50 [15:08<35:18,  0.02it/s]
+Predicting DataLoader 0:  32%|███▏      | 16/50 [16:06<34:14,  0.02it/s]
+Predicting DataLoader 0:  34%|███▍      | 17/50 [17:05<33:11,  0.02it/s]
+Predicting DataLoader 0:  36%|███▌      | 18/50 [18:00<32:01,  0.02it/s]
+Predicting DataLoader 0:  38%|███▊      | 19/50 [18:57<30:55,  0.02it/s]
+Predicting DataLoader 0:  40%|████      | 20/50 [19:57<29:55,  0.02it/s]
+Predicting DataLoader 0:  42%|████▏     | 21/50 [20:56<28:55,  0.02it/s]
+Predicting DataLoader 0:  44%|████▍     | 22/50 [22:02<28:02,  0.02it/s]
+Predicting DataLoader 0:  46%|████▌     | 23/50 [23:01<27:01,  0.02it/s]
+Predicting DataLoader 0:  48%|████▊     | 24/50 [24:04<26:05,  0.02it/s]
+Predicting DataLoader 0:  50%|█████     | 25/50 [25:05<25:05,  0.02it/s]
+Predicting DataLoader 0:  52%|█████▏    | 26/50 [26:09<24:08,  0.02it/s]
+Predicting DataLoader 0:  54%|█████▍    | 27/50 [27:07<23:06,  0.02it/s]
+Predicting DataLoader 0:  56%|█████▌    | 28/50 [28:07<22:05,  0.02it/s]
+Predicting DataLoader 0:  58%|█████▊    | 29/50 [29:05<21:04,  0.02it/s]
+Predicting DataLoader 0:  60%|██████    | 30/50 [30:06<20:04,  0.02it/s]
+Predicting DataLoader 0:  62%|██████▏   | 31/50 [31:06<19:04,  0.02it/s]
+Predicting DataLoader 0:  64%|██████▍   | 32/50 [32:12<18:07,  0.02it/s]
+Predicting DataLoader 0:  66%|██████▌   | 33/50 [33:14<17:07,  0.02it/s]
+Predicting DataLoader 0:  68%|██████▊   | 34/50 [34:16<16:07,  0.02it/s]
+Predicting DataLoader 0:  70%|███████   | 35/50 [35:16<15:06,  0.02it/s]
+Predicting DataLoader 0:  72%|███████▏  | 36/50 [36:15<14:06,  0.02it/s]
+Predicting DataLoader 0:  74%|███████▍  | 37/50 [37:17<13:05,  0.02it/s]
+Predicting DataLoader 0:  76%|███████▌  | 38/50 [38:18<12:05,  0.02it/s]
+Predicting DataLoader 0:  78%|███████▊  | 39/50 [39:18<11:05,  0.02it/s]
+Predicting DataLoader 0:  80%|████████  | 40/50 [40:20<10:05,  0.02it/s]
+Predicting DataLoader 0:  82%|████████▏ | 41/50 [41:21<09:04,  0.02it/s]
+Predicting DataLoader 0:  84%|████████▍ | 42/50 [42:21<08:04,  0.02it/s]
+Predicting DataLoader 0:  86%|████████▌ | 43/50 [43:22<07:03,  0.02it/s]
+Predicting DataLoader 0:  88%|████████▊ | 44/50 [44:21<06:02,  0.02it/s]
+Predicting DataLoader 0:  90%|█████████ | 45/50 [45:21<05:02,  0.02it/s]
+Predicting DataLoader 0:  92%|█████████▏| 46/50 [46:25<04:02,  0.02it/s]
+Predicting DataLoader 0:  94%|█████████▍| 47/50 [47:22<03:01,  0.02it/s]
+Predicting DataLoader 0:  96%|█████████▌| 48/50 [48:23<02:00,  0.02it/s]
+Predicting DataLoader 0:  98%|█████████▊| 49/50 [49:32<01:00,  0.02it/s]
+Predicting DataLoader 0: 100%|██████████| 50/50 [50:33<00:00,  0.02it/s]Number of failed examples: 0
+
+Predicting DataLoader 0: 100%|██████████| 50/50 [50:33<00:00,  0.02it/s]
+                         name        group   pred   score  published_score
+0      rxn:18:1059332:2583545  calibration    NaN -0.0686          -0.0776
+1        rxn:31:2728545:83314  calibration    NaN  0.0311           0.0169
+2      rxn:18:2639636:1174023  calibration    NaN  0.0728           0.0405
+3       rxn:13:2784101:181422  calibration    NaN  0.0504           0.0548
+4      rxn:13:2655395:2628119  calibration    NaN  0.0737           0.0755
+5         rxn:33:211494:75840  calibration    NaN  0.1017           0.0967
+6       rxn:6:1065474:2605287  calibration    NaN  0.1181           0.1149
+7       rxn:6:1028467:2605271  calibration    NaN  0.1325           0.1302
+8   rxn:13:2767947:2636919:k1  calibration    NaN  0.1499           0.1492
+9       rxn:6:1065554:2603013  calibration    NaN  0.1573           0.2007
+10     rxn:33:2625589:2597889   submission 0.1640  0.0580              NaN
+11     rxn:33:2737132:2597889   submission 0.1617  0.0527              NaN
+12  rxn:33:2657180:2674466:k1   submission 0.1590  0.0460              NaN
+13  rxn:33:2657180:2577580:k1   submission 0.1584  0.0631              NaN
+14  rxn:33:2632594:2619786:k1   submission 0.1558  0.0281              NaN
+15  rxn:33:1062603:1051588:k1   submission 0.1541  0.0218              NaN
+16     rxn:33:2596244:2688769   submission 0.1537  0.0126              NaN
+17  rxn:33:2624521:2622976:k1   submission 0.1522  0.1065              NaN
+18  rxn:33:2698267:2622976:k1   submission 0.1520  0.0786              NaN
+19  rxn:33:2659588:2674466:k1   submission 0.1512  0.0955              NaN
+20  rxn:33:2624935:2688769:k1   submission 0.1510  0.0467              NaN
+21     rxn:33:2647668:2799908   submission 0.1503  0.1110              NaN
+22  rxn:33:1062603:2636125:k1   submission 0.1502  0.0557              NaN
+23   rxn:33:2698267:122744:k1   submission 0.1456  0.0557              NaN
+24     rxn:33:2659588:2808177   submission 0.1449  0.0925              NaN
+25     rxn:33:2758455:2630439   submission 0.1422  0.0614              NaN
+26  rxn:33:2037972:2792695:k1   submission 0.1315  0.0286              NaN
+27      rxn:33:1053591:101278   submission 0.1282  0.0271              NaN
+28     rxn:33:1182488:2756698   submission 0.1152  0.0165              NaN
+29      rxn:33:1636568:103837   submission 0.1053  0.0666              NaN
+30     rxn:33:2647668:2676187    shortlist 0.1497  0.0536              NaN
+31  rxn:33:2658891:2734158:k1    shortlist 0.1488  0.0120              NaN
+32     rxn:33:2596244:2676187    shortlist 0.1488  0.0533              NaN
+33  rxn:33:2624521:2577580:k1    shortlist 0.1479  0.0367              NaN
+34     rxn:33:2691345:2619786    shortlist 0.1476  0.0175              NaN
+35  rxn:33:2658891:2691992:k1    shortlist 0.1467  0.0211              NaN
+36     rxn:33:2631099:2701613    shortlist 0.1466  0.0824              NaN
+37  rxn:33:1797762:2625344:k1    shortlist 0.1463  0.0847              NaN
+38     rxn:33:2669127:2581611    shortlist 0.1457  0.0562              NaN
+39      rxn:33:196085:2616458    shortlist 0.1447  0.0272              NaN
+40  rxn:33:1797762:2691365:k1    shortlist 0.1443  0.0600              NaN
+41  rxn:33:2659002:1053108:k1    shortlist 0.1438  0.0266              NaN
+42   rxn:33:198680:1041749:k1    shortlist 0.1434  0.0616              NaN
+43       rxn:33:2626032:94308    shortlist 0.1434  0.0218              NaN
+44  rxn:33:2624935:2691365:k1    shortlist 0.1427  0.0840              NaN
+45     rxn:33:2631099:2694981    shortlist 0.1425  0.0479              NaN
+46  rxn:33:2661864:2674101:k3    shortlist 0.1420  0.0496              NaN
+47     rxn:33:2595105:2694981    shortlist 0.1419  0.0021              NaN
+48     rxn:33:2643451:2627114    shortlist 0.1417  0.0567              NaN
+49      rxn:33:2625589:134247    shortlist 0.1416  0.0793              NaN
+
+calibration: corr 0.976, mean abs diff 0.0116
+proposed submission true total: 1.125 (20 molecules scored)
+
+50 molecules in 211.6 min (4.2 min/molecule)
+saved to /kaggle/temp/Nova/data/boltz/kaggle_batch1/scores.csv

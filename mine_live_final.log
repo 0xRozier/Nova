@@ -1,0 +1,541 @@
+Executing on calm-lion-17
+[17:04:29] epoch 26172: V IGHV3-23, CDR3 16; block 9448414, deadline 9448431 (3 min)
+[17:04:29] epoch 26172: V gene IGHV3-23, CDR3 length 16
+[17:04:30] 3253 of 12664 archived sequences clear today's germline floors with margin
+[17:04:30] 40 framework donors (IGHV3-23), 60 CDR3 donors of length 16
+[17:04:31] generated 3000 distinct candidates; checking validity...
+[17:06:32] 1493 pass the offline checks. Main rejection causes:
+[17:06:32]     943  CDR3 >= 85% identical to an archived CDR
+[17:06:32]     424  human J identity 85.7 < 86
+[17:06:32]     103  V gene ['IGHV3-74'] is not the epoch's I
+[17:06:32]      34  human V identity 81.6 < 82
+[17:06:32]       1  V gene ['IGHV3-53', 'IGHV3-66'] is not t
+[17:06:32]       1  V gene ['IGHV3-64'] is not the epoch's I
+[17:06:33] 
+ranking 1493 candidates against 200 recent archived sequences
+[17:07:12] 
+ranked in one pool with 200 recent real submissions (which score 9754 best, 13112 median):
+[17:07:12]   our best candidate scores 1404 -> place 1 of 201
+[17:07:12]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26172/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26172/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26172/tnp/tnp_stdout.log
+[17:07:50] developability: TNP rejected 0, A3D rejected 2
+[17:07:50] 6 of 8 clear the developability gate
+[17:07:50] WARNING: ranking by the surrogate. Measured over 21 epochs it wins 14% of them against 48% for BoltzGen, and 23% for a random pick — it is worse than chance as a selector.
+[17:07:50] UID 22, reveal round 33727215, pointer 0xRozier/sn68-submissions/main/2f66c678b3ee8a61d52c.txt
+[17:07:50] submission file written to /root/nova-lab/data/mining/epoch26172/2f66c678b3ee8a61d52c.txt
+[17:07:50] committing the pointer on chain...
+[17:08:26] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0xcabe6989fcc946d2a188d43d019a1325354ade49d6d94b4c5c810b1c2044da78eddc19c7c608c829563e02dbd00fd29938a9f36d7310165c4c4aa01f455c188f'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/2f66c678b3ee8a61d52c.txt'}]]}}, 'nonce': 0, 'era': {'period': 128, 'current': 9448429}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/2f66c678b3ee8a61d52c.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0xdb330bb10e06e6f23466754d12ad43e127323a57e36262d597c70198be12575a>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[17:08:26] uploading the encrypted file to GitHub...
+[17:08:26] upload failed: GitHub upload failed: 404 {"message":"Not Found","documentation_url":"https://docs.github.com/rest/repos/contents#create-or-update-file-contents","status":"404"}
+[17:08:26] the pointer is committed but the file is missing: this epoch is lost, and the validator will read a dangling pointer
+[17:12:37] epoch 26173: V IGHV3-7, CDR3 15; block 9448455, deadline 9448792 (67 min)
+[17:12:38] epoch 26173: V gene IGHV3-7, CDR3 length 15
+[17:12:38] 3253 of 12664 archived sequences clear today's germline floors with margin
+[17:12:39] 40 framework donors (IGHV3-7), 60 CDR3 donors of length 15
+[17:12:39] generated 3000 distinct candidates; checking validity...
+[17:14:38] 1416 pass the offline checks. Main rejection causes:
+[17:14:38]     964  CDR3 >= 85% identical to an archived CDR
+[17:14:38]     356  human J identity 85.7 < 86
+[17:14:38]     213  V gene ['IGHV3-23'] is not the epoch's I
+[17:14:38]      31  human V identity 81.6 < 82
+[17:14:38]       9  human J identity 78.6 < 86
+[17:14:38]       9  V gene ['IGHV3-48'] is not the epoch's I
+[17:14:38] 
+ranking 1416 candidates against 200 recent archived sequences
+[17:15:22] 
+ranked in one pool with 200 recent real submissions (which score 6337 best, 11468 median):
+[17:15:22]   our best candidate scores 904 -> place 1 of 201
+[17:15:22]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26173/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26173/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26173/tnp/tnp_stdout.log
+[17:16:07] developability: TNP rejected 0, A3D rejected 2
+[17:16:07] 6 of 8 clear the developability gate
+[17:16:07] WARNING: ranking by the surrogate. Measured over 21 epochs it wins 14% of them against 48% for BoltzGen, and 23% for a random pick — it is worse than chance as a selector.
+[17:16:07] UID 22, reveal round 33728661, pointer 0xRozier/sn68-submissions/main/1e6755e90b91760ba7c8.txt
+[17:16:07] submission file written to /root/nova-lab/data/mining/epoch26173/1e6755e90b91760ba7c8.txt
+[17:16:07] committing the pointer on chain...
+[17:16:37] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x4ae79634a64ef0efce56b8f45d78eafe88ef0ac8c694b220c85b28ab8234142c744226b8c9a4340a9c281285b44b930c24b5fdd8365dbce45d3de93a153a7986'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/1e6755e90b91760ba7c8.txt'}]]}}, 'nonce': 1, 'era': {'period': 128, 'current': 9448470}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/1e6755e90b91760ba7c8.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x1d632df336103763777ee7e2d4d97b40c03032f8774376090a4c0e3bcb2d0bff>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[17:16:37] uploading the encrypted file to GitHub...
+[17:16:39] submitted
+[18:24:30] epoch 26174: V IGHV3-74, CDR3 8; block 9448814, deadline 9449153 (68 min)
+[18:24:31] epoch 26174: V gene IGHV3-74, CDR3 length 8
+[18:24:31] 3253 of 12664 archived sequences clear today's germline floors with margin
+[18:24:32] 40 framework donors (IGHV3-74), 60 CDR3 donors of length 8
+[18:24:32] generated 3000 distinct candidates; checking validity...
+[18:26:31] 2355 pass the offline checks. Main rejection causes:
+[18:26:31]     350  human J identity 85.7 < 86
+[18:26:31]     125  CDR3 >= 85% identical to an archived CDR
+[18:26:31]      72  V gene ['IGHV3-23'] is not the epoch's I
+[18:26:31]      61  human V identity 81.6 < 82
+[18:26:31]      14  human J identity 78.6 < 86
+[18:26:31]       7  V gene ['IGHV3-23', 'IGHV3-48'] is not t
+[18:26:31] 
+ranking 2355 candidates against 200 recent archived sequences
+[18:27:06] 
+ranked in one pool with 200 recent real submissions (which score 5827 best, 20056 median):
+[18:27:06]   our best candidate scores 2344 -> place 1 of 201
+[18:27:06]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26174/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26174/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26174/tnp/tnp_stdout.log
+[18:27:49] developability: TNP rejected 1, A3D rejected 2
+[18:27:49] 5 of 8 clear the developability gate
+[18:27:49] BoltzGen on 5 candidates...
+[18:33:40] UID 22, reveal round 33730104, pointer 0xRozier/sn68-submissions/main/85940ed6bcc1f3dbaa3c.txt
+[18:33:40] submission file written to /root/nova-lab/data/mining/epoch26174/85940ed6bcc1f3dbaa3c.txt
+[18:33:40] committing the pointer on chain...
+[18:34:13] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x48de5f49d31dd0c5f550f7a8988474d2b9569c03765546902145763e709e7026423f46f6180ce8a88c7ebb45492931fa810529f03f47e3902d5e823adab3f98c'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/85940ed6bcc1f3dbaa3c.txt'}]]}}, 'nonce': 2, 'era': {'period': 128, 'current': 9448858}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/85940ed6bcc1f3dbaa3c.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x70ec7f084e6788513e4342cf2aefea7709b5b4902dc73c083a18af39dd3ca595>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[18:34:13] uploading the encrypted file to GitHub...
+[18:34:15] submitted
+[19:36:51] epoch 26175: V IGHV3-74, CDR3 11; block 9449176, deadline 9449514 (68 min)
+[19:36:52] epoch 26175: V gene IGHV3-74, CDR3 length 11
+[19:36:52] 3253 of 12664 archived sequences clear today's germline floors with margin
+[19:36:52] 40 framework donors (IGHV3-74), 60 CDR3 donors of length 11
+[19:36:52] generated 3000 distinct candidates; checking validity...
+[19:38:52] 2131 pass the offline checks. Main rejection causes:
+[19:38:52]     640  human J identity 85.7 < 86
+[19:38:52]      99  CDR3 >= 85% identical to an archived CDR
+[19:38:52]      75  V gene ['IGHV3-23'] is not the epoch's I
+[19:38:52]      18  human J identity 78.6 < 86
+[19:38:52]      17  human V identity 81.6 < 82
+[19:38:52]       7  V gene ['IGHV3-7'] is not the epoch's IG
+[19:38:53] 
+ranking 2131 candidates against 200 recent archived sequences
+[19:39:28] 
+ranked in one pool with 200 recent real submissions (which score 11492 best, 18010 median):
+[19:39:28]   our best candidate scores 1916 -> place 1 of 201
+[19:39:28]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26175/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26175/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26175/tnp/tnp_stdout.log
+[19:40:05] developability: TNP rejected 0, A3D rejected 1
+[19:40:05] 7 of 8 clear the developability gate
+[19:40:05] BoltzGen on 7 candidates...
+[19:45:31] UID 22, reveal round 33731549, pointer 0xRozier/sn68-submissions/main/27c294faa8d1ab78d4b5.txt
+[19:45:31] submission file written to /root/nova-lab/data/mining/epoch26175/27c294faa8d1ab78d4b5.txt
+[19:45:31] committing the pointer on chain...
+[19:46:02] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0xcc6b89288df5008aa24c5754b1f63baf6e88e04ccde7bdf16f86a50e28dab4664ec3ad00c5a14b7f8bba6ffb2f9a15ea75add7c4c1002602f3211fe8ea8dac8a'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/27c294faa8d1ab78d4b5.txt'}]]}}, 'nonce': 3, 'era': {'period': 128, 'current': 9449217}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/27c294faa8d1ab78d4b5.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x8013c4a50e538916bcafc515930746f980a4b41724a101f14adda996082be733>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[19:46:02] uploading the encrypted file to GitHub...
+[19:46:04] submitted
+[20:48:50] epoch 26176: V IGHV3-74, CDR3 18; block 9449536, deadline 9449875 (68 min)
+[20:48:51] epoch 26176: V gene IGHV3-74, CDR3 length 18
+[20:48:52] 3253 of 12664 archived sequences clear today's germline floors with margin
+[20:48:52] 40 framework donors (IGHV3-74), 60 CDR3 donors of length 18
+[20:48:52] generated 3000 distinct candidates; checking validity...
+[20:50:58] 1476 pass the offline checks. Main rejection causes:
+[20:50:58]     902  CDR3 >= 85% identical to an archived CDR
+[20:50:58]     347  human J identity 85.7 < 86
+[20:50:58]     234  V gene ['IGHV3-23'] is not the epoch's I
+[20:50:58]      16  human V identity 81.6 < 82
+[20:50:58]       5  V gene ['IGHV3-7'] is not the epoch's IG
+[20:50:58]       4  V gene ['IGHV3-48', 'IGHV3-7'] is not th
+[20:50:59] 
+ranking 1476 candidates against 200 recent archived sequences
+[20:51:37] 
+ranked in one pool with 200 recent real submissions (which score 8549 best, 12610 median):
+[20:51:37]   our best candidate scores 1363 -> place 1 of 201
+[20:51:37]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26176/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26176/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26176/tnp/tnp_stdout.log
+[20:52:26] developability: TNP rejected 1, A3D rejected 7
+[20:52:26] 0 of 8 clear the developability gate
+[20:52:26] every candidate is red; submitting the best anyway rather than skipping
+[20:52:26] BoltzGen on 8 candidates...
+[20:54:24] epoch 26176: V IGHV3-74, CDR3 18; block 9449563, deadline 9449875 (62 min)
+[20:54:25] epoch 26176: V gene IGHV3-74, CDR3 length 18
+[20:54:25] 3253 of 12664 archived sequences clear today's germline floors with margin
+[20:54:27] 80 framework donors (IGHV3-74), 120 CDR3 donors of length 18
+[20:54:27] generated 5000 distinct candidates; checking validity...
+[20:57:58] 2540 pass the offline checks. Main rejection causes:
+[20:57:58]    1565  CDR3 >= 85% identical to an archived CDR
+[20:57:58]     532  human J identity 85.7 < 86
+[20:57:58]     298  V gene ['IGHV3-23'] is not the epoch's I
+[20:57:58]      23  V gene ['IGHV3-64D'] is not the epoch's 
+[20:57:58]      22  human V identity 81.6 < 82
+[20:57:58]       6  V gene ['IGHV3-7'] is not the epoch's IG
+[20:57:58] 234 of 2540 candidates have liability_count <= 8
+[20:57:59] 
+ranking 234 candidates against 200 recent archived sequences
+[21:01:19] 
+ranked in one pool with 200 recent real submissions (which score 1417 best, 2622 median):
+[21:01:19]   our best candidate scores 368 -> place 1 of 201
+[21:01:19]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26176/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26176/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26176/tnp/tnp_stdout.log
+[21:04:16] developability: TNP rejected 3, A3D rejected 18
+[21:04:16] 20 of 40 clear the developability gate
+[21:04:16] BoltzGen on 20 candidates...
+[21:14:37] UID 22, reveal round 33732991, pointer 0xRozier/sn68-submissions/main/729fb750c627d00a489a.txt
+[21:14:37] submission file written to /root/nova-lab/data/mining/epoch26176/729fb750c627d00a489a.txt
+[21:14:37] committing the pointer on chain...
+[21:15:14] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x4ab200b0e11a7619d36ceaf03cc11ce744bf5b93fa9fdf041177e27a1c3f8b566ab37025b40263326d3a108df9e385852be6ae1d1d2bb31e7773ffca2fefbc84'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/729fb750c627d00a489a.txt'}]]}}, 'nonce': 4, 'era': {'period': 128, 'current': 9449663}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/729fb750c627d00a489a.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x53b0847ffa906458dd45a8aa7ef4c78debc5294577e0064a2218ccac10404625>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[21:15:14] uploading the encrypted file to GitHub...
+[21:15:16] submitted
+--- RESTART WITH PSH FIX ---
+[22:02:00] epoch 26177: V IGHV3-74, CDR3 18; block 9449901, deadline 9450236 (67 min)
+[22:02:01] epoch 26177: V gene IGHV3-74, CDR3 length 18
+[22:02:01] 3253 of 12664 archived sequences clear today's germline floors with margin
+[22:02:03] 80 framework donors (IGHV3-74), 120 CDR3 donors of length 18
+[22:02:03] generated 5000 distinct candidates; checking validity...
+[22:05:36] 2547 pass the offline checks. Main rejection causes:
+[22:05:36]    1604  CDR3 >= 85% identical to an archived CDR
+[22:05:36]     527  human J identity 85.7 < 86
+[22:05:36]     256  V gene ['IGHV3-23'] is not the epoch's I
+[22:05:36]      24  human V identity 81.6 < 82
+[22:05:36]      23  V gene ['IGHV3-64D'] is not the epoch's 
+[22:05:36]       5  V gene ['IGHV3-7'] is not the epoch's IG
+[22:05:36] 204 of 2547 candidates have liability_count <= 8
+[22:05:37] 
+ranking 204 candidates against 200 recent archived sequences
+[22:08:58] 
+ranked in one pool with 200 recent real submissions (which score 1247 best, 2368 median):
+[22:08:58]   our best candidate scores 363 -> place 1 of 201
+[22:08:58]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26177/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26177/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26177/tnp/tnp_stdout.log
+[22:11:48] 31 of 40 candidates exceed the validator's strict PSH limit of 89 (ours median 95); keeping the least hydrophobic
+[22:11:53] developability: TNP rejected 3, A3D rejected 21
+[22:11:53] 3 of 40 clear the developability gate
+[22:11:53] BoltzGen on 3 candidates...
+[22:16:09] UID 22, reveal round 33734438, pointer 0xRozier/sn68-submissions/main/a93e3aa86d138b89aae0.txt
+[22:16:09] submission file written to /root/nova-lab/data/mining/epoch26177/a93e3aa86d138b89aae0.txt
+[22:16:09] committing the pointer on chain...
+[22:16:38] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x2e796c0a3f8f580df9886879d503bff5c72df555676da9ee9eea015d44e0246ea52b3181843a14ad950c35d60ccb59729d73979512a42f212679018aed14b388'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/a93e3aa86d138b89aae0.txt'}]]}}, 'nonce': 5, 'era': {'period': 128, 'current': 9449970}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/a93e3aa86d138b89aae0.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0xdf5e3fc644d546dbc5136a555033747e89035da63a5c8313f0691ac78bbe2e73>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[22:16:38] uploading the encrypted file to GitHub...
+[22:16:40] submitted
+[23:13:20] epoch 26178: V IGHV3-74, CDR3 6; block 9450258, deadline 9450597 (68 min)
+[23:13:21] epoch 26178: V gene IGHV3-74, CDR3 length 6
+[23:13:21] 3253 of 12664 archived sequences clear today's germline floors with margin
+[23:13:23] 80 framework donors (IGHV3-74), 120 CDR3 donors of length 6
+[23:13:23] generated 5000 distinct candidates; checking validity...
+[23:16:39] 3837 pass the offline checks. Main rejection causes:
+[23:16:39]     721  human J identity 85.7 < 86
+[23:16:39]     169  V gene ['IGHV3-23'] is not the epoch's I
+[23:16:39]     129  human V identity 81.6 < 82
+[23:16:39]      92  CDR3 >= 85% identical to an archived CDR
+[23:16:39]      11  V gene ['IGHV3-64D'] is not the epoch's 
+[23:16:39]      10  human J identity 78.6 < 86
+[23:16:39] 369 of 3837 candidates have liability_count <= 8
+[23:16:42] 
+ranking 369 candidates against 200 recent archived sequences
+[23:20:10] 
+ranked in one pool with 200 recent real submissions (which score 1082 best, 3746 median):
+[23:20:10]   our best candidate scores 508 -> place 1 of 201
+[23:20:10]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26178/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26178/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26178/tnp/tnp_stdout.log
+[23:22:36] 4 of 40 candidates exceed the validator's strict PSH limit of 89 (ours median 81); keeping the least hydrophobic
+[23:22:40] developability: TNP rejected 4, A3D rejected 12
+[23:22:40] 22 of 40 clear the developability gate
+[23:22:40] BoltzGen on 22 candidates...
+[23:31:10] UID 22, reveal round 33735882, pointer 0xRozier/sn68-submissions/main/e51797de54cfe2030088.txt
+[23:31:10] submission file written to /root/nova-lab/data/mining/epoch26178/e51797de54cfe2030088.txt
+[23:31:10] committing the pointer on chain...
+[23:31:37] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x6cafe13e4066b1e0d4ba93fe0345658af698f0bd95a7a05aa88ad001a1d78c78cd7f86ad11194d59a35e46b425abcbf3496852064565c041c7453e1b714e1085'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/e51797de54cfe2030088.txt'}]]}}, 'nonce': 6, 'era': {'period': 128, 'current': 9450345}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/e51797de54cfe2030088.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x518efad314ffbd41fa1d7d58b22452cad0cb3669f77947e99006b1171b7c7655>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[23:31:37] uploading the encrypted file to GitHub...
+[23:31:39] submitted
+[00:26:08] epoch 26179: V IGHV3-23, CDR3 15; block 9450622, deadline 9450958 (67 min)
+[00:26:09] epoch 26179: V gene IGHV3-23, CDR3 length 15
+[00:26:09] 3253 of 12664 archived sequences clear today's germline floors with margin
+[00:26:11] 80 framework donors (IGHV3-23), 120 CDR3 donors of length 15
+[00:26:11] generated 5000 distinct candidates; checking validity...
+[00:29:34] 2353 pass the offline checks. Main rejection causes:
+[00:29:34]    1431  CDR3 >= 85% identical to an archived CDR
+[00:29:34]     812  human J identity 85.7 < 86
+[00:29:34]     291  V gene ['IGHV3-74'] is not the epoch's I
+[00:29:34]      60  human V identity 81.6 < 82
+[00:29:34]      25  human J identity 78.6 < 86
+[00:29:34]      22  V gene ['IGHV3-64D'] is not the epoch's 
+[00:29:34] 31 of 2353 candidates have liability_count <= 8
+[00:29:34] 
+ranking 31 candidates against 200 recent archived sequences
+[00:32:03] 
+ranked in one pool with 200 recent real submissions (which score 243 best, 919 median):
+[00:32:03]   our best candidate scores 109 -> place 1 of 201
+[00:32:03]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26179/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26179/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26179/tnp/tnp_stdout.log
+[00:34:14] 26 of 30 candidates exceed the validator's strict PSH limit of 89 (ours median 97); keeping the least hydrophobic
+[00:34:18] developability: TNP rejected 2, A3D rejected 16
+[00:34:18] 4 of 30 clear the developability gate
+[00:34:18] BoltzGen on 4 candidates...
+[00:38:43] UID 22, reveal round 33737325, pointer 0xRozier/sn68-submissions/main/a4c2f9d8c0a554f1d950.txt
+[00:38:43] submission file written to /root/nova-lab/data/mining/epoch26179/a4c2f9d8c0a554f1d950.txt
+[00:38:43] committing the pointer on chain...
+[00:39:13] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x1a6084eea4136abbd482d508f634126a67a39c4fa026dc8cbf1d503f33938701b24f93eff99ccbb88adecb28e091ab258da1128d18c0d13bbe9277ce22734182'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/a4c2f9d8c0a554f1d950.txt'}]]}}, 'nonce': 7, 'era': {'period': 128, 'current': 9450683}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/a4c2f9d8c0a554f1d950.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0x6a054b07e2765baec6012ed906159d97bf2e89e818ee9cb39e294984c33a9398>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[00:39:13] uploading the encrypted file to GitHub...
+[00:39:15] submitted
+[01:37:44] epoch 26180: V IGHV3-23, CDR3 13; block 9450980, deadline 9451319 (68 min)
+[01:37:45] epoch 26180: V gene IGHV3-23, CDR3 length 13
+[01:37:45] 3253 of 12664 archived sequences clear today's germline floors with margin
+[01:37:46] 80 framework donors (IGHV3-23), 120 CDR3 donors of length 13
+[01:37:47] generated 5000 distinct candidates; checking validity...
+[01:42:40] 3561 pass the offline checks. Main rejection causes:
+[01:42:40]     860  human J identity 85.7 < 86
+[01:42:40]     314  V gene ['IGHV3-74'] is not the epoch's I
+[01:42:40]     167  CDR3 >= 85% identical to an archived CDR
+[01:42:40]      61  human V identity 81.6 < 82
+[01:42:40]      26  V gene ['IGHV3-64D'] is not the epoch's 
+[01:42:40]       5  V gene ['IGHV3-53'] is not the epoch's I
+[01:42:40] 34 of 3561 candidates have liability_count <= 8
+[01:42:41] 
+ranking 34 candidates against 200 recent archived sequences
+[01:45:23] 
+ranked in one pool with 200 recent real submissions (which score 256 best, 942 median):
+[01:45:23]   our best candidate scores 119 -> place 1 of 201
+[01:45:23]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26180/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26180/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26180/tnp/tnp_stdout.log
+[01:47:35] 22 of 33 candidates exceed the validator's strict PSH limit of 89 (ours median 93); keeping the least hydrophobic
+[01:47:39] developability: TNP rejected 0, A3D rejected 14
+[01:47:39] 9 of 33 clear the developability gate
+[01:47:39] BoltzGen on 9 candidates...
+[01:53:19] UID 22, reveal round 33738769, pointer 0xRozier/sn68-submissions/main/9628293ddc5420445395.txt
+[01:53:19] submission file written to /root/nova-lab/data/mining/epoch26180/9628293ddc5420445395.txt
+[01:53:19] committing the pointer on chain...
+[01:53:50] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0x2c1bd469f90f24e82dec539118d59944f62fd695dfe5f953dfc1b07f20c9e058d7ea63aa11b81b5421665802a1c03367291b0289ea2cd6bd5aae3e941522cf8d'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/9628293ddc5420445395.txt'}]]}}, 'nonce': 8, 'era': {'period': 128, 'current': 9451056}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/9628293ddc5420445395.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0xa990c7824decb202f366188494bbbfe9d1d6d5a1b8e6b0aa30f248c5c42e32dc>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[01:53:50] uploading the encrypted file to GitHub...
+[01:53:52] submitted
+[02:50:23] epoch 26181: V IGHV3-64, CDR3 11; block 9451343, deadline 9451680 (67 min)
+[02:50:24] epoch 26181: V gene IGHV3-64, CDR3 length 11
+[02:50:24] 3253 of 12664 archived sequences clear today's germline floors with margin
+[02:50:26] 80 framework donors (IGHV3-64), 120 CDR3 donors of length 11
+[02:50:26] generated 5000 distinct candidates; checking validity...
+[02:53:51] 3139 pass the offline checks. Main rejection causes:
+[02:53:51]     958  human J identity 85.7 < 86
+[02:53:51]     440  V gene ['IGHV3-23'] is not the epoch's I
+[02:53:51]     123  CDR3 >= 85% identical to an archived CDR
+[02:53:51]      98  human V identity 81.6 < 82
+[02:53:51]      66  V gene ['IGHV3-64D'] is not the epoch's 
+[02:53:51]      50  human J identity 78.6 < 86
+[02:53:51] 599 of 3139 candidates have liability_count <= 8
+[02:53:56] 
+ranking 599 candidates against 200 recent archived sequences
+[02:57:29] 
+ranked in one pool with 200 recent real submissions (which score 3401 best, 5874 median):
+[02:57:29]   our best candidate scores 872 -> place 1 of 201
+[02:57:29]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26181/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26181/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26181/tnp/tnp_stdout.log
+[03:00:15] 25 of 40 candidates exceed the validator's strict PSH limit of 89 (ours median 92); keeping the least hydrophobic
+[03:00:20] developability: TNP rejected 6, A3D rejected 21
+[03:00:20] 3 of 40 clear the developability gate
+[03:00:20] BoltzGen on 3 candidates...
+[03:04:42] UID 22, reveal round 33740213, pointer 0xRozier/sn68-submissions/main/d1e92948e21570db4f60.txt
+[03:04:42] submission file written to /root/nova-lab/data/mining/epoch26181/d1e92948e21570db4f60.txt
+[03:04:42] committing the pointer on chain...
+[03:05:14] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0xd48f0fbc7d371d52f076e384def23d24162de9b89d09c4edd55c6c7a3fe81c2d1db130e19b01824417764049a5a6ee9c2db0306a044a889fc8f41449b40e498e'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/d1e92948e21570db4f60.txt'}]]}}, 'nonce': 9, 'era': {'period': 128, 'current': 9451413}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/d1e92948e21570db4f60.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0xa5ad2efca7e07a4448850210249b23a6ec1a92fb8952e72f46a3188e0a257bbb>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[03:05:14] uploading the encrypted file to GitHub...
+[03:05:16] submitted
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/nova-lab/scripts/mine.py", line 353, in <module>
+    main()
+  File "/root/nova-lab/scripts/mine.py", line 331, in main
+    params = resolve_epoch(None)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-lab/scripts/check_nanobody.py", line 26, in resolve_epoch
+    st = bt.Subtensor("wss://archive.chain.opentensor.ai:443" if epoch else "finney")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/bittensor/core/subtensor.py", line 258, in __init__
+    self.substrate = self._get_substrate(
+                     ^^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/bittensor/core/subtensor.py", line 367, in _get_substrate
+    return SubstrateInterface(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/async_substrate_interface/sync_substrate.py", line 539, in __init__
+    self.ws = self.connect(init=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/async_substrate_interface/sync_substrate.py", line 627, in connect
+    return connect(self.chain_endpoint, max_size=self.ws_max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/sync/client.py", line 816, in connect
+    connection = connecter.connect()
+                 ^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/sync/client.py", line 496, in connect
+    connection = self.open_connection(deadline)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/sync/client.py", line 406, in open_connection
+    connection.handshake(
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/sync/client.py", line 132, in handshake
+    raise self.protocol.handshake_exc
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/client.py", line 334, in parse
+    self.process_response(response)
+  File "/root/nova-upstream/.venv/lib/python3.12/site-packages/websockets/client.py", line 145, in process_response
+    raise InvalidStatus(response)
+websockets.exceptions.InvalidStatus: server rejected WebSocket connection: HTTP 429
+--- RESTART AFTER 429 CRASH ---
+[07:51:17] epoch 26185: V IGHV3-74, CDR3 5; block 9452848, deadline 9453124 (55 min)
+[07:51:18] epoch 26185: V gene IGHV3-74, CDR3 length 5
+[07:51:18] 3253 of 12664 archived sequences clear today's germline floors with margin
+[07:51:20] 80 framework donors (IGHV3-74), 120 CDR3 donors of length 5
+[07:51:20] generated 5000 distinct candidates; checking validity...
+[07:54:34] 3319 pass the offline checks. Main rejection causes:
+[07:54:34]     787  CDR3 >= 85% identical to an archived CDR
+[07:54:34]     563  human J identity 85.7 < 86
+[07:54:34]     173  V gene ['IGHV3-23'] is not the epoch's I
+[07:54:34]      84  human V identity 81.6 < 82
+[07:54:34]      40  V gene ['IGHV3-64D'] is not the epoch's 
+[07:54:34]      13  human J identity 78.6 < 86
+[07:54:34] 394 of 3319 candidates have liability_count <= 8
+[07:54:37] 
+ranking 394 candidates against 200 recent archived sequences
+[07:57:41] 
+ranked in one pool with 200 recent real submissions (which score 1000 best, 3939 median):
+[07:57:41]   our best candidate scores 493 -> place 1 of 201
+[07:57:41]   predicted only: confirm with BoltzGen before trusting it
+/root/nova-upstream/.venv/bin/TNP --file /root/nova-lab/data/mining/epoch26185/tnp/candidates.fasta --ncores 4 --output /root/nova-lab/data/mining/epoch26185/tnp/TNP_output
+TNP exit 0; log -> /root/nova-lab/data/mining/epoch26185/tnp/tnp_stdout.log
+[08:00:00] 1 of 40 candidates exceed the validator's strict PSH limit of 89 (ours median 80); keeping the least hydrophobic
+[08:00:05] developability: TNP rejected 4, A3D rejected 10
+[08:00:05] 25 of 40 clear the developability gate
+[08:00:05] BoltzGen on 25 candidates...
+[08:09:23] UID 22, reveal round 33745990, pointer 0xRozier/sn68-submissions/main/56175e937d10c5dc4332.txt
+[08:09:23] submission file written to /root/nova-lab/data/mining/epoch26185/56175e937d10c5dc4332.txt
+[08:09:23] committing the pointer on chain...
+[08:10:02] commitment: ExtrinsicResponse:
+	success: True
+	message: Success
+	extrinsic_function: publish_metadata_extrinsic
+	extrinsic: {'account_id': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'signature': {'Sr25519': '0xe2ed7848fb8d8c0f28cbb97bc77aca84cd9c25a506d96bfe07f1bc2d19f1361b497aefff397e893d9d01cc33455ba66c738d2f39aff49a81d9ba250ff7982c8a'}, 'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/56175e937d10c5dc4332.txt'}]]}}, 'nonce': 10, 'era': {'period': 128, 'current': 9452936}, 'tip': 0, 'asset_id': {'tip': 0, 'asset_id': None}, 'mode': 'Disabled', 'signature_version': 1, 'address': '0x4e61520d40296ed1511e9b40ba7147613ae1cabd56876aa24f12fefd77ef985d', 'call': {'call_function': 'set_commitment', 'call_module': 'Commitments', 'call_args': {'netuid': 68, 'info': {'fields': [[{'Raw55': b'0xRozier/sn68-submissions/main/56175e937d10c5dc4332.txt'}]]}}}}
+	extrinsic_fee: τ0.000000000
+	extrinsic_receipt: ExtrinsicReceipt<hash:0xcaf17e3491f2991824831190098a300881415dbc824a35c45233ee0e8d984a69>
+
+	mev_extrinsic: None
+	transaction_tao_fee: None
+	transaction_alpha_fee: None
+	error: None
+	data: None
+
+[08:10:02] uploading the encrypted file to GitHub...
+[08:10:03] submitted
