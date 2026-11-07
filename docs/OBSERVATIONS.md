@@ -265,3 +265,69 @@ fichier n'a jamais été publié. C'est exactement le mode d'échec « pointeur
 orphelin » que le code signale — l'engagement réussit, le push échoue, l'époque
 est perdue. Il s'est produit à la première époque. Le `status` du journal du
 mineur devrait le montrer comme `upload_failed`.
+
+---
+
+# Diagnostic du 2026-11-07 : 0 sur 10, cause inconnue
+
+## Le fait
+
+Votre journal couvre 11 époques : 1 `upload_failed` (26172, le pointeur
+orphelin que le code annonçait) et **10 soumises**, dont 9 avec classement
+BoltzGen. Sur les 9 époques dont les métriques sont publiées, **l'UID 22 est
+absent des 9**.
+
+À un taux de rejet de base de 50 %, neuf rejets consécutifs ont une probabilité
+de 0,2 %. Ce n'est pas du bruit, c'est déterministe.
+
+## Trois hypothèses formulées, trois réfutées
+
+| Hypothèse | Test | Verdict |
+|---|---|---|
+| seuil strict PSH ≤ 89 | PSH des acceptées de la **même** époque | **réfutée** : 16 des 36 acceptées dépassent 89 |
+| dérive du temps de bloc | horodatages réels de la chaîne | **réfutée** : +1,9 min de marge à la fin de l'époque |
+| engagement trop précoce | taux de notation par position dans l'époque | **réfutée** : 45 % vs 54 %, p = 0,17 |
+
+La deuxième venait d'une mesure fausse de ma part : j'avais pris les
+horodatages du journal du mineur pour une horloge de blocs, alors que le mineur
+a redémarré entre 26181 et 26185. La chaîne tourne bien à 12,00 s et son
+horloge est synchrone à 0,2 min près.
+
+## Ce qui est vérifié comme correct
+
+- l'engagement arrive sur la chaîne, dans la fenêtre acceptée
+  (`start_block < bloc < fin − 10`)
+- le fichier est public et lisible : HTTP 200 sur `raw.githubusercontent.com`
+- le chiffrement timelock vise le bon round, avec **+1,9 min de marge** avant
+  que le validateur ne déchiffre
+- notre propre déchiffrement des fichiers réussit
+- toutes les règles reproductibles passent : séquence, gène V, identités
+  germinales, VHH, cystéines, longueur de CDR3, unicité, similarité, les six
+  drapeaux de TNP, Aggrescan3D
+- la séquence de 26174 n'a aucun drapeau rouge et se tient en milieu de peloton
+  parmi les 37 de son époque
+
+**Je n'ai pas la cause.**
+
+## Ce qui reste vrai et actionnable
+
+**Le rejet est la norme pour tout le monde.** Sur 71 époques, taux de rejet
+médian 50 %, et il varie de 12 % à 82 % selon l'opérateur. Mes estimations
+mesuraient le classement *parmi les soumissions déjà admises* : il fallait les
+multiplier par une probabilité d'admission que je n'ai jamais mesurée.
+
+**Le vivier de donneurs était périmé de 149 époques** en production (corrigé :
+le mineur refuse désormais au-delà de 40 époques de retard). C'est une vraie
+faute, mais elle n'explique pas un rejet déterministe — un candidat médiocre
+serait noté et mal classé, pas écarté.
+
+## La seule piste qui ne soit pas une devinette
+
+Chaque rejet écrit un `bt.logging.warning` nommant la raison exacte, dans le log
+du validateur : `not developable`, `PSH strict rejection`, `not unique`,
+`sequences that are not VHH`, etc. Une seule de ces lignes répondrait à ce que
+trois hypothèses et une journée de rétro-ingénierie n'ont pas résolu.
+
+Il faut la demander sur le Discord de NOVA, avec l'UID 22 et une époque précise
+(26174 est la meilleure : seulement 2 rejets sur 38, donc la question est
+nette).
