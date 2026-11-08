@@ -7,11 +7,14 @@ The loop per epoch, in order:
      (scripts.check_config) — a changed target makes every candidate worthless;
   3. generate and keep what the offline checker accepts
      (scripts.propose_nanobody);
-  4. screen the shortlist through both halves of the validator's developability
-     stage: TNP (measured: rejects ~2.4% of our output) and Aggrescan3D, which
-     requires a3d_average <= -0.680 and a3d_maximum <= 1.580 and rejects ~39%
-     of it, almost always on the peak. Skipping this screen is what turns a
-     generated winner into a silent rejection;
+  4. measure PSH on a LARGE pool and keep the least hydrophobic, then run the
+     rest of the developability gate on the survivors. The validator refuses
+     PSH > 89 outright, which rejected all 11 production submissions, and PSH
+     cannot be predicted from the sequence: the best proxies reach Spearman
+     0.30 on the length-corrected residual, swinging from -0.22 to +0.58
+     depending on CDR3 length. So it has to be measured. It is cheap — 3.6 s
+     per candidate on 4 cores — and only 21% of our candidates come in under
+     87.4, so the pool has to be wide for the screen to yield anything;
   5. rank the survivors with BoltzGen, not the surrogate. Measured over 21
      epochs: picking by BoltzGen wins 48% of them, picking by the surrogate
      14% — worse than picking at random, which wins 23%. The surrogate is a
@@ -108,6 +111,36 @@ def config_unchanged() -> bool:
             if "DIFF" in line or "- " in line:
                 log(f"  {line.strip()}")
     return proc.returncode == 0
+
+
+def psh_select(sequences: list[str], keep: int, work: Path) -> tuple[list[str], dict]:
+    """Measure PSH on every candidate and return the `keep` least hydrophobic.
+
+    PSH is computed on a predicted structure, and NanoBodyBuilder2 is not
+    deterministic: re-predicting one sequence three times gave 89.07, 91.86 and
+    92.53, a standard deviation of 1.83 against a threshold of 89. So a single
+    measurement cannot be trusted near the limit, and our local value cannot be
+    calibrated to the validator's — both are draws from the same distribution.
+    Selecting the lowest is what buys margin; `--psh-margin` sets how much.
+    """
+    from scripts.tnp_developability import TNP, parse, run
+    if not TNP.exists():
+        log(f"TNP not installed at {TNP}; cannot measure PSH. The validator "
+            f"refuses PSH > {PSH_STRICT} and that rejected every production "
+            f"submission, so this is not a screen to skip.")
+        return sequences[:keep], {}
+    work.mkdir(parents=True, exist_ok=True)
+    names = {f"cand{i}": s for i, s in enumerate(sequences)}
+    (work / "candidates.fasta").write_text(
+        "".join(f">{n}\n{s}\n" for n, s in names.items()))
+    df = parse(run(work / "candidates.fasta", 4, work))
+    psh = {names[n]: v for n, v in zip(df["name"], df["PSH"]) if n in names}
+    if not psh:
+        return sequences[:keep], {}
+    ranked = sorted(psh, key=lambda s: psh[s])
+    log(f"PSH measured on {len(psh)} candidates: best {psh[ranked[0]]:.1f}, "
+        f"median {psh[ranked[len(ranked) // 2]]:.1f}; keeping the {keep} lowest")
+    return ranked[:keep], psh
 
 
 def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
@@ -234,7 +267,8 @@ def mine_epoch(st, args, params: dict) -> dict:
 
     result = propose(params, args.target, candidates=args.candidates,
                      n_donors=args.donors, n_cdr3=args.cdr3_pool,
-                     shortlist=args.shortlist, seed=args.seed + epoch, log=log)
+                     shortlist=max(args.psh_pool, args.shortlist),
+                     seed=args.seed + epoch, log=log)
     shortlist = result["shortlist"]
     entry.update({"generated": result["generated"], "valid": result["valid"],
                   "status": result["status"]})
@@ -244,6 +278,23 @@ def mine_epoch(st, args, params: dict) -> dict:
 
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
+
+    # PSH first, on the whole pool: it is the gate that rejected every
+    # production submission, and selecting on it needs a wide funnel rather
+    # than a filter at the end of a narrow one.
+    sequences, psh = psh_select(sequences, args.shortlist, work / "psh")
+    if psh:
+        best = min(psh[s] for s in sequences)
+        entry["psh_best"] = round(best, 2)
+        entry["psh_selected_max"] = round(max(psh[s] for s in sequences), 2)
+        if best > PSH_STRICT - args.psh_margin:
+            log(f"best PSH is {best:.1f}; the validator refuses above "
+                f"{PSH_STRICT} and our measurement's deviation is 1.8, so this "
+                f"epoch has no candidate with margin. Skipping rather than "
+                f"spending GPU on a submission that will be refused.")
+            entry["status"] = "psh_no_margin"
+            return entry
+
     verdict = developability_screen(sequences, work / "tnp")
     if verdict:
         kept = [s for s in sequences if verdict.get(s, True)]
@@ -332,7 +383,15 @@ def main():
     parser.add_argument("--donors", type=int, default=40)
     parser.add_argument("--cdr3-pool", type=int, default=60)
     parser.add_argument("--shortlist", type=int, default=8,
-                        help="candidates sent to BoltzGen; ~1.6 min each on 2x T4")
+                        help="candidates sent to BoltzGen after the PSH cut; "
+                             "~1.6 min each on 2x T4")
+    parser.add_argument("--psh-pool", type=int, default=300,
+                        help="candidates to measure PSH on before selecting; "
+                             "3.6 s each on 4 cores, and only ~21% come in under "
+                             "87.4, so a narrow pool yields nothing")
+    parser.add_argument("--psh-margin", type=float, default=3.6,
+                        help="required headroom under the validator's PSH limit; "
+                             "3.6 is twice the 1.8 deviation of a single measurement")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-donor-lag", type=int, default=40,
                         help="refuse to submit if the donor pool is older than this "
