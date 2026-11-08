@@ -271,6 +271,14 @@ raffinement OpenMM n'est pas déterministe, les PDB diffèrent au MD5) :
 **Étendue 3,46 — écart-type 1,83 — pour un seuil à 89.** Une réplique passe,
 les deux autres échouent.
 
+> **Correction du 2026-11-08 (plus tard).** Ce 1,83 vient de 3 répliques d'une
+> *seule* séquence et sous-estime largement le bruit. Mesuré ensuite sur
+> **10 séquences mesurées deux fois chacune** : écart-type de la différence
+> 5,67, donc **écart-type d'une mesure 4,01**. Les deux mesures restent bien
+> ordonnées (Spearman 0,89) mais l'écart médian entre elles est de 3,3 points.
+> Conséquence directe : la marge de 3,6 que j'avais mise dans le mineur ne
+> valait que 0,9 σ. Il faut 8,0 pour 2 σ sur une mesure unique.
+
 Ce n'est donc pas un problème d'échelle : c'est le **même calcul, échantillonné
 une fois de chaque côté**. Notre 85 et leur 89,57 sont deux tirages de la même
 distribution. Cela explique aussi pourquoi 44 % des acceptées mesurent plus de
@@ -283,8 +291,21 @@ bruit. Seules deux choses aident.
 ## Ce qui marche réellement
 
 **1. Moyenner les répliques.** Prédire la structure k fois réduit l'écart-type
-de √k. À k=5, σ passe de 1,83 à 0,82, et une marge de 2σ donne un seuil
-utilisable de **87,4** au lieu de 85,3.
+de √k. Avec σ = 4,01 :
+
+| k plis | σ de la moyenne | Marge 2σ | Seuil utilisable | Nos candidats qui passent |
+|---|---|---|---|---|
+| 1 | 4,01 | 8,0 | 81,0 | 12 % |
+| **3** | **2,32** | **4,6** | **84,4** | **17 %** |
+| 5 | 1,79 | 3,6 | 85,4 | 17 % |
+
+k=3 est le bon compromis : il récupère l'essentiel de la marge pour trois fois
+le coût, et k=5 n'ajoute presque rien.
+
+Le criblage se fait donc en **deux étages** : une passe unique sur tout le
+vivier (3,6 s par candidat), puis k−1 passes sur la tête de classement. Pour un
+vivier de 300 dont on garde 40, cela fait ~23 min contre 54 si l'on repliait
+tout k fois — dans un budget d'époque de 66 min utilisables.
 
 **2. Générer moins hydrophobe.** C'est le vrai blocage :
 
