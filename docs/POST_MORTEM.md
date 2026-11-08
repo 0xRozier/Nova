@@ -228,3 +228,79 @@ All production data is preserved in this repository:
 - `scores_*.csv` — BoltzGen observation scores (6 files)
 - `boltzgen_*.log` — scoring run logs (5 files)
 - `docs/OBSERVATIONS.md` — real-time observations and analysis
+
+---
+
+# Addendum du 2026-11-08 : la PSH n'est pas mal calibrée, elle est bruitée
+
+Le log W&B tranche la cause, et il corrige une erreur de raisonnement de ma part :
+j'avais écarté l'hypothèse PSH parce que ma reproduction de sa *valeur* était
+mauvaise. Un mécanisme ne cesse pas d'être la cause parce qu'on le mesure mal.
+
+Mais le diagnostic « échelle d'hydrophobicité ou version de TNP différente »
+est lui aussi faux, et la correction proposée aggraverait le problème.
+
+## Le correctif proposé (seuil local à 75) rejetterait tout
+
+Les 36 soumissions **acceptées** de l'époque 26174 ont, sur notre échelle, une
+PSH de 75,3 à 99,3 (médiane 87,8). Elles passent toutes chez le validateur.
+
+| Seuil local | Part des séquences qui PASSENT chez le validateur qu'il conserverait |
+|---|---|
+| 75 | **0 %** |
+| 80 | 6 % |
+| 85 | 36 % |
+| 89 | 56 % |
+| 95 | 89 % |
+
+Un seuil à 75 éliminerait **toutes** les séquences acceptables. Les deux
+échelles se chevauchent sans relation monotone : aucun décalage constant ne
+les relie.
+
+## Pourquoi : la PSH dépend d'une structure prédite non déterministe
+
+Même séquence, structure reprédite trois fois par NanoBodyBuilder2 (le
+raffinement OpenMM n'est pas déterministe, les PDB diffèrent au MD5) :
+
+| Réplique | PSH |
+|---|---|
+| 1 | 89,07 |
+| 2 | 91,86 |
+| 3 | 92,53 |
+
+**Étendue 3,46 — écart-type 1,83 — pour un seuil à 89.** Une réplique passe,
+les deux autres échouent.
+
+Ce n'est donc pas un problème d'échelle : c'est le **même calcul, échantillonné
+une fois de chaque côté**. Notre 85 et leur 89,57 sont deux tirages de la même
+distribution. Cela explique aussi pourquoi 44 % des acceptées mesurent plus de
+89 chez nous : les mineurs se placent juste sous la limite et le bruit de mesure
+les disperse des deux côtés.
+
+**Conséquence : aucune calibration n'est possible.** On ne calibre pas contre du
+bruit. Seules deux choses aident.
+
+## Ce qui marche réellement
+
+**1. Moyenner les répliques.** Prédire la structure k fois réduit l'écart-type
+de √k. À k=5, σ passe de 1,83 à 0,82, et une marge de 2σ donne un seuil
+utilisable de **87,4** au lieu de 85,3.
+
+**2. Générer moins hydrophobe.** C'est le vrai blocage :
+
+| | PSH médiane | PSH ≤ 87,4 |
+|---|---|---|
+| nos candidats | **98,1** | 18 sur 84 |
+| acceptées | 90,0 | 24 sur 84 |
+
+Notre générateur sort des candidats **8 points trop hydrophobes**. Le filtre ne
+peut pas réparer ça : il ne fait que vider l'entonnoir, ce qui est exactement
+le goulot du tableau « Candidate diversity too low » plus haut (4 candidats
+notés sur 5000 générés). Il faut pénaliser les résidus hydrophobes en CDR à la
+génération, pas filtrer après.
+
+## Coût réel de l'erreur
+
+Mon filtre PSH, déployé à l'époque 26177, n'a donc rien pu corriger : il opérait
+sur une valeur dont le bruit couvre la marge, et il a réduit l'entonnoir de 30
+candidats à 4 sans améliorer la probabilité de passer. Deux défauts cumulés.
