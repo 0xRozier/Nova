@@ -44,15 +44,19 @@ PSH_SIGMA = 4.01  # one measurement, from 10 sequences measured twice
 A3D_MAX_AVERAGE = -0.68002724866200
 A3D_MAX_PEAK = 1.58023066762925
 # Aggrescan3D rests on the same predicted structure as PSH, so it carries the
-# same kind of noise, smaller: three folds of one sequence deviate by 0.0091 on
-# the average and 0.0019 on the peak. The calibration refused one of the 36
-# accepted submissions at -0.679 against a -0.680 cap, which is 0.1 deviation
-# past it — indistinguishable from noise. So a breach counts as a refusal only
-# beyond two deviations, and anything inside that band is a risk, not a verdict.
-A3D_SIGMA_AVERAGE = 0.0091
-A3D_SIGMA_PEAK = 0.0019
-A3D_BAND_AVERAGE = 2 * A3D_SIGMA_AVERAGE
-A3D_BAND_PEAK = 2 * A3D_SIGMA_PEAK
+# same kind of noise. Measured on 37 sequences folded three times each:
+#
+#   average  deviation 0.0087
+#   peak     deviation 0.0211 median, 0.1248 at the 90th percentile, 0.2959 max
+#
+# The peak is a maximum over residues, so it is far noisier and heavy-tailed; a
+# first estimate from three folds of ONE sequence gave 0.0019, eleven times too
+# small, and the calibration duly refused an accepted submission whose peak
+# breached by 0.084 — well inside the real noise. Both statistics are therefore
+# averaged over the folds, which divides the deviation by root k, and a breach
+# counts as a refusal only beyond two deviations of that mean.
+A3D_SIGMA_AVERAGE = 0.0087
+A3D_SIGMA_PEAK = 0.0211
 
 
 def rejection_probability(mean: float, folds: int) -> float:
@@ -94,16 +98,32 @@ def structural(sequences: list[str], work: Path, folds: int) -> pd.DataFrame:
             rows[names[n]]["tnp_greys"] = int(greys)
             rows[names[n]]["tnp_red_on"] = first.loc[first["name"] == n, "red_on"].iat[0]
 
-    a3d, a3d_values = a3d_screen(names, work / "fold1" / "TNP_output" / "Final_Models",
-                                 work / "a3d", with_values=True)
+    # Score every fold's structures and average, so the peak's noise shrinks.
+    per_fold: dict[str, list[tuple[float, float]]] = {s: [] for s in sequences}
+    for fold in range(1, folds + 1):
+        models = work / f"fold{fold}" / "TNP_output" / "Final_Models"
+        if not models.exists():
+            continue
+        _, values = a3d_screen(names, models, work / f"a3d{fold}", with_values=True)
+        for seq, pair in values.items():
+            per_fold[seq].append(pair)
+
+    band_avg = 2 * A3D_SIGMA_AVERAGE / math.sqrt(max(folds, 1))
+    band_peak = 2 * A3D_SIGMA_PEAK / math.sqrt(max(folds, 1))
     for s in sequences:
-        rows[s]["a3d_pass"] = a3d.get(s)
-        avg, peak = a3d_values.get(s, (float("nan"), float("nan")))
+        seen = per_fold.get(s) or []
+        if not seen:
+            rows[s]["a3d_average"] = rows[s]["a3d_peak"] = float("nan")
+            rows[s]["a3d_refused"] = rows[s]["a3d_borderline"] = False
+            rows[s]["a3d_folds"] = 0
+            continue
+        avg = sum(a for a, _ in seen) / len(seen)
+        peak = sum(p for _, p in seen) / len(seen)
         rows[s]["a3d_average"], rows[s]["a3d_peak"] = avg, peak
-        # Beyond the band it is a refusal; inside it, only a risk.
-        over_avg = (avg - A3D_MAX_AVERAGE) if avg == avg else 0.0
-        over_peak = (peak - A3D_MAX_PEAK) if peak == peak else 0.0
-        rows[s]["a3d_refused"] = (over_avg > A3D_BAND_AVERAGE) or (over_peak > A3D_BAND_PEAK)
+        rows[s]["a3d_folds"] = len(seen)
+        over_avg = avg - A3D_MAX_AVERAGE
+        over_peak = peak - A3D_MAX_PEAK
+        rows[s]["a3d_refused"] = (over_avg > band_avg) or (over_peak > band_peak)
         rows[s]["a3d_borderline"] = (not rows[s]["a3d_refused"]) and (
             over_avg > 0 or over_peak > 0)
         folds_seen = rows[s]["psh_folds"]
