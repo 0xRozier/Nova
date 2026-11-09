@@ -6,6 +6,7 @@
 |---|---|
 | `results/psh_by_generator.csv` | 540 candidats, 3 stratégies × 3 longueurs de CDR3, PSH mesurée (§3) |
 | `results/place_vs_psh.csv` | 21 époques : place dans le champ complet, PSH, admissibilité (§3bis) |
+| `results/psh_by_length.csv` | 120 séquences **acceptées** par les validateurs, PSH par longueur de CDR3 (§3ter) |
 | `results/tnp_epoch26174.csv` | les 36 acceptées de l'époque 26174 + notre rejetée, 6 métriques TNP (§2) |
 | `results/aggrescan_epoch26174.csv` | Aggrescan3D sur ce même champ (§2) |
 | `results/tnp_developability.csv` | TNP sur nos 84 candidats et 84 soumissions réelles (§4) |
@@ -223,6 +224,62 @@ D'où la question que la mesure suivante tranche : la PSH des séquences que les
 validateurs ont **acceptées** à CDR3 ≥ 17. Leur PSH réelle est ≤ 89 par
 construction. Si elles lisent elles aussi au-dessus de 89 chez nous, le mur
 est en grande partie le nôtre (`scripts/psh_by_length.py`).
+
+---
+
+## 3ter. Le seuil PSH plat de 89 est faux tel que nous l'appliquons
+
+Mesure directe, `results/psh_by_length.csv` : 120 séquences que les validateurs
+ont **acceptées**, profilées par notre propre TNP, regroupées par la longueur de
+CDR3 que leur époque imposait. Chacune a franchi la porte `psh > 89 → rejet`,
+donc toute lecture au-dessus de 89 chez nous est un refus que nous aurions
+prononcé à tort.
+
+| Bande de CDR3 | n | Époques | PSH médiane | 90ᵉ pct | > 89 | Refusées à tort |
+|---|---|---|---|---|---|---|
+| court 5–8 | 18 | 13 | 85,1 | 92,6 | 28 % | 5 |
+| moyen 9–12 | 18 | 9 | 86,8 | 95,1 | 33 % | 6 |
+| long 13–16 | 30 | 13 | 90,6 | 97,0 | 60 % | 18 |
+| **très long 17+** | **54** | **20** | **92,0** | **100,5** | **76 %** | **41** |
+
+Pente : **+0,63 point de PSH par résidu de CDR3** (p = 2×10⁻⁸, R² = 0,23),
+Spearman ρ = 0,46 (p = 2×10⁻⁷).
+
+**Ce qui est établi.** À CDR3 ≥ 17, lire 92 est la lecture *typique* d'une
+séquence acceptée. Refuser un candidat parce que notre chiffre dépasse 89 y
+écarte 76 % de la population que le validateur admet. Le seuil plat doit
+devenir un quantile par longueur. C'est vrai quel qu'en soit le mécanisme.
+
+**Ce qui n'est pas établi — et que j'ai d'abord écrit à tort.** Que notre
+implémentation sur-lise. Deux mécanismes produisent la même signature :
+
+- **(a) biais** : notre chaîne lit trop haut à mesure que la boucle s'allonge
+  (NanoBodyBuilder2 sur CPU chez nous, sur GPU chez le validateur ; la
+  minimisation OpenMM reste sur CPU des deux côtés, donc l'écart viendrait du
+  réseau, pas du raffinement) ;
+- **(b) sélection** : la mesure du validateur est bruitée elle aussi
+  (σ = 4,01 mesuré) et sa porte retient la **queue chanceuse** d'une population
+  dont la PSH vraie est vers 98–100 ; notre tirage indépendant retombe sur la
+  vraie valeur, au-dessus de 89.
+
+J'ai simulé (b) : population vraie de moyenne 98–100 et de dispersion ~4,
+bruit σ = 4,01 des deux côtés → ensemble accepté de médiane ~92, 90ᵉ
+percentile ~99, part au-dessus de 89 ≈ 76 %. **(b) suffit quantitativement**,
+sans aucun biais de notre part. Le même jeu de paramètres implique un taux
+d'admission de 2 à 3 % par soumission longue — ce qui explique aussi, tout
+seul, pourquoi le champ n'a que 9 soumissions à ces longueurs.
+
+**Même correctif, espoirs différents.** Sous (a), un candidat long lu à 92
+passe le plus souvent ; sous (b), il passe environ une fois sur cinq. Les deux
+valent mieux que les **0 %** d'aujourd'hui, où nous refusons de soumettre dans
+un tiers du calendrier — celui où nous classons 1ᵉʳ contre 9 rivaux.
+
+Ce qui trancherait : notre PSH sur les soumissions que le validateur a
+**refusées** aux mêmes longueurs. Sous (a) elle sépare nettement refusées et
+acceptées ; sous (b) elle les sépare mal, les deux groupes venant de la même
+population coupée par un seuil bruité. Ces séquences sont dans
+`data/submissions/submissions.jsonl` (soumise mais non notée = refusée), donc
+la mesure ne coûte que du CPU.
 
 ---
 

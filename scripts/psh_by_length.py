@@ -113,16 +113,27 @@ def report(tnp: pd.DataFrame, meta: pd.DataFrame, out: Path) -> None:
     long_rows = scored[scored["bucket"] == long_label]
     if not long_rows.empty:
         share = (long_rows["PSH"] > PSH_STRICT).mean()
+        median = long_rows["PSH"].median()
         print(f"\nlecture du resultat, sur {len(long_rows)} sequences a CDR3 >= 17 :")
+        print(f"  {share:.0%} des sequences ACCEPTEES lisent au-dessus de {PSH_STRICT} chez"
+              f" nous (mediane {median:.1f}).")
         if share > 0.5:
-            print(f"  {share:.0%} des sequences ACCEPTEES lisent au-dessus de {PSH_STRICT} chez nous.")
-            print("  Notre PSH sur-lit quand la boucle s'allonge : le mur des epoques")
-            print("  longues est en grande partie le notre, pas celui du validateur.")
-            print("  Consequence : la marge PSH doit etre calibree par longueur, et nos")
-            print("  propres candidats longs ne doivent plus etre ecartes sur ce chiffre.")
+            print(f"  Ce qui est etabli : refuser un candidat parce que notre lecture")
+            print(f"  depasse {PSH_STRICT} est faux a cette longueur, puisque c'est la lecture")
+            print("  TYPIQUE d'une sequence acceptee. Le seuil plat doit devenir un")
+            print("  quantile par longueur.")
+            print("  Ce qui n'est PAS etabli : que notre implementation sur-lise. Deux")
+            print("  mecanismes produisent la meme signature, et le second suffit")
+            print("  quantitativement (voir FINDINGS 3ter) :")
+            print("    a. notre pipeline lit trop haut quand la boucle s'allonge ;")
+            print("    b. la mesure du validateur est bruitee elle aussi (sigma ~ 4) et sa")
+            print("       porte selectionne la queue chanceuse d'une population dont la PSH")
+            print("       vraie est vers 98-100 ; notre tirage independant retombe dessus.")
+            print("  Les deux impliquent le meme correctif, mais pas le meme espoir : sous")
+            print("  (a) un candidat long lu a 92 passe le plus souvent ; sous (b) il passe")
+            print("  une fois sur cinq environ. Contre 0 % aujourd'hui, ou nous ne")
+            print("  soumettons rien.")
         else:
-            print(f"  seulement {share:.0%} des sequences acceptees lisent au-dessus de "
-                  f"{PSH_STRICT} :")
             print("  notre reproduction tient a cette longueur. Le mur est reel, et nos")
             print("  candidats longs (PSH 95 a 117) en sont tres loin.")
 
