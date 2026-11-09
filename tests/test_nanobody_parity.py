@@ -14,6 +14,7 @@ and the decrypted submissions (scripts.fetch_submissions).
 """
 import json
 import random
+from collections import Counter
 
 import pytest
 
@@ -114,12 +115,40 @@ def test_never_rejects_a_sequence_the_validator_accepted(labelled, params, archi
 
 
 def test_catches_the_rejections_it_can_see(labelled, params, archive, exclude_by_epoch):
-    """Structure-based developability rejections are invisible to us; the
-    sequence-level ones (germline, V gene, CDR3 length) must be caught."""
+    """What we catch is germline identity, and that is most of what we can.
+
+    Measured over 147 of the validator's rejections: we catch 18, and all 18 are
+    human V identity below the floor. The rest are refused for reasons we do not
+    model as hard gates — above all PSH, where our own measurement deviates by
+    4.01 against a threshold of 89, so treating it as a verdict would refuse
+    sequences the validator accepts (39% of the accepted set reads above 89
+    here).
+
+    The floor was 15% when this test was written, but that number was inflated
+    by the anachronistic duplicates fixed in exclude_by_epoch: the checker was
+    "catching" sequences that were novel at their epoch and only look archived
+    today. 12% is the honest rate, so the floor sits at 8% — low enough not to
+    be brittle, high enough that a broken germline check (which would drop it to
+    roughly zero) still fails the test.
+    """
     rejected = [(s, e) for s, e, accepted in labelled if not accepted]
-    caught = sum(bool(check_sequence(s, params[e]["allowed_v"], params[e]["allowed_cdr3_length"],
-                                     archive, exclude_by_epoch(e), warnings=[]))
-                 for s, e in rejected)
-    print(f"\ncaught {caught}/{len(rejected)} of the validator's rejections "
-          f"(the rest need structure-based developability)")
-    assert caught >= 0.15 * len(rejected)
+    reasons = []
+    for seq, epoch in rejected:
+        problems = check_sequence(seq, params[epoch]["allowed_v"],
+                                  params[epoch]["allowed_cdr3_length"],
+                                  archive, exclude_by_epoch(epoch), warnings=[])
+        if problems:
+            reasons.append(problems[0])
+    caught = len(reasons)
+    kinds = Counter(r.split("(")[0].strip()[:40] for r in reasons)
+    print(f"\ncaught {caught}/{len(rejected)} of the validator's rejections:")
+    for kind, n in kinds.most_common():
+        print(f"  {n:4d}  {kind}")
+    print("  (the rest are refused on grounds we deliberately do not gate on, "
+          "chiefly PSH)")
+
+    assert caught >= 0.08 * len(rejected), (
+        f"only {caught}/{len(rejected)} caught; the germline check may be broken")
+    assert any("identity" in r for r in reasons), (
+        "no germline-identity rejection caught at all — that check is the one "
+        "kind we reproduce, so its absence means the reproduction is broken")
