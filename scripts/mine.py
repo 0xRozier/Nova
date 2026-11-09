@@ -59,9 +59,36 @@ BLOCK_SECONDS = 12
 # Leave room for encryption, the GitHub PUT and the extrinsic. Measured: BoltzGen
 # runs at ~1.6 min/sequence on 2x T4, so the candidate budget follows from this.
 SAFETY_BLOCKS = 12
-# Measured across 540 candidates over 10 epochs (results/place_vs_psh.csv):
-# CDR3 >= 17 → 0% under PSH 89, CDR3 13-16 → 60%, CDR3 <= 12 → 100%.
-CDR3_PSH_HOPELESS = 17
+# Share of candidates clearing PSH 89, measured per CDR3 length on 540
+# candidates (results/psh_by_generator.csv). These are per-CANDIDATE rates, not
+# per-epoch: 0% of the depth-4 epochs at length >= 17 had a passing candidate,
+# but with only four candidates each and a 9% rate, finding none is the expected
+# outcome (0.91^4 = 69%). Long CDR3 is hard, not hopeless — and it is where we
+# rank best, 6 wins of 9 epochs — so the pool is widened instead of skipping.
+PSH_PASS_RATE = {8: 0.51, 11: 0.28, 18: 0.09}
+PSH_MARGIN_RATE = {8: 0.20, 11: 0.11, 18: 0.017}
+WANT_WITH_MARGIN = 5  # candidates we want under the margin before BoltzGen
+
+
+def psh_pass_rate(cdr3_length: int, table: dict) -> float:
+    """Interpolate the measured rate, clamped at the ends."""
+    lengths = sorted(table)
+    if cdr3_length <= lengths[0]:
+        return table[lengths[0]]
+    if cdr3_length >= lengths[-1]:
+        return table[lengths[-1]]
+    for lo, hi in zip(lengths, lengths[1:]):
+        if lo <= cdr3_length <= hi:
+            f = (cdr3_length - lo) / (hi - lo)
+            return table[lo] + f * (table[hi] - table[lo])
+    return table[lengths[-1]]
+
+
+def psh_pool_for(cdr3_length: int, floor: int, ceiling: int) -> tuple[int, float]:
+    """Pool size that should yield WANT_WITH_MARGIN candidates under the margin."""
+    rate = psh_pass_rate(cdr3_length, PSH_MARGIN_RATE)
+    need = int(WANT_WITH_MARGIN / max(rate, 0.002))
+    return max(floor, min(need, ceiling)), rate
 
 
 def log(msg: str) -> None:
@@ -348,18 +375,16 @@ def mine_epoch(st, args, params: dict) -> dict:
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days)")
 
     cdr3_len = params["allowed_cdr3_length"]
-    if cdr3_len >= CDR3_PSH_HOPELESS:
-        log(f"CDR3 length {cdr3_len} >= {CDR3_PSH_HOPELESS}: measured 0% of candidates "
-            f"pass PSH < {PSH_STRICT} at this length. Skipping epoch.")
-        entry["status"] = "cdr3_hopeless"
-        return _stamp(entry)
-
-    # CDR3 13-16 has a ~60% pass rate — widen the PSH pool to compensate.
-    psh_pool = args.psh_pool
-    if cdr3_len >= 13:
-        psh_pool = min(args.psh_pool * 2, args.candidates)
-        log(f"CDR3 length {cdr3_len} in marginal range: widening PSH pool "
-            f"from {args.psh_pool} to {psh_pool}")
+    # Size the PSH pool to the length's measured pass rate rather than skipping:
+    # at length 18 only 1.7% of candidates clear the margin, but 1.7% of 300 is
+    # still five, and these are the epochs we rank best in.
+    psh_pool, rate = psh_pool_for(cdr3_len, args.psh_pool, args.candidates)
+    entry["psh_margin_rate"] = round(rate, 3)
+    log(f"CDR3 length {cdr3_len}: {rate:.1%} of candidates expected under the "
+        f"margin, so PSH pool {psh_pool} to find about {WANT_WITH_MARGIN}")
+    if psh_pool * 3.6 / 60 > 30:
+        log(f"  that pool costs {psh_pool * 3.6 / 60:.0f} min of CPU; the epoch "
+            f"budget is about 66 min, so the run may not finish")
 
     with timed("propose", timings):
         result = propose(params, args.target, candidates=args.candidates,
