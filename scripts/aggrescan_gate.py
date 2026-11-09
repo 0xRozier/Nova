@@ -35,7 +35,8 @@ MAX_PEAK = 1.58023066762925
 TOOLS = Path("/home/user/nanofilter/.tools/bin")
 
 
-def screen(sequences: dict[str, str], models: Path, work: Path) -> dict[str, bool]:
+def screen(sequences: dict[str, str], models: Path, work: Path,
+           with_values: bool = False):
     """True per sequence if Aggrescan3D passes both caps. Empty if it cannot run.
 
     `sequences` maps the TNP model name to the sequence, so the models
@@ -44,7 +45,7 @@ def screen(sequences: dict[str, str], models: Path, work: Path) -> dict[str, boo
     """
     scorer, freesasa = TOOLS / "aggrescan3d-rs", TOOLS / "freesasa"
     if not (scorer.exists() and freesasa.exists()):
-        return {}
+        return ({}, {}) if with_values else {}
     structures = work / "structures"
     structures.mkdir(parents=True, exist_ok=True)
     records = {}
@@ -56,7 +57,7 @@ def screen(sequences: dict[str, str], models: Path, work: Path) -> dict[str, boo
         shutil.copyfile(model, structures / f"{digest}.pdb")
         records[digest] = sequence
     if not records:
-        return {}
+        return ({}, {}) if with_values else {}
     fasta = work / "sequences.fasta"
     fasta.write_text("".join(f">{d}\n{s}\n" for d, s in records.items()))
     summary = work / "summary"
@@ -65,8 +66,8 @@ def screen(sequences: dict[str, str], models: Path, work: Path) -> dict[str, boo
                            "--freesasa", str(freesasa)], capture_output=True, text=True)
     out = summary / "aggrescan3d.csv"
     if proc.returncode != 0 or not out.is_file():
-        return {}
-    verdict = {}
+        return ({}, {}) if with_values else {}
+    verdict, values = {}, {}
     for row in csv.DictReader(out.open(newline="")):
         try:
             avg, peak = float(row["a3d_average"]), float(row["a3d_maximum"])
@@ -75,7 +76,8 @@ def screen(sequences: dict[str, str], models: Path, work: Path) -> dict[str, boo
         sequence = records.get(row.get("sequence_hash", ""))
         if sequence is not None:
             verdict[sequence] = avg <= MAX_AVERAGE and peak <= MAX_PEAK
-    return verdict
+            values[sequence] = (avg, peak)
+    return (verdict, values) if with_values else verdict
 
 
 def main():

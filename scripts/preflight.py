@@ -43,6 +43,16 @@ from nova_lab.nanobodies import NanobodyArchive, check_sequence
 PSH_SIGMA = 4.01  # one measurement, from 10 sequences measured twice
 A3D_MAX_AVERAGE = -0.68002724866200
 A3D_MAX_PEAK = 1.58023066762925
+# Aggrescan3D rests on the same predicted structure as PSH, so it carries the
+# same kind of noise, smaller: three folds of one sequence deviate by 0.0091 on
+# the average and 0.0019 on the peak. The calibration refused one of the 36
+# accepted submissions at -0.679 against a -0.680 cap, which is 0.1 deviation
+# past it — indistinguishable from noise. So a breach counts as a refusal only
+# beyond two deviations, and anything inside that band is a risk, not a verdict.
+A3D_SIGMA_AVERAGE = 0.0091
+A3D_SIGMA_PEAK = 0.0019
+A3D_BAND_AVERAGE = 2 * A3D_SIGMA_AVERAGE
+A3D_BAND_PEAK = 2 * A3D_SIGMA_PEAK
 
 
 def rejection_probability(mean: float, folds: int) -> float:
@@ -84,9 +94,18 @@ def structural(sequences: list[str], work: Path, folds: int) -> pd.DataFrame:
             rows[names[n]]["tnp_greys"] = int(greys)
             rows[names[n]]["tnp_red_on"] = first.loc[first["name"] == n, "red_on"].iat[0]
 
-    a3d = a3d_screen(names, work / "fold1" / "TNP_output" / "Final_Models", work / "a3d")
+    a3d, a3d_values = a3d_screen(names, work / "fold1" / "TNP_output" / "Final_Models",
+                                 work / "a3d", with_values=True)
     for s in sequences:
         rows[s]["a3d_pass"] = a3d.get(s)
+        avg, peak = a3d_values.get(s, (float("nan"), float("nan")))
+        rows[s]["a3d_average"], rows[s]["a3d_peak"] = avg, peak
+        # Beyond the band it is a refusal; inside it, only a risk.
+        over_avg = (avg - A3D_MAX_AVERAGE) if avg == avg else 0.0
+        over_peak = (peak - A3D_MAX_PEAK) if peak == peak else 0.0
+        rows[s]["a3d_refused"] = (over_avg > A3D_BAND_AVERAGE) or (over_peak > A3D_BAND_PEAK)
+        rows[s]["a3d_borderline"] = (not rows[s]["a3d_refused"]) and (
+            over_avg > 0 or over_peak > 0)
         folds_seen = rows[s]["psh_folds"]
         rows[s]["psh_mean"] = sum(folds_seen) / len(folds_seen) if folds_seen else float("nan")
         rows[s]["psh_n"] = len(folds_seen)
@@ -109,7 +128,7 @@ def run_preflight(sequences: list[str], allowed_v: str | None, cdr3_len: int | N
         out["psh_reject_p"] = [rejection_probability(m, int(n or 1)) if m == m else float("nan")
                                for m, n in zip(out["psh_mean"], out.get("psh_n", 1))]
     out["refused"] = out["deterministic"].ne("") | out.get("tnp_reds", 0).fillna(0).gt(0) \
-        | out.get("a3d_pass", True).fillna(True).eq(False)
+        | out.get("a3d_refused", False).fillna(False)
     return out
 
 
@@ -122,8 +141,9 @@ def report(out: pd.DataFrame) -> None:
         bits = []
         if getattr(r, "tnp_reds", 0):
             bits.append(f"TNP red on {r.tnp_red_on}")
-        if getattr(r, "a3d_pass", None) is False:
-            bits.append("Aggrescan3D over cap")
+        if getattr(r, "a3d_refused", False):
+            bits.append(f"Aggrescan3D past the cap by more than two deviations "
+                        f"(avg {r.a3d_average:.4f}, peak {r.a3d_peak:.4f})")
         if bits:
             print(f"{head}REFUSED — {', '.join(bits)}")
             continue
@@ -135,6 +155,9 @@ def report(out: pd.DataFrame) -> None:
             risk = "low" if p < 0.1 else ("even" if p < 0.5 else "high")
             print(f"{head}deterministic gates pass; PSH {m:.1f} over {int(r.psh_n)} folds "
                   f"-> {p:.0%} chance of refusal ({risk})")
+        if getattr(r, "a3d_borderline", False):
+            print(f"    note: Aggrescan3D sits on its cap (avg {r.a3d_average:.4f}, "
+                  f"peak {r.a3d_peak:.4f}) — within the noise of the limit")
         if r.archive_warning:
             print(f"    note: {r.archive_warning}")
 
@@ -161,7 +184,7 @@ def calibrate(folds: int, target: str) -> int:
         print("  WRONGLY REFUSED — the reproduction is broken, not the sequences:")
         for r in ok[ok["refused"]].itertuples():
             why = r.deterministic or (f"TNP red on {r.tnp_red_on}" if getattr(r, "tnp_reds", 0)
-                                      else "Aggrescan3D over cap")
+                                      else "Aggrescan3D past the cap")
             print(f"    {r.sequence[:34]}... {why}")
 
     if "psh_mean" in out:
