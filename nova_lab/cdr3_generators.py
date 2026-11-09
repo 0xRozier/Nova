@@ -203,7 +203,20 @@ class IgLMGenerator:
 # Factory
 # ---------------------------------------------------------------------------
 
-GENERATORS = {"chimeric", "pssm", "iglm"}
+class PSSMDeNovoGenerator(PSSMGenerator):
+    """PSSM sampling at every mutable position, J-tail kept from the donor.
+
+    scripts.compare_generators reached this through its own if/elif, so the
+    strategy existed but was not usable from propose_nanobody or mine.py, which
+    both build generators through make_generator.
+    """
+
+    def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
+                      j_tail: int, rng: random.Random) -> str:
+        return self.generate_de_novo(donor_cdr3, cdr3_length, j_tail, rng)
+
+
+GENERATORS = {"chimeric", "pssm", "pssm_denovo", "iglm"}
 
 
 def make_generator(name: str, cdr3_sequences: list[str] | None = None,
@@ -215,6 +228,10 @@ def make_generator(name: str, cdr3_sequences: list[str] | None = None,
         if not cdr3_sequences:
             raise ValueError("PSSMGenerator requires cdr3_sequences from the archive")
         return PSSMGenerator(cdr3_sequences)
+    if name == "pssm_denovo":
+        if not cdr3_sequences:
+            raise ValueError("PSSMDeNovoGenerator requires cdr3_sequences from the archive")
+        return PSSMDeNovoGenerator(cdr3_sequences)
     if name == "iglm":
         return IgLMGenerator(device=device)
     raise ValueError(f"unknown generator {name!r}; choose from {sorted(GENERATORS)}")
