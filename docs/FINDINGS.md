@@ -1,5 +1,22 @@
 # Ce que nous avons mesuré sur SN68 — synthèse
 
+## Les données brutes derrière chaque chiffre
+
+| Fichier | Contenu |
+|---|---|
+| `results/psh_by_generator.csv` | 540 candidats, 3 stratégies × 3 longueurs de CDR3, PSH mesurée (§3) |
+| `results/place_vs_psh.csv` | 21 époques : place dans le champ complet, PSH, admissibilité (§3bis) |
+| `results/tnp_epoch26174.csv` | les 36 acceptées de l'époque 26174 + notre rejetée, 6 métriques TNP (§2) |
+| `results/aggrescan_epoch26174.csv` | Aggrescan3D sur ce même champ (§2) |
+| `results/tnp_developability.csv` | TNP sur nos 84 candidats et 84 soumissions réelles (§4) |
+| `results/aggrescan_gate.csv` | Aggrescan3D sur les mêmes 168 (§4) |
+| `results/scores_nanobody_observation_depth4.csv` | les 168 scores BoltzGen du lot à profondeur 4 (§7) |
+| `results/economics.txt` | seuil de rentabilité, dimensionnement GPU |
+| `journal_final.jsonl`, `mine_live_final.log` | le run de production (11 époques) |
+
+`data/` est ignoré par git : tout ce qui soutient une conclusion est copié dans
+`results/`.
+
 État au 2026-11-09. Ce document rassemble les faits mesurés, les erreurs
 commises et ce qui reste ouvert. Il est organisé par sujet, pas
 chronologiquement. `docs/OBSERVATIONS.md` et `docs/POST_MORTEM.md` gardent le
