@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 
 from nova_lab import DATA_DIR
+from nova_lab.cdr3_generators import GENERATORS, J_TAIL, make_generator
 from nova_lab.config import MIN_HUMAN_J_IDENTITY, MIN_HUMAN_V_IDENTITY, NANOBODY_TARGET
 from nova_lab.nanobodies import (NanobodyArchive, cdr_similarity, check_sequence,
                                  germline_identity, regions)
@@ -50,12 +51,6 @@ def assemble(r: dict) -> str:
     return r["FR1"] + r["CDR1"] + r["FR2"] + r["CDR2"] + r["FR3"] + r["CDR3"] + r["FR4"]
 
 
-# The last residues of CDR3 are J-gene encoded (the ...FDY / ...WGQG motif), so
-# touching them breaks the human J identity floor: 285 of 800 candidates failed
-# on it before this was fixed.
-J_TAIL = 4
-
-
 def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> str:
     """n point substitutions, leaving the last `keep_tail` residues alone."""
     out = list(seq)
@@ -67,11 +62,15 @@ def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> s
     return "".join(out)
 
 
-def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Random) -> list[str]:
+def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Random,
+             generator=None) -> list[str]:
     """Framework from a donor, CDR3 of the required length, CDRs mutated lightly.
 
     CDR1 and CDR2 are scored against the V reference, so changing them eats into
     the germline identity margin: CDR3 carries most of the variation.
+
+    When *generator* is given, CDR3 creation is delegated to it instead of the
+    inline uniform-random mutate_region.
     """
     seen, out = set(), []
     attempts = 0
@@ -79,8 +78,12 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
         attempts += 1
         donor = donors.iloc[rng.randrange(len(donors))]
         r = dict(donor["regions"])
-        # A verbatim graft is a duplicate by CDR3 identity, so always mutate it.
-        r["CDR3"] = mutate_region(rng.choice(cdr3_pool), rng, rng.randint(2, 4), keep_tail=J_TAIL)
+        donor_cdr3 = rng.choice(cdr3_pool)
+        cdr3_length = len(donor_cdr3)
+        if generator is not None:
+            r["CDR3"] = generator.generate_cdr3(donor_cdr3, cdr3_length, J_TAIL, rng)
+        else:
+            r["CDR3"] = mutate_region(donor_cdr3, rng, rng.randint(2, 4), keep_tail=J_TAIL)
         if rng.random() < 0.15:
             r["CDR1"] = mutate_region(r["CDR1"], rng, 1)
         if rng.random() < 0.1:
@@ -123,7 +126,8 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
 
 def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
             n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
-            archive_cutoff: int | None = None, log=print) -> dict:
+            archive_cutoff: int | None = None, generator_name: str = "chimeric",
+            log=print) -> dict:
     """Build and rank candidates for one epoch. Pure CPU, no chain write.
 
     `params` is what scripts.check_nanobody.resolve_epoch returns: it must carry
@@ -181,8 +185,15 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     out["cdr3_donors"] = len(cdr3_donors)
     log(f"{len(donors)} framework donors ({allowed_v}), {len(cdr3_donors)} CDR3 donors of length {cdr3_len}")
 
+    # Build the CDR3 generator. PSSM uses all compliant CDR3s (not just the
+    # right-length donors) so it has enough data for every column.
+    generator = make_generator(generator_name,
+                               cdr3_sequences=list(compliant["cdr3"].dropna()))
+    out["generator"] = generator_name
+    log(f"CDR3 generator: {generator_name}")
+
     rng = random.Random(seed)
-    generated = generate(donors, cdr3_donors, candidates, rng)
+    generated = generate(donors, cdr3_donors, candidates, rng, generator=generator)
     out["generated"] = len(generated)
     log(f"generated {len(generated)} distinct candidates; checking validity...")
 
@@ -262,11 +273,14 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--archive-cutoff", type=int,
                         help="ignore archived sequences from this epoch onward (replays)")
+    parser.add_argument("--generator", choices=sorted(GENERATORS), default="pssm",
+                        help="CDR3 generation strategy (default: pssm)")
     args = parser.parse_args()
 
     p = resolve_epoch(args.epoch)
     result = propose(p, args.target, args.candidates, args.donors, args.cdr3_pool,
-                     args.shortlist, args.seed, args.archive_cutoff)
+                     args.shortlist, args.seed, args.archive_cutoff,
+                     generator_name=args.generator)
     out = result["shortlist"]
     if out.empty:
         print(f"nothing to propose ({result['status']})")

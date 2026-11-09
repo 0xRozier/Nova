@@ -48,6 +48,7 @@ import pandas as pd
 import requests
 
 from nova_lab import DATA_DIR
+from nova_lab.cdr3_generators import GENERATORS
 from nova_lab.config import (EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS,
                              PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT)
 from nova_lab import timelock
@@ -300,7 +301,8 @@ def mine_epoch(st, args, params: dict) -> dict:
     result = propose(params, args.target, candidates=args.candidates,
                      n_donors=args.donors, n_cdr3=args.cdr3_pool,
                      shortlist=max(args.psh_pool, args.shortlist),
-                     seed=args.seed + epoch, log=log)
+                     seed=args.seed + epoch,
+                     generator_name=args.generator, log=log)
     shortlist = result["shortlist"]
     entry.update({"generated": result["generated"], "valid": result["valid"],
                   "status": result["status"]})
@@ -432,6 +434,8 @@ def main():
     parser.add_argument("--max-donor-lag", type=int, default=40,
                         help="refuse to submit if the donor pool is older than this "
                              "many epochs (40 ~= 2 days)")
+    parser.add_argument("--generator", choices=sorted(GENERATORS), default="pssm",
+                        help="CDR3 generation strategy (default: pssm)")
     args = parser.parse_args()
 
     import bittensor as bt
