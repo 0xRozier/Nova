@@ -127,7 +127,7 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
 def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
             n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
             archive_cutoff: int | None = None, generator_name: str = "chimeric",
-            log=print) -> dict:
+            skip_surrogate: bool = False, log=print) -> dict:
     """Build and rank candidates for one epoch. Pure CPU, no chain write.
 
     `params` is what scripts.check_nanobody.resolve_epoch returns: it must carry
@@ -225,6 +225,31 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
         out["status"] = "no_valid_candidate"
         return out
 
+    archive = NanobodyArchive(target)
+
+    if skip_surrogate:
+        # Mining path: PSH + BoltzGen do the real selection, so skip the
+        # surrogate entirely and just pass valid, de-duplicated candidates.
+        log(f"skip_surrogate=True: passing {len(valid)} valid candidates directly (no surrogate ranking)")
+        rows = []
+        for seq in valid:
+            r = regions(seq)
+            g = germline_identity(seq)
+            warnings = []
+            if check_sequence(seq, allowed_v, cdr3_len, archive, warnings=warnings):
+                continue
+            rows.append({"sequence": seq, "cdr3": r["CDR3"] if r else "",
+                         "predicted_rank_sum": np.nan, "v_identity": g["V"]["identity_pct"] if g else np.nan,
+                         "design_iiptm": np.nan, "interaction_pae": np.nan,
+                         "archive_warning": "; ".join(warnings)})
+            if len(rows) >= shortlist:
+                break
+        if not rows:
+            out["status"] = "all_duplicates"
+            return out
+        out["shortlist"] = pd.DataFrame(rows)
+        return out
+
     # The real competition: the most recent dated submissions, which all comply.
     dated = df[df["epoch"].notna()]
     reference = dated.nlargest(REFERENCE_POOL, "epoch") if len(dated) else compliant.head(REFERENCE_POOL)
@@ -232,7 +257,6 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     out["reference_size"] = len(reference)
     log(f"\nranking {len(ranked)} candidates against {len(reference)} recent archived sequences")
 
-    archive = NanobodyArchive(target)
     rows = []
     for row in ranked.itertuples():
         warnings = []

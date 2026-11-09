@@ -41,6 +41,7 @@ import os
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -58,10 +59,47 @@ BLOCK_SECONDS = 12
 # Leave room for encryption, the GitHub PUT and the extrinsic. Measured: BoltzGen
 # runs at ~1.6 min/sequence on 2x T4, so the candidate budget follows from this.
 SAFETY_BLOCKS = 12
+# Measured across 540 candidates over 10 epochs (results/place_vs_psh.csv):
+# CDR3 >= 17 → 0% under PSH 89, CDR3 13-16 → 60%, CDR3 <= 12 → 100%.
+CDR3_PSH_HOPELESS = 17
 
 
 def log(msg: str) -> None:
     print(f"[{datetime.now(timezone.utc):%H:%M:%S}] {msg}", flush=True)
+
+
+@contextmanager
+def timed(label: str, timings: dict):
+    """Log and record elapsed seconds for a pipeline stage."""
+    t0 = time.monotonic()
+    log(f"[{label}] start")
+    try:
+        yield
+    finally:
+        elapsed = time.monotonic() - t0
+        timings[label] = round(elapsed, 1)
+        log(f"[{label}] done in {elapsed:.0f}s")
+
+
+def retry(fn, *args, max_retries: int = 5, base_delay: float = 30, **kwargs):
+    """Call *fn* with retries on transient network errors (429, WebSocket, timeout).
+
+    Exponential backoff: base_delay * 2^attempt seconds between attempts.
+    """
+    for attempt in range(max_retries + 1):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:
+            msg = f"{type(exc).__name__}: {exc}"
+            transient = any(tok in msg for tok in ("429", "ConnectionClosed",
+                                                   "TimeoutError", "WebSocket",
+                                                   "Timeout", "timed out"))
+            if not transient or attempt == max_retries:
+                raise
+            delay = base_delay * (2 ** attempt)
+            log(f"transient error (attempt {attempt + 1}/{max_retries + 1}): "
+                f"{msg}; retrying in {delay:.0f}s")
+            time.sleep(delay)
 
 
 def github_path() -> str:
@@ -271,19 +309,30 @@ def mine_epoch(st, args, params: dict) -> dict:
     deadline = end_block - NO_SUBMISSION_BLOCKS - SAFETY_BLOCKS
     block = st.get_current_block()
     left = (deadline - block) * BLOCK_SECONDS
+    t0 = time.monotonic()
+    timings = {}
     entry = {"epoch": epoch, "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
              "allowed_v": params["allowed_v"], "allowed_cdr3_length": params["allowed_cdr3_length"],
              "live": bool(args.live), "submitted": False}
+
+    def _stamp(entry):
+        """Always persist timing before returning the journal entry."""
+        entry["elapsed_seconds"] = round(time.monotonic() - t0, 1)
+        entry["timings"] = timings
+        remaining = left - (time.monotonic() - t0)
+        log(f"total {entry['elapsed_seconds']:.0f}s, {remaining / 60:.0f} min remaining in budget")
+        return entry
+
     log(f"epoch {epoch}: V {params['allowed_v']}, CDR3 {params['allowed_cdr3_length']}; "
         f"block {block}, deadline {deadline} ({left / 60:.0f} min)")
     if left <= 0:
         entry["status"] = "too_late"
         log("past the submission deadline for this epoch")
-        return entry
+        return _stamp(entry)
 
     if not config_unchanged():
         entry["status"] = "config_drift"
-        return entry
+        return _stamp(entry)
 
     stale = donor_pool_lag(args.target, epoch)
     entry["donor_lag_epochs"] = stale
@@ -294,21 +343,36 @@ def mine_epoch(st, args, params: dict) -> dict:
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days); "
             f"rebuild it with scripts.build_nanobody_dataset. Refusing to submit.")
         entry["status"] = "donor_pool_stale"
-        return entry
+        return _stamp(entry)
     if stale:
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days)")
 
-    result = propose(params, args.target, candidates=args.candidates,
-                     n_donors=args.donors, n_cdr3=args.cdr3_pool,
-                     shortlist=max(args.psh_pool, args.shortlist),
-                     seed=args.seed + epoch,
-                     generator_name=args.generator, log=log)
+    cdr3_len = params["allowed_cdr3_length"]
+    if cdr3_len >= CDR3_PSH_HOPELESS:
+        log(f"CDR3 length {cdr3_len} >= {CDR3_PSH_HOPELESS}: measured 0% of candidates "
+            f"pass PSH < {PSH_STRICT} at this length. Skipping epoch.")
+        entry["status"] = "cdr3_hopeless"
+        return _stamp(entry)
+
+    # CDR3 13-16 has a ~60% pass rate — widen the PSH pool to compensate.
+    psh_pool = args.psh_pool
+    if cdr3_len >= 13:
+        psh_pool = min(args.psh_pool * 2, args.candidates)
+        log(f"CDR3 length {cdr3_len} in marginal range: widening PSH pool "
+            f"from {args.psh_pool} to {psh_pool}")
+
+    with timed("propose", timings):
+        result = propose(params, args.target, candidates=args.candidates,
+                         n_donors=args.donors, n_cdr3=args.cdr3_pool,
+                         shortlist=max(psh_pool, args.shortlist),
+                         seed=args.seed + epoch,
+                         generator_name=args.generator, skip_surrogate=True, log=log)
     shortlist = result["shortlist"]
     entry.update({"generated": result["generated"], "valid": result["valid"],
                   "status": result["status"]})
     if shortlist.empty:
         log(f"nothing to submit ({result['status']})")
-        return entry
+        return _stamp(entry)
 
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
@@ -316,8 +380,9 @@ def mine_epoch(st, args, params: dict) -> dict:
     # PSH first, on the whole pool: it is the gate that rejected every
     # production submission, and selecting on it needs a wide funnel rather
     # than a filter at the end of a narrow one.
-    sequences, psh = psh_select(sequences, args.shortlist, work / "psh",
-                                args.psh_replicates)
+    with timed("psh_select", timings):
+        sequences, psh = psh_select(sequences, args.shortlist, work / "psh",
+                                    args.psh_replicates)
     if psh:
         best = min(psh[s] for s in sequences)
         entry["psh_best"] = round(best, 2)
@@ -328,9 +393,10 @@ def mine_epoch(st, args, params: dict) -> dict:
                 f"epoch has no candidate with margin. Skipping rather than "
                 f"spending GPU on a submission that will be refused.")
             entry["status"] = "psh_no_margin"
-            return entry
+            return _stamp(entry)
 
-    verdict = developability_screen(sequences, work / "tnp")
+    with timed("developability", timings):
+        verdict = developability_screen(sequences, work / "tnp")
     if verdict:
         kept = [s for s in sequences if verdict.get(s, True)]
         entry["developability_rejected"] = len(sequences) - len(kept)
@@ -339,17 +405,20 @@ def mine_epoch(st, args, params: dict) -> dict:
         if not kept:
             log("every candidate is red; submitting the best anyway rather than skipping")
 
-    ranked = boltzgen_rank(sequences, f"epoch{epoch}", args.nova_dir, work / "boltzgen") \
-        if args.scorer == "boltzgen" else None
-    if ranked is not None and not ranked.empty:
-        best = ranked["sequence"].iat[0]
-        entry["ranked_by"] = "boltzgen"
-    else:
-        best = sequences[0]
-        entry["ranked_by"] = "surrogate"
-        log("WARNING: ranking by the surrogate. Measured over 21 epochs it wins 14% "
-            "of them against 48% for BoltzGen, and 23% for a random pick — it is "
-            "worse than chance as a selector.")
+    with timed("boltzgen", timings):
+        ranked = boltzgen_rank(sequences, f"epoch{epoch}", args.nova_dir, work / "boltzgen")
+    if ranked is None or ranked.empty:
+        log("BoltzGen unavailable or returned nothing. The surrogate wins 14% of "
+            "epochs vs 48% for BoltzGen vs 23% random — falling back is worse than "
+            "skipping. Abandoning this epoch.")
+        entry["status"] = "no_boltzgen"
+        return _stamp(entry)
+    best = ranked["sequence"].iat[0]
+    entry["ranked_by"] = "boltzgen"
+    # Persist scores for post-mortem analysis (distinguish "rejected by gate" from "scored low").
+    score_cols = [c for c in ranked.columns if c not in ("sequence",)]
+    entry["boltzgen_scores"] = ranked[["sequence"] + score_cols].head(20).to_dict("records")
+    entry["boltzgen_best_rank_sum"] = float(ranked["rank_sum"].iat[0])
     entry["sequence"] = best
     entry["cdr3"] = shortlist.set_index("sequence")["cdr3"].get(best, "")
 
@@ -357,8 +426,8 @@ def mine_epoch(st, args, params: dict) -> dict:
     if uid is None:
         entry["status"] = "no_uid"
         log("this hotkey is not registered on the subnet")
-        return entry
-    block = st.get_current_block()
+        return _stamp(entry)
+    block = retry(st.get_current_block)
     reveal = timelock.reveal_round(block, EPOCH_LENGTH, NO_SUBMISSION_BLOCKS)
     filename, content = timelock.submission_file(uid, reveal, f"~|{best}")
     pointer = f"{github_path()}/{filename}"
@@ -371,10 +440,20 @@ def mine_epoch(st, args, params: dict) -> dict:
     if not args.live:
         entry["status"] = "dry_run"
         log("dry run: nothing committed on chain, nothing pushed to GitHub. Pass --live.")
-        return entry
+        return _stamp(entry)
 
-    # The reference miner commits first and uploads after, so a failed upload
-    # leaves a dangling pointer rather than an unreferenced file.
+    # Upload FIRST, then commit. A file without a pointer is harmless (orphaned
+    # on GitHub); a pointer without a file is fatal (dangling, epoch lost).
+    # Epoch 26172 committed on-chain then GitHub returned 404 → dangling pointer.
+    log("uploading the encrypted file to GitHub...")
+    try:
+        upload(filename, content)
+    except Exception as error:
+        entry.update({"status": "upload_failed", "error": f"{type(error).__name__}: {error}"})
+        log(f"upload failed: {error}")
+        log("not committing, since the file is not reachable")
+        return _stamp(entry)
+
     log("committing the pointer on chain...")
     try:
         resp = st.set_commitment(wallet=args.wallet_obj, netuid=args.netuid, data=pointer)
@@ -383,23 +462,13 @@ def mine_epoch(st, args, params: dict) -> dict:
         # rather than returning. A miner that must run for weeks cannot die here.
         entry.update({"status": "commit_failed", "error": f"{type(error).__name__}: {error}"})
         log(f"commitment failed: {type(error).__name__}: {error}")
-        log("not uploading, since nothing points at the file")
-        return entry
+        log("the file is uploaded but nothing points at it (harmless orphan)")
+        return _stamp(entry)
     entry["commitment"] = str(resp)
     log(f"commitment: {resp}")
-
-    log("uploading the encrypted file to GitHub...")
-    try:
-        upload(filename, content)
-    except Exception as error:
-        entry.update({"status": "upload_failed", "error": f"{type(error).__name__}: {error}"})
-        log(f"upload failed: {error}")
-        log("the pointer is committed but the file is missing: this epoch is lost, "
-            "and the validator will read a dangling pointer")
-        return entry
     entry.update({"status": "submitted", "submitted": True})
     log("submitted")
-    return entry
+    return _stamp(entry)
 
 
 def main():
@@ -412,15 +481,14 @@ def main():
     parser.add_argument("--uid", type=int, help="skip the metagraph lookup and use this UID")
     parser.add_argument("--netuid", type=int, default=68)
     parser.add_argument("--target", default=NANOBODY_TARGET[0])
-    parser.add_argument("--scorer", choices=["boltzgen", "surrogate"], default="boltzgen")
     parser.add_argument("--nova-dir", type=Path, default=Path("/home/user/nova-upstream"))
-    parser.add_argument("--candidates", type=int, default=3000)
+    parser.add_argument("--candidates", type=int, default=5000)
     parser.add_argument("--donors", type=int, default=40)
     parser.add_argument("--cdr3-pool", type=int, default=60)
     parser.add_argument("--shortlist", type=int, default=8,
                         help="candidates sent to BoltzGen after the PSH cut; "
                              "~1.6 min each on 2x T4")
-    parser.add_argument("--psh-pool", type=int, default=300,
+    parser.add_argument("--psh-pool", type=int, default=500,
                         help="candidates to measure PSH on before selecting; "
                              "3.6 s each on 4 cores, and only ~21% come in under "
                              "87.4, so a narrow pool yields nothing")
@@ -451,14 +519,14 @@ def main():
     if args.uid is None and not args.hotkey_ss58:
         sys.exit("give --wallet (to look the UID up) or --uid")
 
-    st = bt.Subtensor("finney")
+    st = retry(bt.Subtensor, "finney")
     JOURNAL.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if JOURNAL.exists():
         done = {json.loads(l)["epoch"] for l in JOURNAL.open() if l.strip()}
 
     while True:
-        params = resolve_epoch(None)
+        params = retry(resolve_epoch, None)
         if params["epoch"] in done:
             time.sleep(60)
             if args.once:

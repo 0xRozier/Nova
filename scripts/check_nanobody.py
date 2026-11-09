@@ -19,14 +19,29 @@ from nova_lab.config import EPOCH_LENGTH, NANOBODY_TARGET
 from nova_lab.nanobodies import NanobodyArchive, check_sequence, germline_identity, regions
 
 
-def resolve_epoch(epoch: int | None) -> dict:
+def resolve_epoch(epoch: int | None, max_retries: int = 5, base_delay: float = 30) -> dict:
+    import time
     import bittensor as bt
     from nova_lab.reactions import reaction_ids
     from scripts.epoch_info import challenge_params
-    st = bt.Subtensor("wss://archive.chain.opentensor.ai:443" if epoch else "finney")
-    epoch = epoch if epoch is not None else st.get_current_block() // EPOCH_LENGTH
-    params = challenge_params(st.determine_block_hash(epoch * EPOCH_LENGTH), len(reaction_ids()))
-    return {"epoch": epoch, **params}
+    url = "wss://archive.chain.opentensor.ai:443" if epoch else "finney"
+    for attempt in range(max_retries + 1):
+        try:
+            st = bt.Subtensor(url)
+            epoch_val = epoch if epoch is not None else st.get_current_block() // EPOCH_LENGTH
+            params = challenge_params(st.determine_block_hash(epoch_val * EPOCH_LENGTH), len(reaction_ids()))
+            return {"epoch": epoch_val, **params}
+        except Exception as exc:
+            msg = f"{type(exc).__name__}: {exc}"
+            transient = any(tok in msg for tok in ("429", "ConnectionClosed",
+                                                   "TimeoutError", "WebSocket",
+                                                   "Timeout", "timed out"))
+            if not transient or attempt == max_retries:
+                raise
+            delay = base_delay * (2 ** attempt)
+            print(f"[resolve_epoch] transient error (attempt {attempt + 1}/"
+                  f"{max_retries + 1}): {msg}; retrying in {delay:.0f}s")
+            time.sleep(delay)
 
 
 def main():
