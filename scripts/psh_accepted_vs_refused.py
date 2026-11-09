@@ -137,26 +137,58 @@ def observed(group: pd.DataFrame) -> dict:
             "auc": float(auc(ref, acc)), "n_accepted": len(acc), "n_refused": len(ref)}
 
 
-def fit(obs: dict, acceptance: float) -> pd.DataFrame:
-    """Grid over (m, s, sigma_v, bias); score on the statistics we measured."""
+# The real base rates at each band, from the whole paired field rather than
+# from the sample, so the curve below reads as a probability a miner can use.
+BASE_RATES = {"long 17+": (741, 692), "court 5-8": (651, 218)}
+
+
+def wilson(successes: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Binomial interval that stays inside [0, 1] at small n and extreme p."""
+    p = successes / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    return centre - half, centre + half
+
+
+def acceptance_curve(group: pd.DataFrame, band: str,
+                     edges=(88, 92, 96, 100)) -> pd.DataFrame:
+    """P(the validators accept it | our PSH reads X), at this band's base rate.
+
+    This replaces a four-parameter fit of the measurement model that the data
+    cannot identify: see FINDINGS 3ter. A quarter of the refusals at 17+ read
+    BELOW the accepted median, so they were refused for something our PSH does
+    not see (Aggrescan3D, archive similarity). The fit had no term for that and
+    absorbed it as validator noise, which is why it ran to whatever ceiling the
+    grid allowed. The question a miner actually needs answered does not need
+    the model: given a reading, how often was such a sequence accepted?
+    """
+    n_accepted, n_refused = BASE_RATES[band]
+    sampled_accepted = int(group["accepted"].sum())
+    sampled_refused = len(group) - sampled_accepted
+    if not (sampled_accepted and sampled_refused):
+        return pd.DataFrame()
+    w_accepted = n_accepted / sampled_accepted
+    w_refused = n_refused / sampled_refused
+
+    def to_base_rate(share: float) -> float:
+        """A sample share, reweighted to the band's real acceptance rate."""
+        odds = share * w_accepted
+        return odds / (odds + (1 - share) * w_refused)
+
+    bounds = [-np.inf, *edges, np.inf]
     rows = []
-    for m in np.arange(84, 109, 1.0):
-        for s in (2.0, 3.0, 4.0, 6.0, 8.0, 10.0):
-            for sigma_v in (0.0, 1.0, 2.0, 4.01, 6.0, 8.0, 10.0, 12.0, 15.0):
-                for bias in np.arange(-4.0, 15.0, 1.0):
-                    pred = predicted(m, s, sigma_v, bias)
-                    if not pred:
-                        continue
-                    # Each statistic in units of its own measurement scatter.
-                    cost = (((pred["median_accepted"] - obs["median_accepted"]) / 1.0) ** 2
-                            + ((pred["median_refused"] - obs["median_refused"]) / 1.0) ** 2
-                            + ((pred["sd_accepted"] - obs["sd_accepted"]) / 1.5) ** 2
-                            + ((pred["sd_refused"] - obs["sd_refused"]) / 1.5) ** 2
-                            + ((pred["auc"] - obs["auc"]) / 0.04) ** 2
-                            + ((pred["acceptance"] - acceptance) / 0.08) ** 2)
-                    rows.append({"m": m, "s": s, "sigma_v": sigma_v, "bias": bias,
-                                 "cost": cost, **pred})
-    return pd.DataFrame(rows).sort_values("cost").reset_index(drop=True)
+    for low, high in zip(bounds, bounds[1:]):
+        band_rows = group[(group["PSH"] > low) & (group["PSH"] <= high)]
+        if band_rows.empty:
+            continue
+        k, n = int(band_rows["accepted"].sum()), len(band_rows)
+        low_ci, high_ci = wilson(k, n)
+        label = (f"<= {high:.0f}" if low == -np.inf else
+                 f"> {low:.0f}" if high == np.inf else f"{low:.0f}-{high:.0f}")
+        rows.append({"notre PSH": label, "n": n, "acceptees": k,
+                     "P(accepte)": f"{to_base_rate(k / n):.0%}",
+                     "IC95": f"{to_base_rate(low_ci):.0%}-{to_base_rate(high_ci):.0%}"})
+    return pd.DataFrame(rows)
 
 
 def main():
@@ -214,18 +246,14 @@ def main():
         print(f"  ecart des medianes {obs['median_refused'] - obs['median_accepted']:+.1f}")
         print(f"  AUC {obs['auc']:.2f}  (0,50 = notre PSH ne separe pas du tout ; "
               f"1,00 = separation parfaite)")
-        acceptance = float(group["accepted"].mean())
-        top = fit(obs, acceptance)
-        if top.empty:
-            continue
-        best = top.iloc[0]
-        print(f"  ajustement : PSH vraie ~ N({best['m']:.0f}, {best['s']:.0f}), "
-              f"bruit du validateur sigma_v = {best['sigma_v']:.2f}, "
-              f"notre biais = {best['bias']:+.0f}")
-        near = top[top["cost"] <= top["cost"].iloc[0] + 4]
-        print(f"  parmi les {len(near)} ajustements comparables : "
-              f"sigma_v de {near['sigma_v'].min():.2f} a {near['sigma_v'].max():.2f}, "
-              f"biais de {near['bias'].min():+.0f} a {near['bias'].max():+.0f}")
+        below = group[~group["accepted"] & (group["PSH"] < obs["median_accepted"])]
+        print(f"  {len(below)} des {obs['n_refused']} refusees lisent SOUS la mediane des "
+              f"acceptees : refusees pour ce que notre PSH ne voit pas")
+        curve = acceptance_curve(group, band)
+        if not curve.empty:
+            print(f"  P(accepte | notre PSH), au taux de base reel du champ "
+                  f"({BASE_RATES[band][0]} acceptees / {BASE_RATES[band][1]} refusees) :")
+            print("    " + curve.to_string(index=False).replace("\n", "\n    "))
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     cols = [c for c in ("name", "epoch", "uid", "band", "epoch_length", "accepted",
