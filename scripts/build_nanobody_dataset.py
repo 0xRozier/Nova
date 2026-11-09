@@ -29,9 +29,17 @@ METRICS = ["design_iiptm", "design_ptm", "design_to_target_iptm", "min_design_to
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", default="Q9NZQ7")
+    parser.add_argument("--no-refresh", action="store_true",
+                        help="rebuild from the archive already on disk instead of "
+                             "re-downloading it (for a replay at a fixed snapshot)")
     args = parser.parse_args()
 
-    archive = NanobodyArchive(args.target)  # also gives us cached IMGT regions
+    # Re-download by default. NanobodyArchive only fetches when the file is
+    # absent, so rebuilding from the cached copy reproduces the stale pool it
+    # was run to fix -- and reports the same lag, which is how the staleness
+    # survived a "rebuild" on 2026-11-09: the archive on disk was three days
+    # old and the epoch labels stopped 63 epochs back.
+    archive = NanobodyArchive(args.target, refresh=not args.no_refresh)
     df = pd.read_csv(DATA_DIR / "archive" / f"{args.target}_nanobodies.csv")
     df["regions"] = archive.regions
     print(f"{len(df)} archived sequences, {sum(r is not None for r in archive.regions)} numberable")

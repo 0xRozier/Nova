@@ -106,6 +106,15 @@ et les deux premiers coûtent cher en silence.
 # toujours l'interprete du venv : /usr/bin/python porte une autre version de
 # bittensor (11.3.0), ou l'API de soumission n'existe pas. Voir FINDINGS 5ter.
 PY=/home/user/venv/bin/python
+
+# Rafraichir le vivier AVANT tout le reste : le mineur refuse de soumettre
+# au-dela de 40 epoques de retard, et les trois etapes sont necessaires. La
+# troisieme seule rebatit le meme vivier perime (mesure le 2026-11-09 : retard
+# de 63 epoques, inchange apres un build seul ; 3 apres les trois).
+$PY -m scripts.fetch_submissions --last 60   # dechiffrer ce qui a ete soumis
+$PY -m scripts.analyze_nanobodies            # joindre les metriques publiees
+$PY -m scripts.build_nanobody_dataset        # re-telecharger l'archive, refeaturiser
+
 $PY -m scripts.check_config          # les regles du subnet ont-elles bouge ?
 $PY -m pytest tests -q               # parite + aller-retour du chiffrement
 $PY -m scripts.mine --once --wallet mon --hotkey default   # a blanc, avec GPU

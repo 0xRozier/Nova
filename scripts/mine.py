@@ -369,7 +369,12 @@ def mine_epoch(st, args, params: dict) -> dict:
         # none of the 55 scored submissions of 26173-26174 were in it. The
         # generator then grafts from a generation the competition has moved past.
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days); "
-            f"rebuild it with scripts.build_nanobody_dataset. Refusing to submit.")
+            f"refusing to submit. Rebuild it in three steps, in this order:\n"
+            f"    python -m scripts.fetch_submissions --last 60   # decrypt what was submitted\n"
+            f"    python -m scripts.analyze_nanobodies           # join the published metrics\n"
+            f"    python -m scripts.build_nanobody_dataset       # re-download the archive, refeaturize\n"
+            f"  The last step alone is not enough: without the first two the new "
+            f"sequences carry no epoch and the lag does not move.")
         entry["status"] = "donor_pool_stale"
         return _stamp(entry)
     if stale:
