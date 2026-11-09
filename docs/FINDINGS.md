@@ -106,27 +106,81 @@ longueur 23.
 moitié des époques.** Et la longueur n'est pas actionnable : CDR1+CDR2 est figé
 à 15–16 résidus pour nous comme pour tous les concurrents.
 
-### Les stratégies de génération, mesurées sur la vraie PSH
+### Les stratégies de génération ne changent rien à la PSH
 
-Époque 26174 (IGHV3-74, CDR3 de 8), 30 candidats par stratégie :
+540 candidats, 60 par stratégie et par longueur, PSH mesurée avec TNP :
 
-| Stratégie | PSH médiane | ≤89 | ≤84,4 |
+| CDR3 | chimeric | pssm | pssm_denovo |
 |---|---|---|---|
-| chimeric (référence) | 89,7 | 47 % | 10 % |
-| **pssm** | **92,1** | **30 %** | 7 % |
-| pssm_denovo | **88,0** | **57 %** | 17 % |
+| 8 | 88,5 / **53 %** | 89,9 / 43 % | 88,2 / 57 % |
+| 11 | 93,2 / **28 %** | 92,7 / 23 % | 93,1 / 33 % |
+| 18 | 100,5 / **10 %** | 96,8 / 13 % | 100,2 / 3 % |
 
-**La PSSM par mutations ponctuelles dégrade la PSH** — l'archive dont elle
-apprend les fréquences est faite de soumissions de mineurs qui poussent, comme
-nous, vers des CDR3 hydrophobes. Seul l'échantillonnage de novo aide.
+*(PSH médiane / part sous 89)*
 
-À n=30 l'écart chimeric/pssm ne fait que 1,4 σ ; une mesure sur 540 candidats
-et trois longueurs de CDR3 est en cours pour trancher.
+Aucune différence significative : à la longueur 8, chimeric contre pssm donne
+p = 0,36, contre pssm_denovo p = 0,85. **La PSSM ne corrige pas la PSH.** Elle
+change bien la distribution des acides aminés — c'est réel et c'est ce que
+mesure `scripts.compare_generators` — mais cela ne se traduit pas en PSH.
+
+> Un premier essai à n=30 montrait pssm à 30 % et pssm_denovo à 57 %, et je
+> l'ai rapporté comme un effet. En doublant l'effectif l'écart a disparu. Je
+> l'avais pourtant prédit : le signal de composition ne vaut que +0,30 après
+> correction de la longueur.
+
+### Ce qui pilote la PSH, c'est la longueur imposée
+
+| CDR3 | PSH médiane | ≤89 | ≤84,4 |
+|---|---|---|---|
+| 8 | 88,5 | 53 % | 20 % |
+| 11 | 93,2 | 28 % | 8 % |
+| 18 | 100,5 | 10 % | 2 % |
+
+Corrélation longueur/PSH : **+0,81**. Et nous ne choisissons pas la longueur.
 
 > **Leçon de méthode.** `scripts.compare_generators` mesure l'hydropathie et la
 > divergence de Jensen-Shannon — des proxys non validés. Sur ces proxys, la
 > PSSM paraît excellente. Sur la PSH mesurée, elle est pire que la référence.
 > Un proxy non validé peut inverser une décision.
+
+---
+
+## 3bis. La tension structurelle : nous gagnons là où nous ne sommes pas admis
+
+C'est le résultat le plus important de tout le projet.
+
+Sur les 21 époques du jeu noté à profondeur 4, en croisant la place dans le
+champ complet et l'admissibilité PSH de nos candidats :
+
+| Bande de CDR3 | Époques | Gagnées (classement) | Au moins un candidat sous 89 | Avec marge (≤84,4) |
+|---|---|---|---|---|
+| court ≤10 | 4 | 1 | 4 | 3 |
+| moyen 11–16 | 8 | 2 | 6 | 3 |
+| **long ≥17** | **9** | **6** | **0** | **0** |
+
+- longueur CDR3 vs notre place : Spearman **−0,44** (on classe **mieux** sur les longs)
+- longueur CDR3 vs PSH : Spearman **+0,81** (la PSH **monte** avec la longueur)
+
+**Les deux effets s'opposent exactement.** Sur les 9 époques que nous
+gagnerions au classement, **aucune n'a de candidat sous 89** si elle est longue ;
+toutes bandes confondues, seules 3 ont un candidat admissible et **2** en ont un
+avec marge.
+
+| | Époques | Taux |
+|---|---|---|
+| gagnées sur le classement seul | 9/21 | 43 % |
+| admissibles avec marge seule | 6/21 | 29 % |
+| **les deux à la fois** | **2/21** | **10 %** |
+
+**Le taux de victoire réellement atteignable est donc ~10 %**, IC 95 % [1 %,
+30 %] — pas les 29 % que j'annonçais, qui ne mesuraient que le classement.
+
+Cela explique aussi pourquoi aucun réglage du générateur n'aide : **nous sommes
+bons là où nous ne passons pas, et nous passons là où nous sommes mauvais.**
+Changer la stratégie de CDR3 ne touche ni l'un ni l'autre.
+
+Face au seuil de rentabilité de 0,3–1 %, 10 % reste au-dessus. Mais la marge
+d'erreur a fondu, et la borne basse de l'intervalle (1 %) touche le seuil.
 
 ---
 
