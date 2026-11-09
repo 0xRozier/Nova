@@ -100,7 +100,7 @@ def drop_other_gates(df: pd.DataFrame, log=print) -> pd.DataFrame:
 
 
 def predicted(m: float, s: float, sigma_v: float, bias: float,
-              n: int = 200000, seed: int = 0) -> dict:
+              n: int = 40000, seed: int = 0) -> dict:
     """Summary statistics the model implies, by simulation."""
     rng = np.random.default_rng(seed)
     mu = rng.normal(m, s, n)
@@ -113,14 +113,20 @@ def predicted(m: float, s: float, sigma_v: float, bias: float,
             "sd_accepted": float(np.std(ours[accepted])),
             "sd_refused": float(np.std(ours[~accepted])),
             "acceptance": float(accepted.mean()),
-            "auc": float(auc(ours[~accepted][:5000], ours[accepted][:5000]))}
+            "auc": float(auc(ours[~accepted], ours[accepted]))}
 
 
 def auc(refused: np.ndarray, accepted: np.ndarray) -> float:
-    """P(a refused sequence reads higher than an accepted one), ties at half."""
-    bigger = (refused[:, None] > accepted[None, :]).mean()
-    equal = (refused[:, None] == accepted[None, :]).mean()
-    return bigger + equal / 2
+    """P(a refused sequence reads higher than an accepted one), ties at half.
+
+    Mann-Whitney U from the rank sum: the pairwise form is a |refused| x
+    |accepted| matrix, which at simulation sizes is tens of millions of
+    comparisons per grid point and turned a parameter sweep into half an hour.
+    """
+    both = np.concatenate([refused, accepted])
+    ranks = pd.Series(both).rank().to_numpy()  # averages ties, as U requires
+    u = ranks[:len(refused)].sum() - len(refused) * (len(refused) + 1) / 2
+    return float(u / (len(refused) * len(accepted)))
 
 
 def observed(group: pd.DataFrame) -> dict:
@@ -136,8 +142,8 @@ def fit(obs: dict, acceptance: float) -> pd.DataFrame:
     rows = []
     for m in np.arange(84, 109, 1.0):
         for s in (2.0, 3.0, 4.0, 6.0, 8.0, 10.0):
-            for sigma_v in (0.0, 1.0, 2.0, 4.01, 6.0):
-                for bias in np.arange(0.0, 13.0, 1.0):
+            for sigma_v in (0.0, 1.0, 2.0, 4.01, 6.0, 8.0, 10.0, 12.0, 15.0):
+                for bias in np.arange(-4.0, 15.0, 1.0):
                     pred = predicted(m, s, sigma_v, bias)
                     if not pred:
                         continue
