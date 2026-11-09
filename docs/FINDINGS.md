@@ -199,6 +199,31 @@ Changer la stratégie de CDR3 ne touche ni l'un ni l'autre.
 Face au seuil de rentabilité de 0,3–1 %, 10 % reste au-dessus. Mais la marge
 d'erreur a fondu, et la borne basse de l'intervalle (1 %) touche le seuil.
 
+### Et le champ se vide quand la boucle s'allonge
+
+Mesuré sur les 71 époques notées du champ réel (1252 soumissions,
+`data/submissions/Q9NZQ7_nanobody_results.csv`) :
+
+| CDR3 imposé | Époques | Champ médian | Champ moyen | Minimum |
+|---|---|---|---|---|
+| court 5–8 | 19 | 26 | 24,2 | 11 |
+| moyen 9–12 | 11 | 20 | 20,5 | 10 |
+| long 13–16 | 18 | 22 | 18,9 | 6 |
+| **très long 17–23** | **23** | **9** | 9,9 | 1 |
+
+Spearman longueur vs taille du champ : **ρ = −0,63, p = 3×10⁻⁹**.
+
+Cela double l'enjeu du tableau précédent : les époques où nous classons le
+mieux sont aussi **celles où il y a le moins de rivaux** — 9 concurrents au
+lieu de 26, sur un tiers du calendrier (23 des 71 époques). Ce n'est pas une
+coïncidence : si presque personne ne soumet quand la boucle est longue, c'est
+vraisemblablement que presque personne n'y passe les portes non plus.
+
+D'où la question que la mesure suivante tranche : la PSH des séquences que les
+validateurs ont **acceptées** à CDR3 ≥ 17. Leur PSH réelle est ≤ 89 par
+construction. Si elles lisent elles aussi au-dessus de 89 chez nous, le mur
+est en grande partie le nôtre (`scripts/psh_by_length.py`).
+
 ---
 
 ## 4. Les verrous du validateur, reproduits et vérifiés
