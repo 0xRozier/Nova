@@ -53,6 +53,7 @@ from nova_lab.cdr3_generators import GENERATORS
 from nova_lab.config import (EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS,
                              PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT)
 from nova_lab import timelock
+from nova_lab.chain import current_block, missing_api, require_api
 
 JOURNAL = DATA_DIR / "mining" / "journal.jsonl"
 BLOCK_SECONDS = 12
@@ -334,7 +335,7 @@ def mine_epoch(st, args, params: dict) -> dict:
     epoch = params["epoch"]
     end_block = (epoch + 1) * EPOCH_LENGTH
     deadline = end_block - NO_SUBMISSION_BLOCKS - SAFETY_BLOCKS
-    block = st.get_current_block()
+    block = current_block(st)
     left = (deadline - block) * BLOCK_SECONDS
     t0 = time.monotonic()
     timings = {}
@@ -452,7 +453,7 @@ def mine_epoch(st, args, params: dict) -> dict:
         entry["status"] = "no_uid"
         log("this hotkey is not registered on the subnet")
         return _stamp(entry)
-    block = retry(st.get_current_block)
+    block = retry(current_block, st)
     reveal = timelock.reveal_round(block, EPOCH_LENGTH, NO_SUBMISSION_BLOCKS)
     filename, content = timelock.submission_file(uid, reveal, f"~|{best}")
     pointer = f"{github_path()}/{filename}"
@@ -545,6 +546,14 @@ def main():
         sys.exit("give --wallet (to look the UID up) or --uid")
 
     st = retry(bt.Subtensor, "finney")
+    # An upgrade inside the container (11.3.0 was found installed against a
+    # 10.4.1 pin) removes every call the submission path makes. Say so here,
+    # not forty minutes into an epoch with the CPU already spent.
+    if args.live or args.hotkey_ss58:
+        require_api(st)
+    elif missing_api(st):
+        log(f"warning: this bittensor cannot submit (no {', '.join(missing_api(st))}); "
+            f"dry runs only, see nova_lab.chain")
     JOURNAL.parent.mkdir(parents=True, exist_ok=True)
     done = set()
     if JOURNAL.exists():

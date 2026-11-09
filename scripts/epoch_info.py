@@ -14,6 +14,7 @@ import random
 
 import bittensor as bt
 
+from nova_lab.chain import current_block
 from nova_lab.config import CDR3_LENGTH_RANGE, EPOCH_LENGTH, NO_SUBMISSION_BLOCKS, V_NEIGHBORHOOD_CATEGORIES
 from nova_lab.reactions import reaction_ids
 
@@ -46,7 +47,7 @@ def main():
     args = parser.parse_args()
 
     st = bt.Subtensor(args.network)
-    block = st.get_current_block()
+    block = current_block(st)
     current = block // EPOCH_LENGTH
     n_reactions = len(reaction_ids())
 

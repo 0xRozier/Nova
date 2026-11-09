@@ -253,6 +253,47 @@ propriété critique.** Corrigé : le mineur refuse au-delà de `--max-donor-lag
 
 ---
 
+## 5ter. Deux interprètes Python dans le conteneur, un seul sait soumettre
+
+Le 9 novembre, en préparant l'essai à blanc, la première lecture de la chaîne
+a échoué :
+
+```
+AttributeError: 'Subtensor' object has no attribute 'get_current_block'
+```
+
+Diagnostic : le conteneur a deux interprètes, et `python` nu désigne le
+**mauvais**.
+
+| Interprète | `bittensor` | API de soumission |
+|---|---|---|
+| `/home/user/venv/bin/python` (le projet, le pin) | 10.4.1 | complète |
+| `/usr/bin/python` (système, sur le `PATH` par défaut) | 11.3.0 | **absente** |
+
+Dans la 11.3.0 l'objet `Subtensor` a été réécrit : les trois appels que fait le
+mineur y ont tous disparu — `get_current_block`,
+`get_uid_for_hotkey_on_subnet`, `set_commitment` — et `bittensor_drand`, donc
+le verrou temporel, n'y est pas installé du tout.
+
+**La production n'a jamais été touchée** : le mineur tournait sous le venv.
+Ce que cela casse, c'est un lancement fait sans activer le venv — et le
+message, un `AttributeError` nu sur la première lecture de la chaîne, ne dit
+rien de la cause. J'ai moi-même passé vingt minutes à conclure à une
+régression de l'API avant de regarder `which python`.
+
+Deux garde-fous, dans `nova_lab/chain.py` :
+
+- `current_block(st)` lit la tête de chaîne via la méthode (10.x) ou la
+  propriété (11.x), donc toutes les lectures survivent aux deux API ;
+- `require_api(st)` refuse de démarrer, **avant** l'époque, quand la version
+  chargée ne peut pas soumettre, en nommant le pin à réinstaller ; en essai à
+  blanc c'est un simple avertissement.
+
+Lancer le mineur avec `/home/user/venv/bin/python -m scripts.mine`, jamais
+`python -m scripts.mine`.
+
+---
+
 ## 6. Hypothèses que j'ai formulées et qui étaient fausses
 
 | Hypothèse | Comment je l'ai réfutée |

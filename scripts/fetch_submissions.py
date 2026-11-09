@@ -21,6 +21,7 @@ from bittensor.core.chain_data.utils import decode_metadata
 
 from nova_lab import DATA_DIR
 from nova_lab import timelock
+from nova_lab.chain import current_block
 from nova_lab.config import EPOCH_LENGTH, NO_SUBMISSION_BLOCKS
 
 NETUID = 68
@@ -82,7 +83,7 @@ def main():
     args = parser.parse_args()
 
     st = bt.Subtensor(ARCHIVE_NODE)
-    last_done = st.get_current_block() // EPOCH_LENGTH - 1
+    last_done = current_block(st) // EPOCH_LENGTH - 1
     if args.last:
         epochs = range(last_done - args.last + 1, last_done + 1)
     else:

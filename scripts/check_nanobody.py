@@ -15,6 +15,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from nova_lab.chain import current_block
 from nova_lab.config import EPOCH_LENGTH, NANOBODY_TARGET
 from nova_lab.nanobodies import NanobodyArchive, check_sequence, germline_identity, regions
 
@@ -28,7 +29,7 @@ def resolve_epoch(epoch: int | None, max_retries: int = 5, base_delay: float = 3
     for attempt in range(max_retries + 1):
         try:
             st = bt.Subtensor(url)
-            epoch_val = epoch if epoch is not None else st.get_current_block() // EPOCH_LENGTH
+            epoch_val = epoch if epoch is not None else current_block(st) // EPOCH_LENGTH
             params = challenge_params(st.determine_block_hash(epoch_val * EPOCH_LENGTH), len(reaction_ids()))
             return {"epoch": epoch_val, **params}
         except Exception as exc:

@@ -103,9 +103,12 @@ et les deux premiers coûtent cher en silence.
 ## Ordre de mise en service
 
 ```sh
-python -m scripts.check_config          # les regles du subnet ont-elles bouge ?
-python -m pytest tests -q               # parite + aller-retour du chiffrement
-python -m scripts.mine --once --wallet mon --hotkey default   # a blanc, avec GPU
+# toujours l'interprete du venv : /usr/bin/python porte une autre version de
+# bittensor (11.3.0), ou l'API de soumission n'existe pas. Voir FINDINGS 5ter.
+PY=/home/user/venv/bin/python
+$PY -m scripts.check_config          # les regles du subnet ont-elles bouge ?
+$PY -m pytest tests -q               # parite + aller-retour du chiffrement
+$PY -m scripts.mine --once --wallet mon --hotkey default   # a blanc, avec GPU
 ```
 
 Le troisième doit montrer `ranked_by: boltzgen` dans le journal et tenir dans le
