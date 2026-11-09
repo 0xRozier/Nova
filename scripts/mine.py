@@ -562,9 +562,13 @@ def main():
     while True:
         params = retry(resolve_epoch, None)
         if params["epoch"] in done:
-            time.sleep(60)
             if args.once:
+                # Don't sit through the polling sleep to say nothing: --once on
+                # an epoch already in the journal is a no-op, and silence here
+                # reads as a run in progress.
+                log(f"epoch {params['epoch']} is already in the journal, nothing to do")
                 return
+            time.sleep(60)
             continue
         try:
             entry = mine_epoch(st, args, params)
@@ -582,4 +586,22 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # bittensor leaves a non-daemon websocket thread behind, so returning from
+    # main() does not end the process. Measured: --once journalled its entry in
+    # 0.8 s and the process was still alive two minutes later with nothing left
+    # to do, so a supervisor waiting on the exit (systemd Restart=, cron, a
+    # shell loop) would wait on a miner that had already finished. Exit hard,
+    # after flushing what we wrote ourselves.
+    code = 0
+    try:
+        main()
+    except SystemExit as exit_request:  # sys.exit() inside main(), message or code
+        if isinstance(exit_request.code, str):
+            print(exit_request.code, file=sys.stderr)
+            code = 1
+        elif isinstance(exit_request.code, int):
+            code = exit_request.code
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(code)
