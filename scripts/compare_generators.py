@@ -24,8 +24,9 @@ import pandas as pd
 from nova_lab import DATA_DIR
 from nova_lab.config import NANOBODY_TARGET
 from nova_lab.cdr3_generators import (AAS, J_TAIL, ChimericGenerator,
-                                      PSSMGenerator)
+                                      PSSMGenerator, IgLMGenerator)
 from nova_lab.nanobody_features import HYDROPATHY
+from nova_lab.nanobodies import regions as parse_regions
 
 import random
 
@@ -75,7 +76,7 @@ def main():
     parser.add_argument("--target", default=NANOBODY_TARGET[0])
     parser.add_argument("--generators", nargs="+",
                         default=["chimeric", "pssm", "pssm_denovo"],
-                        choices=["chimeric", "pssm", "pssm_denovo"])
+                        choices=["chimeric", "pssm", "pssm_denovo", "iglm"])
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--hydro-threshold", type=float, default=-0.5,
                         help="hydropathy threshold for reporting %% under")
@@ -104,6 +105,31 @@ def main():
     # Build generators.
     chimeric = ChimericGenerator()
     pssm = PSSMGenerator(all_cdr3s)
+    iglm = None
+    if "iglm" in args.generators:
+        try:
+            iglm = IgLMGenerator()
+            # Trigger the lazy load to verify torch+iglm are available.
+            iglm._load()
+        except ImportError as exc:
+            print(f"skipping iglm: {exc}")
+            args.generators = [g for g in args.generators if g != "iglm"]
+            iglm = None
+
+    # For IgLM we need framework contexts: parse full sequences from the archive.
+    framework_donors: list[dict] = []
+    if iglm is not None:
+        for seq in df["sequence"].dropna().head(200):
+            r = parse_regions(seq)
+            if r and len(r["CDR3"]) == cdr3_len:
+                framework_donors.append(r)
+            if len(framework_donors) >= 50:
+                break
+        if not framework_donors:
+            print("skipping iglm: could not parse any framework donors from the archive")
+            args.generators = [g for g in args.generators if g != "iglm"]
+            iglm = None
+
     rng = random.Random(args.seed)
 
     strategies: dict[str, list[str]] = {}
@@ -118,6 +144,10 @@ def main():
                 cdr3s.append(pssm.generate_cdr3(donor, cdr3_len, J_TAIL, gen_rng))
             elif name == "pssm_denovo":
                 cdr3s.append(pssm.generate_de_novo(donor, cdr3_len, J_TAIL, gen_rng))
+            elif name == "iglm":
+                fw = gen_rng.choice(framework_donors)
+                cdr3s.append(iglm.generate_cdr3(donor, cdr3_len, J_TAIL, gen_rng,
+                                                framework=fw))
         strategies[name] = cdr3s
 
     # Also add the raw archive donors for comparison.

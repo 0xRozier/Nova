@@ -81,7 +81,8 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
         donor_cdr3 = rng.choice(cdr3_pool)
         cdr3_length = len(donor_cdr3)
         if generator is not None:
-            r["CDR3"] = generator.generate_cdr3(donor_cdr3, cdr3_length, J_TAIL, rng)
+            r["CDR3"] = generator.generate_cdr3(donor_cdr3, cdr3_length, J_TAIL, rng,
+                                                framework=r)
         else:
             r["CDR3"] = mutate_region(donor_cdr3, rng, rng.randint(2, 4), keep_tail=J_TAIL)
         if rng.random() < 0.15:

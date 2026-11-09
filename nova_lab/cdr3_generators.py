@@ -11,9 +11,12 @@ Three strategies behind a common interface:
   PSSMGenerator      -- position-specific frequencies from archive CDR3s
   IgLMGenerator      -- language model infilling (requires torch + iglm)
 
-Every generator exposes ``generate_cdr3(donor_cdr3, cdr3_length, j_tail, rng)``
+Every generator exposes
+``generate_cdr3(donor_cdr3, cdr3_length, j_tail, rng, framework=None)``
 and returns a string of exactly *cdr3_length* residues, with the last *j_tail*
-residues preserved from the donor.
+residues preserved from the donor.  The optional *framework* dict
+(``{"FR1":…, "CDR1":…, …}``) provides the full VH context that IgLM needs;
+Chimeric and PSSM generators ignore it.
 """
 from __future__ import annotations
 
@@ -32,7 +35,8 @@ class ChimericGenerator:
     """Current behaviour: uniform random point mutations. Baseline."""
 
     def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
-                      j_tail: int, rng: random.Random) -> str:
+                      j_tail: int, rng: random.Random,
+                      framework: dict | None = None) -> str:
         out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
         mutable = range(max(len(out) - j_tail, 0))
         if not mutable:
@@ -101,7 +105,8 @@ class PSSMGenerator:
         return rng.choices(aas, weights=weights, k=1)[0]
 
     def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
-                      j_tail: int, rng: random.Random) -> str:
+                      j_tail: int, rng: random.Random,
+                      framework: dict | None = None) -> str:
         """Weighted point mutations: same number of mutations as chimeric, but
         drawn from archive column frequencies instead of uniform."""
         out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
@@ -137,17 +142,40 @@ class PSSMGenerator:
 # IgLM: language model infilling (requires torch + iglm)
 # ---------------------------------------------------------------------------
 
+def _assemble_regions(r: dict) -> str:
+    """Concatenate framework + CDR regions into a full VH sequence."""
+    return r["FR1"] + r["CDR1"] + r["FR2"] + r["CDR2"] + r["FR3"] + r["CDR3"] + r["FR4"]
+
+
+def _cdr3_start(r: dict) -> int:
+    """Return the 0-based index where CDR3 begins in the assembled VH."""
+    return len(r["FR1"]) + len(r["CDR1"]) + len(r["FR2"]) + len(r["CDR2"]) + len(r["FR3"])
+
+
 class IgLMGenerator:
     """CDR3 infilling via IgLM camel heavy-chain model.
 
-    Lazy-loads torch and iglm on first use. Raises ImportError with a clear
+    Lazy-loads torch and iglm on first use.  Raises ImportError with a clear
     message if the dependencies are not installed.
+
+    IgLM's real API::
+
+        model.infill(
+            sequence,            # full VH string
+            chain_token,         # "[HEAVY]"
+            species_token,       # "[CAMEL]"
+            infill_range=(start, end),
+            num_to_generate=N,
+        )
+
+    It returns ``list[str]`` — full VH sequences with the infill region
+    replaced by model-generated residues.  The infill can be variable-length,
+    so we filter for exact CDR3 length afterwards.
     """
 
     def __init__(self, device: str = "cpu"):
         self._device = device
         self._model = None
-        self._tokenizer = None
 
     def _load(self):
         if self._model is not None:
@@ -166,37 +194,88 @@ class IgLMGenerator:
         self._model = model
 
     def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
-                      j_tail: int, rng: random.Random) -> str:
-        """Infill the mutable part of CDR3 using IgLM, preserving J-tail."""
+                      j_tail: int, rng: random.Random,
+                      framework: dict | None = None) -> str:
+        """Infill the mutable part of CDR3 using IgLM, preserving J-tail.
+
+        *framework* is a regions dict (FR1, CDR1, …, FR4).  When provided the
+        full VH context is given to IgLM so the model can condition on the
+        surrounding sequence.  Without it we fall back to chimeric-style
+        random mutation (IgLM needs a full VH to work).
+        """
+        if framework is None:
+            # No framework context — fall back to simple random mutation.
+            out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
+            tail_start = max(cdr3_length - j_tail, 0)
+            for pos in rng.sample(list(range(tail_start)), min(2, tail_start)):
+                out[pos] = rng.choice(AAS)
+            return "".join(out)
+
         self._load()
-        tail_start = max(cdr3_length - j_tail, 0)
-        tail = donor_cdr3[tail_start:cdr3_length] if tail_start < len(donor_cdr3) else ""
-        # IgLM infills a masked span. We mask the mutable region and let the
-        # model generate it conditioned on species=camel, chain=heavy.
-        parent_seq = donor_cdr3[:cdr3_length].ljust(cdr3_length, "G")
-        prefix = parent_seq[:0]  # empty — infill the whole mutable part
-        suffix = tail
-        num_to_generate = tail_start
-        if num_to_generate <= 0:
+        # Build the parent VH with the donor CDR3 in place.
+        parent_regions = dict(framework)
+        parent_regions["CDR3"] = donor_cdr3[:cdr3_length].ljust(cdr3_length, "G")
+        parent_seq = _assemble_regions(parent_regions)
+        start = _cdr3_start(parent_regions)
+        # Infill just the mutable part (not the J-tail).
+        mutable_end = start + max(cdr3_length - j_tail, 0)
+
+        if mutable_end <= start:
             return donor_cdr3[:cdr3_length]
-        generated, _ = self._model.infill(
-            prefix, suffix,
-            species="camel",
-            chain_type="heavy",
-            num_to_generate=1,
-            infill_len=num_to_generate,
+
+        seqs = self._model.infill(
+            parent_seq, "[HEAVY]", "[CAMEL]",
+            infill_range=(start, mutable_end),
+            num_to_generate=100,
         )
-        if generated:
-            infilled = generated[0][:num_to_generate]
-            # Pad if the model returned fewer residues than requested.
-            while len(infilled) < num_to_generate:
-                infilled += rng.choice(AAS)
-            return infilled + tail
-        # Fallback: return the donor with minimal mutation.
-        out = list(parent_seq)
+
+        # Extract CDR3 from returned full VH sequences and filter for length.
+        j_tail_seq = donor_cdr3[cdr3_length - j_tail:cdr3_length] if j_tail else ""
+        for seq in seqs:
+            infilled = seq[start:mutable_end]
+            cdr3 = infilled + j_tail_seq
+            if len(cdr3) == cdr3_length:
+                return cdr3
+
+        # Fallback: no IgLM result matched the length — random mutation.
+        out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
+        tail_start = max(cdr3_length - j_tail, 0)
         for pos in rng.sample(list(range(tail_start)), min(2, tail_start)):
             out[pos] = rng.choice(AAS)
         return "".join(out)
+
+    def generate_batch(self, framework: dict, cdr3_length: int,
+                       j_tail: int, n: int, rng: random.Random) -> list[str]:
+        """Generate up to *n* CDR3 candidates in one IgLM call.
+
+        Much faster than calling generate_cdr3() *n* times because IgLM's
+        ``infill()`` supports ``num_to_generate`` to produce many sequences in
+        a single forward pass.
+        """
+        self._load()
+        parent_seq = _assemble_regions(framework)
+        start = _cdr3_start(framework)
+        mutable_end = start + max(cdr3_length - j_tail, 0)
+
+        if mutable_end <= start:
+            return [framework["CDR3"][:cdr3_length]] * n
+
+        seqs = self._model.infill(
+            parent_seq, "[HEAVY]", "[CAMEL]",
+            infill_range=(start, mutable_end),
+            num_to_generate=n * 3,
+        )
+
+        j_tail_seq = framework["CDR3"][-j_tail:] if j_tail else ""
+        results: list[str] = []
+        for seq in seqs:
+            infilled = seq[start:mutable_end]
+            cdr3 = infilled + j_tail_seq
+            if len(cdr3) == cdr3_length:
+                results.append(cdr3)
+            if len(results) >= n:
+                break
+        return results
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +291,8 @@ class PSSMDeNovoGenerator(PSSMGenerator):
     """
 
     def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
-                      j_tail: int, rng: random.Random) -> str:
+                      j_tail: int, rng: random.Random,
+                      framework: dict | None = None) -> str:
         return self.generate_de_novo(donor_cdr3, cdr3_length, j_tail, rng)
 
 
