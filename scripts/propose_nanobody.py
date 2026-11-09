@@ -155,7 +155,6 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
         df = df[df["epoch"].isna() | (df["epoch"] < archive_cutoff)].copy()
         log(f"archive restricted to before epoch {archive_cutoff}: {len(df)} of {before} sequences")
     df["true_rank_sum"] = rank_sum(df)
-    models = Surrogate.load(f"{target}_nanobody").main
 
     compliant = df[(df["v_identity"] >= MIN_HUMAN_V_IDENTITY + GERMLINE_MARGIN)
                    & (df["j_identity"] >= MIN_HUMAN_J_IDENTITY)]
@@ -251,6 +250,7 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
         return out
 
     # The real competition: the most recent dated submissions, which all comply.
+    models = Surrogate.load(f"{target}_nanobody").main
     dated = df[df["epoch"].notna()]
     reference = dated.nlargest(REFERENCE_POOL, "epoch") if len(dated) else compliant.head(REFERENCE_POOL)
     ranked, reference_ranks = score(valid, models, reference)
