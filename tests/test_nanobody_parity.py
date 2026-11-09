@@ -18,6 +18,7 @@ import random
 import pytest
 
 from nova_lab import DATA_DIR
+from nova_lab.config import NANOBODY_TARGET
 from nova_lab.nanobodies import NanobodyArchive, check_sequence, seq_hash
 
 SAMPLE = 100
@@ -70,7 +71,33 @@ def exclude_by_epoch():
         s = json.loads(line)
         if s["sequences"]:
             by_epoch.setdefault(s["epoch"], set()).add(s["sequences"][0])
-    return lambda epoch: {s for e, seqs in by_epoch.items() if e >= epoch for s in seqs}
+
+    # submissions.jsonl only covers the epochs we decrypted, so it cannot
+    # exclude everything the archive gained since. The archive carries no date
+    # column, but data/prebuilt/<target>_regions.csv is keyed by sequence and
+    # was built when the archive held 9466 entries, covering up to epoch 26025
+    # — so it is a dated snapshot. Anything outside it arrived later and must
+    # not count as a duplicate when replaying an earlier epoch. Without this,
+    # refreshing the archive to 12842 made the checker reject 4 of 85 sequences
+    # the validators had accepted.
+    snapshot, snapshot_epoch = set(), 26025
+    snap = DATA_DIR / "prebuilt" / f"{NANOBODY_TARGET[0]}_regions.csv"
+    if snap.exists():
+        import pandas as pd
+        frame = pd.read_csv(snap, keep_default_na=False)
+        if "sequence" in frame.columns:
+            snapshot = set(frame["sequence"])
+
+    current = set(NanobodyArchive(with_regions=False).sequences)
+    arrived_later = (current - snapshot) if snapshot else set()
+
+    def exclude(epoch: int) -> set:
+        later = {s for e, seqs in by_epoch.items() if e >= epoch for s in seqs}
+        if epoch <= snapshot_epoch:
+            later |= arrived_later
+        return later
+
+    return exclude
 
 
 def test_never_rejects_a_sequence_the_validator_accepted(labelled, params, archive, exclude_by_epoch):
