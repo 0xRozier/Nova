@@ -9,3 +9,6 @@ lium_ed25519
 lium_ed25519:Zone.Identifier
 *:Zone.Identifier
 *.sqlite
+
+# Structures regenerees par scripts.design_nanobody --fold (150 ko chacune)
+inputs/design/*.pdb

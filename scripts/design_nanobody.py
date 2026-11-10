@@ -171,11 +171,58 @@ def top_level_spec(scaffold_paths: list[str], target_cif: str) -> dict:
     }
 
 
+def renumber_sequentially(pdb: Path) -> int:
+    """Renumber residues 1..N in place, and return N.
+
+    NanoBodyBuilder2 writes IMGT numbering, which has gaps: scaffold0 runs
+    1-9, 11, ... to 128 for 120 residues. BoltzGen's res_index is the canonical
+    mmcif index, sequential from 1, and its README is explicit that the author
+    numbering is "incorrect" for this purpose -- but what its PDB parser does
+    with an author-numbered file is not something we can check without running
+    it. Renumbering makes the two readings coincide, so the spec is right
+    either way instead of right if we guessed the parser correctly.
+    """
+    lines, mapping, out = pdb.read_text().splitlines(True), {}, []
+    for line in lines:
+        if line.startswith(("ATOM", "HETATM")):
+            key = line[22:27]  # residue number plus insertion code
+            if key not in mapping:
+                mapping[key] = len(mapping) + 1
+            out.append(f"{line[:22]}{mapping[key]:>4} {line[27:]}")
+        else:
+            out.append(line)
+    pdb.write_text("".join(out))
+    return len(mapping)
+
+
+# ImmuneBuilder lives in the TNP virtualenv, not the miner's: the same split
+# scripts.tnp_developability works around for the TNP binary.
+FOLDER_PYTHON = Path("/home/user/venv-tnp/bin/python")
+
+
 def fold(sequence: str, out: Path) -> Path:
     """NanoBodyBuilder2 structure for the framework, as BoltzGen's input."""
-    from ImmuneBuilder import NanoBodyBuilder2
+    import subprocess
+    if not FOLDER_PYTHON.exists():
+        raise SystemExit(
+            f"NanoBodyBuilder2 needs {FOLDER_PYTHON}, which is where ImmuneBuilder "
+            f"is installed. Without it there is no structure and no design spec.")
     out.parent.mkdir(parents=True, exist_ok=True)
-    NanoBodyBuilder2().predict({"H": sequence}).save(str(out))
+    proc = subprocess.run(
+        [str(FOLDER_PYTHON), "-c",
+         "import sys\n"
+         "from ImmuneBuilder import NanoBodyBuilder2\n"
+         "NanoBodyBuilder2().predict({'H': sys.argv[1]}).save(sys.argv[2])",
+         sequence, str(out)],
+        capture_output=True, text=True)
+    if proc.returncode != 0 or not out.exists():
+        raise RuntimeError(f"NanoBodyBuilder2 failed: {proc.stderr[-600:]}")
+    n = renumber_sequentially(out)
+    if n != len(sequence):
+        raise ValueError(
+            f"{out.name}: the structure has {n} residues for a {len(sequence)}-residue "
+            f"sequence, so sequence offsets do not index it. Refusing to emit a spec "
+            f"whose res_index would point at the wrong residues.")
     return out
 
 
