@@ -454,9 +454,36 @@ réellement soumise reste intégralement vérifiée, et un doublon reste un refu
 certain — pas de repli « soumettre quand même », contrairement au crible de
 développabilité.
 
-Budget attendu après correctif : ~22 min au lieu de 49, soit **45 min
-disponibles** pour BoltzGen au lieu de 18. De quoi tripler le pool PSH sur les
-époques longues, qui en ont besoin.
+### Mesuré après les deux correctifs
+
+Même époque, même graine, mêmes donneurs :
+
+| | avant | après |
+|---|---|---|
+| `propose` | 1853 s | **145 s** (×12,8) |
+| candidats valides sur 5000 | 829 | **2163** (×2,6) |
+| refus sur l'identité J | 2919 | **0** |
+
+Budget d'époque recomposé : propose 145 s + PSH 1058 s + archive 44 s +
+développabilité 33 s + BoltzGen ~660 s ≈ **32 min sur 67**. Au lieu de 7 min
+de marge, **35** — et de quoi tripler le pool PSH sur les époques longues.
+
+### Le prochain levier est de la même famille
+
+Les causes de refus restantes, après la correction du J :
+
+```
+1326  CDR3 >= 85% identique a un CDR archive
+1144  gene V ['IGHV3-23'] n'est pas celui de l'epoque (IGHV3-66)
+ 165  idem, autres appels de V
+ 125  identite V humaine 81,4-81,6 < 82
+```
+
+**1309 candidats (26 %) perdus parce que le greffon change l'appel du gène V.**
+C'est exactement le défaut du J vu de l'autre côté : le segment V couvre CDR1,
+CDR2 et le *début* du CDR3, et nous mutons CDR1 (15 % du temps), CDR2 (10 %) et
+la tête du CDR3 librement. À vérifier de la même façon : croiser les donneurs et
+mesurer, pas supposer.
 
 ---
 
