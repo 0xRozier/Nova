@@ -248,6 +248,12 @@ assert proc.returncode == 0, "BoltzGen a echoue : voir le journal ci-dessus"
 Les verrous du validateur (identité germinale, marqueurs VHH, PSH, Aggrescan3D, unicité d'archive) ne sont **pas** appliqués ici : ANARCI et hmmer ne sont pas installés. Le CSV se criblera localement avec `scripts.preflight`.
 """),
         code("""
+# L arborescence AVANT la lecture : si le parsing echoue, papermill arrete le
+# carnet et la cellule d inspection qui suivait ne tournait jamais -- on perdait
+# exactement l information necessaire pour corriger la lecture.
+print("=== arborescence des resultats ===")
+sh(f"find {out_dir} -maxdepth 4 | head -80")
+
 import pandas as pd, glob
 rows = []
 for f in sorted(glob.glob(str(out_dir / "**" / "*.csv"), recursive=True)):
@@ -276,9 +282,6 @@ if "design_iiptm" in res.columns:
                "elle ne se transfere pas telle quelle a ce cadre")
     print(f"  -> {verdict}")
 res.head(20)
-"""),
-        code("""
-sh(f"find {out_dir} -maxdepth 3 | head -60")
 """),
     ]
     # Before the cell that unpacks it, not after: cells[1] both sets the
