@@ -686,3 +686,74 @@ deux hypothèses fausses de ma part) et la position 1 du CDR3 (après trois).
 Et valider chaque contrainte trouvée contre le champ réel accepté : 69 % des
 2536 acceptées portent une des quatre queues J compatibles, ce qui a confirmé
 que la contrainte était réelle et non un artefact de notre chaîne.
+
+---
+
+## 10. Le champ s'est amélioré pendant que nous réparions le mineur
+
+Mesuré le 2026-11-10 sur le run Kaggle de l'étage BoltzGen (8 candidats réels
+de l'époque 26238, 2×T4) confronté aux 970 soumissions notées des 35 dernières
+époques.
+
+### D'abord, le chiffre qui manquait au budget
+
+| étape de BoltzGen | temps |
+|---|---|
+| design | 392,9 s |
+| folding | 547,5 s |
+| analysis | 36,1 s |
+| **total, 8 séquences** | **20,0 min = 150 s/séquence** sur 2×T4 |
+
+**150 s, pas les 96 que j'estimais.** Budget d'époque complet : propose ~3 min
++ PSH 3,6 min + archive 0,7 + développabilité 0,6 + BoltzGen 20 = **~28 min
+sur 67**. Le budget tient, avec 39 min de marge.
+
+### Ensuite, le résultat qui compte
+
+Le champ réel a changé de régime entre les époques 26025 et 26170 :
+
+| | octobre (25956-26025) | maintenant (26200+) |
+|---|---|---|
+| `design_iiptm` médian | **0,239** | **0,664** |
+| 99ᵉ percentile | 0,630 | 0,778 |
+| maximum | 0,704 | 0,786 |
+| part au-dessus de 0,6 | **2 %** | **75 %** |
+| meilleur par époque (médiane) | 0,543 | 0,757 |
+| taux de refus | 52 % | 33 % |
+
+**Notre meilleur candidat : 0,375.** Soit dans les **12 % les plus faibles** du
+champ actuel, et **0 des 35 dernières époques** aurait été gagnée avec cette
+valeur.
+
+### Deux explications écartées par la mesure
+
+1. **Changement d'échelle de la notation.** Il aurait déplacé le maximum comme
+   la médiane. Le maximum n'a bougé que de 12 % (0,704 → 0,786) quand la
+   médiane triplait. De plus le dépôt amont n'a pas changé depuis le 26 octobre
+   (db9bf19, `HEAD..origin/main` = 0), donc le code de notation est le même.
+2. **Survie** — un durcissement des filtres éliminerait les soumissions faibles
+   et relèverait la médiane des acceptées sans toucher le plafond, exactement
+   la signature observée. Mais le taux de refus a **baissé**, de 52 % à 33 %.
+   Les filtres ne se sont pas durcis.
+
+Il reste donc que **le champ s'est réellement amélioré** : en octobre 2 % des
+soumissions dépassaient 0,6, aujourd'hui 75 %. Le plafond était déjà atteignable
+en octobre (quelqu'un faisait 0,704) ; maintenant presque tout le monde
+l'atteint. Une méthode est devenue publique, ou copiée, entre le 29 octobre et
+le 6 novembre.
+
+### Ce que cela fait aux estimations de ce document
+
+**Les taux de victoire de 14-29 % (§7) puis 10 % (§3bis) ont été mesurés contre
+le champ d'octobre. Ce champ n'existe plus.** Rejoué contre les époques
+récentes, notre meilleur candidat se place 17ᵉ à 33ᵉ sur des champs de 22 à 37,
+là où il se plaçait 1ᵉʳ dans 7 des 18 époques d'octobre à CDR3 court.
+
+L'écart n'est pas un écart de réglage : greffer des CDR3 archivés sur des
+charpentes archivées produit 0,375, et il faut 0,75 pour gagner. Aucun des
+correctifs de cette nuit — appariement J, seuil PSH recalibré, budget d'époque
+— ne touche à cela. Ils ont rendu le mineur capable de soumettre ; ils ne
+rendent pas la séquence compétitive.
+
+**Conséquence directe : ne pas engager de TAO.** L'espérance de gain mesurée
+contre le champ actuel est de zéro victoire sur 35 époques.
