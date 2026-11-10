@@ -534,9 +534,62 @@ C'est la même leçon que le σ de la PSH et que « le seuil PSH n'est pas la
 cause » : **un mécanisme établi ne dit pas quelle part du résultat il
 explique.** Seule la mesure de bout en bout le dit.
 
-Le levier V, s'il vaut la peine, ce sont les mutations elles-mêmes. Le
-commentaire de `propose` dit depuis toujours que muter CDR1/CDR2 entame la marge
-germinale ; personne ne l'a jamais chiffré.
+### Quatre tentatives sur le gène V, quatre rejets par la mesure
+
+| tentative | valides sur 5000 (CDR3 = 7) |
+|---|---|
+| **référence : appariement J seul** | **2163** |
+| criblage des paires sur le V, avec repli | 1955 |
+| criblage des paires sur le V, sans repli | 2129 |
+| CDR1/CDR2 jamais mutés | inchangé (28 % de refus V dans les 4 variantes) |
+| donneurs de CDR3 filtrés sur le gène V | 1751 |
+| tête du CDR3 protégée (`V_HEAD = 2`) | **0** |
+
+Le mécanisme, lui, a fini par être trouvé et il est solide : **le deuxième
+résidu du CDR3 porte la signature du gène V** (IGHV3-23 finit par `…YYCAK`,
+IGHV3-66 par `…YYCAR`). Sur 1200 candidats, une tête en `R` est refusée sur
+l'appel V dans 0 à 2 % des cas, une tête en `K` dans 65 à 77 % ; le *premier*
+résidu est indifférent. Dans l'archive, 48 % des séquences appelant IGHV3-23
+portent `K` là, contre 3 % de celles appelant IGHV3-66.
+
+Et les deux pièces n'ont de sens qu'**ensemble** : un donneur du bon gène V
+(pour que la tête soit juste) *et* une tête que le PSSM ne peut pas toucher
+(parce qu'il est ajusté sur tous les gènes V confondus et y remet un `K`).
+Chacune seule échoue.
+
+**Mais à CDR3 court il n'y a pas de place pour les appliquer.** Longueur 7 :
+2 résidus codés par le V + 3 par le J (+1 de marge dans `J_TAIL`) = **une seule
+position libre**, donc chaque candidat est son propre donneur et 3361 sont
+refusés comme doublons d'archive. Les ~25 % de refus sur le V sont le prix de
+la diversité à ces longueurs. Ce n'est pas un défaut de notre générateur, c'est
+la géométrie du problème — et cela explique vraisemblablement pourquoi le champ
+est le plus fourni aux CDR3 courts (26 soumissions médianes contre 9 aux
+longueurs longues) : personne n'y peut différencier beaucoup sa séquence.
+
+À CDR3 long, où les mêmes contraintes laissent 14 positions libres, la paire
+de correctifs fait ce qu'elle promet — mesuré à longueur 20, `IGHV3-23` :
+
+| variante | valides sur 1500 | refus V |
+|---|---|---|
+| témoin | 1353 (90 %) | 142 |
+| tête protégée seule | 1362 (91 %) | 136 |
+| donneurs du bon V seuls | 1411 (94 %) | 85 |
+| **les deux ensemble** | **1441 (96 %)** | **54** |
+
+**Non livré malgré tout.** +6 points de validité dans un étage qui coûte 145 s
+et n'est pas le goulot (la PSH en prend 17,6 min), contre un comportement
+conditionnel à la longueur dans deux modules. Le vivier de candidats valides
+n'a jamais été ce qui nous limite aux longueurs longues. Le mécanisme est
+documenté ici ; si un jour la génération devient le goulot, le correctif est à
+reprendre tel quel.
+
+### Et une affirmation du code qui était fausse
+
+Le commentaire de `generate` disait depuis toujours que muter CDR1/CDR2 entame
+la marge d'identité germinale. Chiffré pour la première fois : couper
+**entièrement** ces mutations laisse les refus V à 28 % et la validité à 71,5 %
+contre 69,9 % — un écart dans le bruit (± 1,2 point à n = 1500). L'affirmation
+est fausse en pratique.
 
 ---
 
