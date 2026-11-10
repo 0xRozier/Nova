@@ -460,30 +460,83 @@ Même époque, même graine, mêmes donneurs :
 
 | | avant | après |
 |---|---|---|
-| `propose` | 1853 s | **145 s** (×12,8) |
+| `propose` | 1853 s | **145 à 189 s** (×10 à ×12,8) |
 | candidats valides sur 5000 | 829 | **2163** (×2,6) |
 | refus sur l'identité J | 2919 | **0** |
+
+(Le `propose` corrigé a été remesuré quatre fois : 145, 171, 181 et 189 s. Le
+coût de la sonde d'appariement varie avec le nombre de donneurs sondés ; la
+dispersion de ±15 % est à retenir plutôt que la première valeur.)
 
 Budget d'époque recomposé : propose 145 s + PSH 1058 s + archive 44 s +
 développabilité 33 s + BoltzGen ~660 s ≈ **32 min sur 67**. Au lieu de 7 min
 de marge, **35** — et de quoi tripler le pool PSH sur les époques longues.
 
-### Le prochain levier est de la même famille
+---
 
-Les causes de refus restantes, après la correction du J :
+## 7ter. Le greffon cassait un segment germinal : un cas sur deux corrigé
 
-```
-1326  CDR3 >= 85% identique a un CDR archive
-1144  gene V ['IGHV3-23'] n'est pas celui de l'epoque (IGHV3-66)
- 165  idem, autres appels de V
- 125  identite V humaine 81,4-81,6 < 82
-```
+Deux défauts symétriques, trouvés en croisant les donneurs plutôt qu'en
+raisonnant. Les deux mécanismes sont réels et mesurés. **Un seul des deux
+correctifs améliore le résultat**, et c'est tout l'intérêt de l'histoire.
 
-**1309 candidats (26 %) perdus parce que le greffon change l'appel du gène V.**
-C'est exactement le défaut du J vu de l'autre côté : le segment V couvre CDR1,
-CDR2 et le *début* du CDR3, et nous mutons CDR1 (15 % du temps), CDR2 (10 %) et
-la tête du CDR3 librement. À vérifier de la même façon : croiser les donneurs et
-mesurer, pas supposer.
+### Le gène J : corrigé, ×2,6 sur le vivier de candidats
+
+Le segment J couvre les **3 derniers résidus du CDR3 plus les 11 de la FR4** —
+quatorze positions. Le chimérisme prend la queue chez un donneur et la FR4 chez
+un autre : la séquence porte alors deux gènes IGHJ, lit 12/14 = **85,71 %**
+contre un plancher de 86, et le validateur la refuse pour trois dixièmes de
+point. Époque 26238 : **2919 candidats sur 5000**, tous sur cette même valeur.
+
+Croisement de neuf queues × quatre variantes de FR4, corps fixe :
+
+| queue | L | M | Q | T |
+|---|---|---|---|---|
+| FDY | **100** | 92,9 | 92,9 | 92,9 |
+| FDV | 92,9 | **100** | 92,9 | 92,9 |
+| MDV | 92,9 | 92,9 | 92,9 | **100** |
+| RDV | *85,7* | 92,9 | *85,7* | 92,9 |
+| DDY | 92,9 | *85,7* | *85,7* | *85,7* |
+| MDG | *85,7* | *85,7* | *85,7* | 92,9 |
+
+Validé sur la vérité terrain : **69 % des 2536 soumissions acceptées** utilisent
+une des quatre queues qui passent partout (`FDY`, `FDV`, `FDP`, `MDV`), `FDY`
+seule en faisant la moitié. Les séquences admises portent des extrémités
+germino-compatibles parce qu'elles n'ont pas le choix.
+
+Correctif : le donneur de CDR3 est tiré parmi ceux compatibles avec la FR4 de la
+charpente. Mesuré à graine et donneurs identiques : **38 % → 100 %** de passage
+du plancher J sur 400 candidats.
+
+### Le gène V : mécanisme réel, correctif inutile — retiré
+
+Le segment V couvre CDR1, CDR2 et le **début** du CDR3 : IGHV3-66 finit par
+`…YYCAR`, donc la tête du CDR3 est codée par le V. En assemblant 144 paires
+**sans aucune mutation**, 38 % perdent le gène V de l'époque, et la coupure est
+franche : tête `AR` → 100 % des charpentes gardent l'appel, tête `AK` → 25 %.
+
+J'ai donc étendu la sonde au V. Résultat :
+
+| variante | valides sur 5000 |
+|---|---|
+| origine | 829 |
+| **J seul** | **2163** |
+| J + V, avec repli vers le vivier entier | 1955 |
+| J + V, sans repli | 2129 |
+
+**Les refus sur le V restent à ~1077 sur 5000 avec le criblage en place.**
+Cribler la paire ne corrige que l'assemblage non muté ; ce qui casse l'appel V,
+c'est la suite — CDR1 muté 15 % du temps, CDR2 10 %, et le corps du CDR3
+librement. Le criblage réduisait les paires utilisables de 2400 à 654 et
+écartait trois charpentes pour ne rien gagner. Retiré.
+
+C'est la même leçon que le σ de la PSH et que « le seuil PSH n'est pas la
+cause » : **un mécanisme établi ne dit pas quelle part du résultat il
+explique.** Seule la mesure de bout en bout le dit.
+
+Le levier V, s'il vaut la peine, ce sont les mutations elles-mêmes. Le
+commentaire de `propose` dit depuis toujours que muter CDR1/CDR2 entame la marge
+germinale ; personne ne l'a jamais chiffré.
 
 ---
 
