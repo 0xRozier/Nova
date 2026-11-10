@@ -202,15 +202,33 @@ if out_dir.exists():
     raise SystemExit(f"{{out_dir}} existe déjà : BoltzGen reprendrait les résultats au lieu de "
                      f"recalculer. Incrémenter REPLICATE pour un nouveau tirage.")
 step(f"lancement de BoltzGen sur {{n_total}} séquences (run {{RUN}})")
+# Chronometrage de l etage BoltzGen SEUL, sans l installation ni les 6 Go de
+# poids : c est le seul chiffre du budget d epoque qui manque, parce que le
+# conteneur ou tourne le mineur n a pas de GPU. Tous les autres etages sont
+# mesures (FINDINGS 7bis).
+t_boltzgen = time.time()
 with open(log_path, "w") as log:
     proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT)
     while proc.poll() is None:
         time.sleep(300)
         step(f"en cours — {{last_log_line()}}")
+elapsed = time.time() - t_boltzgen
 
 print(log_path.read_text(errors="replace").replace("\\r", "\\n")[-5000:])
 step(f"BoltzGen terminé (code {{proc.returncode}})")
 assert proc.returncode == 0, "BoltzGen a échoué : voir le journal ci-dessus"
+print()
+print("=== CHRONOMETRAGE DE L ETAGE BOLTZGEN ===")
+print(f"  {{n_total}} sequences en {{elapsed / 60:.1f}} min "
+      f"= {{elapsed / max(n_total, 1):.0f}} s par sequence")
+try:
+    import torch
+    gpus = [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())]
+    print(f"  sur {{len(gpus)}} GPU : {{', '.join(gpus)}}")
+except Exception as exc:
+    print(f"  (GPU non identifies : {{exc}})")
+print(f"  budget d epoque : 67 min au total, dont ~20 min deja mesurees hors")
+print(f"  BoltzGen, donc marge restante {{67 - 20 - elapsed / 60:.0f}} min")
 """),
         code("""
 import shutil
