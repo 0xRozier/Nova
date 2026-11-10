@@ -62,53 +62,69 @@ def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> s
     return "".join(out)
 
 
-def j_compatible_pool(donors: pd.DataFrame, cdr3_pool: list[str],
-                      log=print) -> dict[str, list[str]]:
-    """For each framework's FR4, the CDR3 donors whose tail clears the J floor.
+def germline_compatible_pool(donors: pd.DataFrame, cdr3_pool: list[str],
+                             allowed_v: str, log=print) -> dict[str, list[str]]:
+    """For each framework, the CDR3 donors that keep its germline calls intact.
 
-    The IMGT J segment spans the last three CDR3 residues *plus* the eleven of
-    FR4 -- fourteen positions in all. A chimera therefore takes its J gene from
-    two donors at once: the tail from the CDR3 donor, FR4 from the framework
-    donor. When the two imply different IGHJ genes the pair reads 12/14 =
-    85.7 % against a floor of 86 and the validator refuses it.
+    Two symmetric defects, both of them the graft breaking a germline segment
+    the validator scores:
 
-    Measured on epoch 26238: 2919 of 5000 candidates died there, every one of
-    them on that same 85.7 -- 58 % of the generator's output, thrown away for
+    The J segment spans the last three CDR3 residues plus FR4 (fourteen
+    positions). The V segment covers CDR1, CDR2 and the START of CDR3 --
+    IGHV3-66 ends ...YYCAR, so the CDR3's first residues are V-encoded.
+    Measured with no mutation at all, grafting a CDR3 donor onto a framework
+    donor flips the V call 38% of the time, and it splits by the CDR3's first
+    two residues: donors starting AR keep the call in 100% of frameworks,
+    donors starting AK in 25%.
+
+    One probe answers both, since germline_identity returns V and J together.
+
+    On the J side, measured on epoch 26238: 2919 of 5000 candidates died there,
+    every one of them on the same 85.7 -- 58 % of the output, thrown away for
     three tenths of a point. Holding the body fixed and crossing nine tails
     with the four observed FR4 variants, tails split cleanly: FDY, FDV, FDP and
     MDV clear every FR4, RDV and YDV clear half, DDY, LDY and MDG clear one in
-    four.
+    four. On the V side the same log shows 1309 candidates, 26 %, called
+    IGHV3-23 or IGHV3-NL1 instead of the epoch's gene.
 
-    This is not a narrowing into some unusual corner: 69 % of the 2536 accepted
-    submissions in the field use one of those four tails, and FDY alone is half
-    of them. Sequences that pass have germline-compatible tails because they
-    have to.
+    Neither is a narrowing into some odd corner: 69 % of the 2536 accepted
+    submissions in the field use one of those four tails, FDY alone being half.
+    Sequences that pass carry germline-compatible ends because they cannot do
+    otherwise.
+
+    Keyed by the framework donor's own sequence, not by its FR4: the V call
+    depends on CDR1, CDR2 and FR1-3 as well, so two frameworks sharing an FR4
+    can still disagree about a given CDR3 donor.
     """
-    by_fr4: dict[str, list[str]] = {}
+    by_framework: dict[str, list[str]] = {}
     probes = 0
-    for fr4 in {dict(d)["FR4"] for d in donors["regions"]}:
-        probe_regions = next(dict(d) for d in donors["regions"] if dict(d)["FR4"] == fr4)
+    for donor_sequence, donor_regions in zip(donors["sequence"], donors["regions"]):
         keep = []
         for donor_cdr3 in cdr3_pool:
-            trial = dict(probe_regions)
+            trial = dict(donor_regions)
             trial["CDR3"] = donor_cdr3
             identity = germline_identity(assemble(trial))
             probes += 1
-            if identity and identity["J"]["identity_pct"] >= MIN_HUMAN_J_IDENTITY:
+            if (identity
+                    and identity["J"]["identity_pct"] >= MIN_HUMAN_J_IDENTITY
+                    and allowed_v in identity["V"]["genes"]
+                    and identity["V"]["identity_pct"] >= MIN_HUMAN_V_IDENTITY):
                 keep.append(donor_cdr3)
-        by_fr4[fr4] = keep
-    usable = sum(len(v) for v in by_fr4.values())
-    total = len(by_fr4) * len(cdr3_pool)
-    log(f"J pairing: {usable} of {total} (framework, CDR3 donor) pairs clear the "
-        f"J floor of {MIN_HUMAN_J_IDENTITY}  [{probes} probes]")
-    for fr4, keep in sorted(by_fr4.items()):
-        if len(keep) < len(cdr3_pool):
-            log(f"  {fr4}: {len(keep)}/{len(cdr3_pool)} CDR3 donors compatible")
-    return by_fr4
+        by_framework[donor_sequence] = keep
+    usable = sum(len(v) for v in by_framework.values())
+    total = len(by_framework) * len(cdr3_pool)
+    empty = sum(not v for v in by_framework.values())
+    log(f"germline pairing: {usable} of {total} (framework, CDR3 donor) pairs keep "
+        f"{allowed_v} and clear J >= {MIN_HUMAN_J_IDENTITY}  [{probes} probes]")
+    log(f"  per framework: {min(len(v) for v in by_framework.values())} to "
+        f"{max(len(v) for v in by_framework.values())} compatible CDR3 donors of "
+        f"{len(cdr3_pool)}; {empty} framework(s) with none")
+    return by_framework
 
 
 def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Random,
-             generator=None, pool_by_fr4: dict[str, list[str]] | None = None) -> list[str]:
+             generator=None,
+             pool_by_framework: dict[str, list[str]] | None = None) -> list[str]:
     """Framework from a donor, CDR3 of the required length, CDRs mutated lightly.
 
     CDR1 and CDR2 are scored against the V reference, so changing them eats into
@@ -127,7 +143,7 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
         # framework's FR4: a mismatched pair is refused on J identity, and that
         # was 58% of the output. Fall back to the whole pool rather than loop
         # forever when a framework has no compatible donor.
-        pool = (pool_by_fr4 or {}).get(r["FR4"]) or cdr3_pool
+        pool = (pool_by_framework or {}).get(donor["sequence"]) or cdr3_pool
         donor_cdr3 = rng.choice(pool)
         cdr3_length = len(donor_cdr3)
         if generator is not None:
@@ -244,9 +260,9 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     log(f"CDR3 generator: {generator_name}")
 
     rng = random.Random(seed)
-    pool_by_fr4 = j_compatible_pool(donors, cdr3_donors, log=log)
+    pool_by_framework = germline_compatible_pool(donors, cdr3_donors, allowed_v, log=log)
     generated = generate(donors, cdr3_donors, candidates, rng, generator=generator,
-                         pool_by_fr4=pool_by_fr4)
+                         pool_by_framework=pool_by_framework)
     out["generated"] = len(generated)
     log(f"generated {len(generated)} distinct candidates; checking validity...")
 
