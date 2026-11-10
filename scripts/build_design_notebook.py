@@ -230,7 +230,11 @@ sh(configure)
 t_design = time.time()
 step(f"conception de {NUM_DESIGNS} designs (run {RUN})")
 with open(log_path, "w") as log:
-    proc = subprocess.Popen([bg, "execute", str(out_dir)], stdout=log, stderr=subprocess.STDOUT)
+    # env=BG_ENV, like every other call: this one does not go through sh(), and
+    # omitting it cost a Kaggle run to the same MPLBACKEND error check had
+    # already been fixed for.
+    proc = subprocess.Popen([bg, "execute", str(out_dir)], stdout=log,
+                            stderr=subprocess.STDOUT, env=BG_ENV)
     while proc.poll() is None:
         time.sleep(300)
         lines = [l.strip() for l in log_path.read_text(errors="replace").replace("\\r","\\n").splitlines() if l.strip()]
@@ -299,6 +303,24 @@ res.head(20)
         raise AssertionError(
             f"PAYLOAD is defined in cell {defines} and used in cell {uses}: the "
             f"notebook would fail on NameError at the first run.")
+
+    # Every subprocess call must carry BG_ENV. Fixing sh() was not enough: the
+    # design step uses Popen directly, so it kept Kaggle's MPLBACKEND and died
+    # on the error check had already been fixed for. A claim of coverage is
+    # worth nothing unless something checks it.
+    import re
+    for i, source in enumerate(sources):
+        for line in source.splitlines():
+            if "subprocess.Popen(" in line or "subprocess.run(" in line:
+                statement = source[source.index(line):]
+                statement = statement[:statement.index(")\n") + 1
+                                      if ")\n" in statement else len(statement)]
+                through_sh = "kw.setdefault" in source and "def sh(" in source
+                if "env=" not in statement and not through_sh:
+                    raise AssertionError(
+                        f"cell {i} calls subprocess without env=BG_ENV:\n  "
+                        f"{line.strip()}\nKaggle's MPLBACKEND breaks every "
+                        f"BoltzGen import that inherits it.")
     return {"cells": cells,
             "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python",
                                         "name": "python3"},
