@@ -595,26 +595,94 @@ est fausse en pratique.
 
 ## 8. Ce qui reste ouvert
 
-**Bloquant pour un nouveau run :**
+*Révisé au 2026-11-10, après la nuit du 9 au 10 (§9).*
 
-1. Confirmer la stratégie de génération sur 540 candidats et trois longueurs de
-   CDR3 (en cours). Si `pssm` dégrade bien la PSH, il faut câbler
-   `pssm_denovo`.
-2. Un **preflight calibré** : dérouler chaque verrou dans l'ordre du validateur
-   et le valider contre la vérité terrain — les 36 acceptées de l'époque 26174
-   doivent passer, nos 11 rejetées doivent échouer. Sans ce calibrage on
-   refait l'erreur du §6.
-3. Mesurer le **temps réel de chaque étage** dans une époque : mon dernier
-   essai à blanc est tombé sur `too_late`.
+**Fermé depuis :** le preflight calibré (36/36 sur les acceptées de l'époque
+26174), le chronométrage par étage (§7bis), la persistance des scores BoltzGen,
+la reprise sur HTTP 429 et la vérification du dépôt avant l'engagement du
+pointeur (les trois par le propriétaire du dépôt), et la question du générateur
+— `pssm` contre `pssm_denovo` ne se distinguent pas à n = 60 (p = 0,36 et 0,85).
 
-**Important :**
+**Ce qui demande une décision, pas une mesure :**
 
-4. Persister les scores BoltzGen — sans eux, impossible de distinguer
-   « rejeté par un verrou » de « noté et mal classé ».
-5. Reprise sur HTTP 429 (3 époques et 5 heures perdues en production).
-6. Vérifier le dépôt GitHub avant d'engager le pointeur (époque 26172 perdue
-   sur un pointeur orphelin).
+1. **Porter le seuil PSH par longueur** dans `preflight.py` et `mine.py`. La
+   mesure (§3ter) dit qu'à CDR3 ≥ 17 un candidat lu ≤ 96 est admis 68 % du
+   temps et un candidat lu > 96, 28 %. Le seuil plat de 89 nous fait refuser de
+   soumettre dans un tiers du calendrier — celui où nous classons 1ᵉʳ contre 9
+   rivaux. C'est un changement de politique de soumission, donc une décision du
+   propriétaire, pas une correction de bug.
+2. **Un essai à blanc avec BoltzGen**, qui demande un GPU loué. Tous les autres
+   étages sont chronométrés ; BoltzGen est estimé à ~11 min pour 7 candidats
+   sur 2×T4 et n'a jamais tourné dans une époque réelle.
+
+**Ce que le générateur ne sait pas faire :** nos candidats sont à 98,1 de PSH
+médiane contre 90,0 pour les acceptées. Le criblage exploite la queue de
+distribution ; il ne rend pas le générateur meilleur. Et §7ter montre pourquoi
+il ne peut pas beaucoup mieux faire aux CDR3 courts : 5 des 7 positions y sont
+réclamées par les segments germinaux.
 
 **Ce que le générateur ne sait pas faire :** nos candidats sont à 98,1 de PSH
 médiane contre 90,0 pour les acceptées. Le criblage exploite la queue de
 distribution ; il ne rend pas le générateur meilleur.
+
+---
+
+## 9. Bilan de la nuit du 9 au 10 novembre 2026
+
+Huit heures de travail hors ligne, sans soumission, sans dépense et sans GPU.
+Vingt-trois mesures, douze commits. Résumé par nature de résultat.
+
+### Deux questions ouvertes depuis des jours, tranchées
+
+| | résultat |
+|---|---|
+| **Le budget d'époque tient-il ?** | Oui, mesuré pour la première fois : 49,1 min sur 67 avant correctifs, **~32 min après**. Le mineur avait échoué trois fois sur `too_late` sans qu'on sache pourquoi. |
+| **Le seuil PSH est-il à la bonne place ?** | Non : la rupture est à **96, pas 89**. À CDR3 ≥ 17, lire ≤ 96 vaut 68 % d'admission [57-77], lire > 96 vaut 28 % [18-42], Fisher p = 2×10⁻⁵. |
+
+### Quatre défauts corrigés, dont trois auraient coûté des époques
+
+1. **`propose` passait 28 de ses 31 minutes** à cribler l'archive sur 300
+   candidats dont la PSH jette 97 % — et ce coût suivait la taille de
+   l'archive, donc il empirait tout seul (il a grandi de 52 % dans la même
+   nuit). Déplacé après la coupe PSH : 28 min → 44 s.
+2. **Le chimérisme coupait le gène J en deux** : 58 % de la production perdue
+   pour trois dixièmes de point d'identité. Appariement queue/FR4 : 38 % →
+   100 % de passage, vivier valide 829 → 2163.
+3. **`--once` ne terminait jamais** (fil websocket non démon) : un superviseur
+   aurait attendu indéfiniment un mineur ayant fini son travail en 0,8 s.
+4. **Le rebuild du vivier que le mineur conseillait lui-même** ne
+   re-téléchargeait pas l'archive, donc ne corrigeait rien. Je suis tombé dans
+   ce piège avant de lire le constructeur. Vivier : 63 époques de retard → 3.
+
+### Ce qui a échoué, et pourquoi c'est aussi un résultat
+
+**Quatre tentatives sur les refus du gène V, quatre rejets par la mesure**
+(§7ter). Le mécanisme a fini par être trouvé et il est solide — la position 1
+du CDR3 porte la signature du gène V. Mais aucune de ses corrections ne gagne :
+à CDR3 court il n'y a pas de place (5 positions sur 7 sont germinales), et à
+CDR3 long le gain est réel mais marginal (+6 points de validité) dans un étage
+qui n'est pas le goulot. **Non livré.** Ce que l'enquête laisse n'est pas un
+correctif mais une contrainte structurelle, qui explique pourquoi le champ est
+le plus fourni là où personne ne peut différencier sa séquence.
+
+### Trois erreurs de ma part, attrapées avant d'être publiées comme des faits
+
+| ce que j'allais écrire | ce qui était vrai |
+|---|---|
+| « notre PSH sur-lit avec la longueur » | la sélection au seuil suffit à produire la même signature ; simulé et vérifié |
+| un ajustement donnant σ_v et notre biais | modèle mal spécifié : un quart des refus n'est pas dû à la PSH, les paramètres ne sont pas identifiables. Retiré, remplacé par une courbe d'admission sans modèle |
+| « muter CDR1/CDR2 entame la marge germinale » (dans le code depuis l'origine) | faux en pratique : couper ces mutations ne change rien (28 % de refus V dans les deux cas) |
+
+Les trois relèvent de la même erreur de forme, déjà commise sur le σ de la PSH
+et sur « le seuil PSH n'est pas la cause » : **un mécanisme établi ne dit pas
+quelle part du résultat il explique.** Seule la mesure de bout en bout le dit,
+et elle a dit non quatre fois cette nuit.
+
+### Méthode qui a marché, à réutiliser
+
+Croiser systématiquement les donneurs deux à deux et mesurer, plutôt que
+raisonner sur le mécanisme. C'est ce croisement qui a donné le gène J (après
+deux hypothèses fausses de ma part) et la position 1 du CDR3 (après trois).
+Et valider chaque contrainte trouvée contre le champ réel accepté : 69 % des
+2536 acceptées portent une des quatre queues J compatibles, ce qui a confirmé
+que la contrainte était réelle et non un artefact de notre chaîne.
