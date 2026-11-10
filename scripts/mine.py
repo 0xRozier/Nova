@@ -223,57 +223,99 @@ def measure_psh(sequences: list[str], work: Path) -> dict[str, float]:
     return {names[n]: v for n, v in zip(df["name"], df["PSH"]) if n in names}
 
 
-def psh_select(sequences: list[str], keep: int, work: Path,
-               replicates: int = 3) -> tuple[list[str], dict]:
-    """Return the `keep` least hydrophobic candidates, PSH averaged over folds.
+# psh_select was removed here. It returned the `keep` LOWEST PSH, which made
+# PSH the selection criterion -- the defect this pipeline now exists to undo
+# (surrogate_rank, psh_admissible). Leaving it in place as dead code would
+# invite it back; the two-stage fold-averaging it did lives on in
+# psh_admissible.
 
-    PSH is computed on a predicted structure and NanoBodyBuilder2 is not
-    deterministic, so one measurement is noisy: ten sequences measured twice
-    give a per-measurement deviation of 4.01 against a threshold of 89. Our
-    local value therefore cannot be calibrated to the validator's — both are
-    draws from the same distribution — and a single reading near the limit is a
-    coin toss.
 
-    Averaging k folds divides that deviation by root k, which is what buys back
-    a usable margin. Two stages keep it affordable: one cheap pass over the
-    whole pool (3.6 s per candidate on 4 cores), then k-1 more passes over the
-    best few.
+def surrogate_rank(sequences: list[str], target: str) -> list[str] | None:
+    """Candidates ordered by predicted design_iiptm, best first.
 
-    The pool is now sized by psh_pool_for from the length's measured rate under
-    the break -- 11 candidates at CDR3 8, 31 at 18 -- so this stage costs 2 to
-    5 minutes. It used to run on a 300-candidate pool, 21 minutes of the
-    epoch's 67, to pick the very lowest reading; the acceptance curve says the
-    bands below 96 are indistinguishable, so those 19 minutes bought nothing
-    measurable.
+    This is the selection that decides the epoch, and it used to be PSH. Over
+    84 grafted candidates scored by BoltzGen the best read design_iiptm 0.692,
+    above the field's median of 0.664, while the eight chosen on PSH for epoch
+    26238 topped out at 0.375: the good candidates were discarded before
+    anything looked at them. PSH does not predict the verdict below 96
+    (FINDINGS 3ter), so it was never a selection criterion -- only the one we
+    could compute offline.
+
+    Predicting design_iiptm costs milliseconds, so the whole valid pool is
+    ranked rather than a sample of it. Trained on the field and validated by
+    ranking our own candidates: rho = 0.569 (n = 124), picking 8 that read a
+    real median of 0.572 against 0.332 at random. See
+    scripts.train_iiptm_surrogate for the numbers and their caveats.
+
+    Returns None when the model is absent, so the caller can fall back rather
+    than crash in the middle of an epoch.
+    """
+    import joblib
+    from nova_lab.nanobodies import regions_batch
+    from nova_lab.nanobody_features import featurize
+    path = DATA_DIR / "dataset" / f"{target}_iiptm_surrogate.joblib"
+    if not path.exists():
+        log(f"no design_iiptm surrogate at {path}; falling back to the PSH order. "
+            f"Train it with scripts.train_iiptm_surrogate -- selecting on PSH "
+            f"measured a median of 0.335 against 0.572 for the surrogate.")
+        return None
+    bundle = joblib.load(path)
+    regions = regions_batch(sequences)
+    usable, rows = [], []
+    for sequence, region in zip(sequences, regions):
+        if not region:
+            continue
+        vector = featurize(sequence, region)
+        if vector is None:
+            continue
+        usable.append(sequence)
+        rows.append(vector)
+    if not rows:
+        log("no candidate could be featurized; falling back to the PSH order")
+        return None
+    import numpy as np
+    predicted = bundle["model"].predict(np.vstack(rows))
+    order = np.argsort(-predicted)
+    log(f"surrogate ranked {len(usable)} candidates on predicted "
+        f"{bundle['metric']}: best {predicted[order[0]]:.3f}, "
+        f"median {float(np.median(predicted)):.3f} "
+        f"(trained on {bundle['n_train']} scored sequences)")
+    return [usable[i] for i in order]
+
+
+def psh_admissible(sequences: list[str], ceiling: float, work: Path,
+                   replicates: int = 3) -> tuple[list[str], dict]:
+    """Which candidates clear the PSH ceiling, in the order they came in.
+
+    PSH is an admissibility gate here, not a ranking: the order is the
+    surrogate's. One cheap pass over the pool drops what breaches the ceiling,
+    then the survivors are refolded k times for a value whose deviation is
+    PSH_SIGMA/sqrt(k) rather than 4.0.
     """
     from scripts.tnp_developability import TNP
     if not TNP.exists():
-        log(f"TNP not installed at {TNP}; cannot measure PSH. The validator "
-            f"refuses PSH > {PSH_STRICT} and that rejected every production "
-            f"submission, so this is not a screen to skip.")
-        return sequences[:keep], {}
-
+        log(f"TNP not installed at {TNP}; cannot screen PSH at all. The "
+            f"validator refuses above {PSH_STRICT} and that rejected every "
+            f"production submission, so this is not a screen to skip.")
+        return sequences, {}
     first = measure_psh(sequences, work / "pass1")
     if not first:
-        return sequences[:keep], {}
-    ranked = sorted(first, key=lambda s: first[s])
-    log(f"PSH pass 1 on {len(first)} candidates: best {first[ranked[0]]:.1f}, "
-        f"median {first[ranked[len(ranked) // 2]]:.1f}")
-
-    # Re-fold only the promising head, with headroom for the ranking to change.
-    head = ranked[:max(keep * 3, keep)]
-    samples = {s: [first[s]] for s in head}
+        return sequences, {}
+    kept = [s for s in sequences if first.get(s, 0.0) <= ceiling]
+    log(f"PSH pass 1 on {len(first)}: {len(kept)} at or under {ceiling:.0f}, "
+        f"best {min(first.values()):.1f}")
+    if not kept:
+        return [], first
+    samples = {s: [first[s]] for s in kept}
     for i in range(2, replicates + 1):
-        more = measure_psh(head, work / f"pass{i}")
-        for s, v in more.items():
+        for s, v in measure_psh(kept, work / f"pass{i}").items():
             samples.setdefault(s, []).append(v)
     mean = {s: sum(v) / len(v) for s, v in samples.items()}
-    ranked = sorted(mean, key=lambda s: mean[s])
-    n = min(len(v) for v in samples.values()) or 1
-    log(f"PSH over {replicates} folds on the best {len(head)}: "
-        f"best {mean[ranked[0]]:.1f}, deviation of the mean "
-        f"{PSH_SIGMA / n ** 0.5:.1f}; keeping the {keep} lowest")
-    return ranked[:keep], mean
+    folds = min(len(v) for v in samples.values()) or 1
+    kept = [s for s in kept if mean.get(s, 0.0) <= ceiling]
+    log(f"PSH over {replicates} folds: {len(kept)} still at or under "
+        f"{ceiling:.0f}, deviation of the mean {PSH_SIGMA / folds ** 0.5:.1f}")
+    return kept, mean
 
 
 def archive_screen(sequences: list[str], target: str, allowed_v: str,
@@ -467,16 +509,37 @@ def mine_epoch(st, args, params: dict) -> dict:
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
 
-    # PSH first, on the whole pool: it is the gate that rejected every
-    # production submission, and selecting on it needs a wide funnel rather
-    # than a filter at the end of a narrow one.
-    with timed("psh_select", timings):
-        sequences, psh = psh_select(sequences, args.shortlist, work / "psh",
-                                    args.psh_replicates)
+    # Rank the WHOLE valid pool on predicted design_iiptm. This is the choice
+    # that decides the epoch and it used to be PSH, which does not predict the
+    # verdict below 96: on epoch 26238 the eight chosen on PSH read at best
+    # 0.375 while their pool reached 0.692. Milliseconds a candidate, so the
+    # pool is ranked entire rather than sampled.
+    with timed("surrogate", timings):
+        ordered = surrogate_rank(sequences, args.target)
+    entry["surrogate_ranked"] = bool(ordered)
+    if ordered:
+        sequences = ordered[:psh_pool]
+    else:
+        sequences = sequences[:psh_pool]
+
+    # PSH is now the admissibility gate, applied in the surrogate's order
+    # rather than replacing it.
+    with timed("psh_admissible", timings):
+        admissible, psh = psh_admissible(sequences, PSH_LONG_BREAK,
+                                         work / "psh", args.psh_replicates)
+    if admissible:
+        # Keep the surrogate's order among those that clear the gate.
+        sequences = [s for s in sequences if s in set(admissible)][:args.shortlist]
+    else:
+        log(f"no candidate clears PSH {PSH_LONG_BREAK}; keeping the best "
+            f"{args.shortlist} by surrogate anyway, since submitting nothing is 0%")
+        sequences = sequences[:args.shortlist]
     if psh:
-        best = min(psh[s] for s in sequences)
+        best = min(psh[s] for s in sequences if s in psh) if any(
+            s in psh for s in sequences) else min(psh.values())
         entry["psh_best"] = round(best, 2)
-        entry["psh_selected_max"] = round(max(psh[s] for s in sequences), 2)
+        measured = [psh[s] for s in sequences if s in psh]
+        entry["psh_selected_max"] = round(max(measured), 2) if measured else None
         # What that reading means for the verdict, measured on 300 submissions
         # the validators ruled on rather than assumed from the 89 in their
         # config -- that is their threshold on their measurement, not ours. See
