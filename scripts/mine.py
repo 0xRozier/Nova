@@ -54,6 +54,10 @@ from nova_lab.config import (EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS
                              PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT)
 from nova_lab import timelock
 from nova_lab.chain import current_block, missing_api, require_api
+from nova_lab.psh_calibration import (LONG_BREAK as PSH_LONG_BREAK,
+                                      MIN_ACCEPTANCE as PSH_MIN_ACCEPTANCE,
+                                      acceptance_probability, band_label,
+                                      discriminates as psh_discriminates)
 
 JOURNAL = DATA_DIR / "mining" / "journal.jsonl"
 BLOCK_SECONDS = 12
@@ -67,8 +71,23 @@ SAFETY_BLOCKS = 12
 # outcome (0.91^4 = 69%). Long CDR3 is hard, not hopeless — and it is where we
 # rank best, 6 wins of 9 epochs — so the pool is widened instead of skipping.
 PSH_PASS_RATE = {8: 0.51, 11: 0.28, 18: 0.09}
-PSH_MARGIN_RATE = {8: 0.20, 11: 0.11, 18: 0.017}
-WANT_WITH_MARGIN = 5  # candidates we want under the margin before BoltzGen
+# Share of our candidates reading at or under the measured break of 96, where
+# acceptance at a long CDR3 falls from ~68% to ~28% (nova_lab.psh_calibration).
+# Same 540 candidates, so the three tables are directly comparable:
+#
+#   CDR3    <= 84.4 (old margin)   <= 89   <= 96
+#      8            20 %            51 %    89 %
+#     11            11 %            28 %    68 %
+#     18           1.7 %           8.9 %    32 %
+#
+# The pool used to be sized against the 84.4 column, which is why it needed
+# hundreds of candidates: finding five under 84.4 at length 18 takes ~300. The
+# break column needs 10 to 32. Confirmed on epoch 26238 (CDR3 7): of the 300
+# candidates actually measured, 57% came in under 84.4 and 97% under 96.
+PSH_BREAK_RATE = {8: 0.89, 11: 0.68, 18: 0.32}
+# Candidates wanted under the break before BoltzGen: the shortlist of 8, plus
+# slack for the developability screen, which rejected 1 of 8 on epoch 26238.
+WANT_UNDER_BREAK = 10
 
 
 def psh_pass_rate(cdr3_length: int, table: dict) -> float:
@@ -85,11 +104,21 @@ def psh_pass_rate(cdr3_length: int, table: dict) -> float:
     return table[lengths[-1]]
 
 
-def psh_pool_for(cdr3_length: int, floor: int, ceiling: int) -> tuple[int, float]:
-    """Pool size that should yield WANT_WITH_MARGIN candidates under the margin."""
-    rate = psh_pass_rate(cdr3_length, PSH_MARGIN_RATE)
-    need = int(WANT_WITH_MARGIN / max(rate, 0.002))
-    return max(floor, min(need, ceiling)), rate
+def psh_pool_for(cdr3_length: int, override: int | None,
+                 ceiling: int) -> tuple[int, float]:
+    """Pool size that should yield WANT_UNDER_BREAK candidates under the break.
+
+    There is no reason to go wider. The three measured bands below 96 are
+    statistically indistinguishable in acceptance (66 %, 74 %, 62 %, intervals
+    overlapping), so measuring hundreds of candidates to pick the very lowest
+    buys nothing the data can see -- while costing 3.5 s each, which is how the
+    PSH stage came to take 17.6 of the epoch's 67 minutes.
+    """
+    rate = psh_pass_rate(cdr3_length, PSH_BREAK_RATE)
+    if override:
+        return min(override, ceiling), rate
+    need = int(WANT_UNDER_BREAK / max(rate, 0.02))
+    return max(WANT_UNDER_BREAK, min(need, ceiling)), rate
 
 
 def log(msg: str) -> None:
@@ -208,9 +237,14 @@ def psh_select(sequences: list[str], keep: int, work: Path,
     Averaging k folds divides that deviation by root k, which is what buys back
     a usable margin. Two stages keep it affordable: one cheap pass over the
     whole pool (3.6 s per candidate on 4 cores), then k-1 more passes over the
-    best few. For a 300-candidate pool keeping 40, that is about 23 minutes
-    against a 66-minute usable epoch, where folding everything k times would
-    cost 54.
+    best few.
+
+    The pool is now sized by psh_pool_for from the length's measured rate under
+    the break -- 11 candidates at CDR3 8, 31 at 18 -- so this stage costs 2 to
+    5 minutes. It used to run on a 300-candidate pool, 21 minutes of the
+    epoch's 67, to pick the very lowest reading; the acceptance curve says the
+    bands below 96 are indistinguishable, so those 19 minutes bought nothing
+    measurable.
     """
     from scripts.tnp_developability import TNP
     if not TNP.exists():
@@ -402,13 +436,16 @@ def mine_epoch(st, args, params: dict) -> dict:
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days)")
 
     cdr3_len = params["allowed_cdr3_length"]
-    # Size the PSH pool to the length's measured pass rate rather than skipping:
-    # at length 18 only 1.7% of candidates clear the margin, but 1.7% of 300 is
-    # still five, and these are the epochs we rank best in.
+    # Size the PSH pool to the length's measured rate under the break rather
+    # than to a fixed number. Long CDR3 is the hard case -- 32% under 96 at
+    # length 18 against 89% at length 8 -- and it is also where we rank best,
+    # six wins in nine epochs replayed, so it gets the wider pool.
     psh_pool, rate = psh_pool_for(cdr3_len, args.psh_pool, args.candidates)
-    entry["psh_margin_rate"] = round(rate, 3)
-    log(f"CDR3 length {cdr3_len}: {rate:.1%} of candidates expected under the "
-        f"margin, so PSH pool {psh_pool} to find about {WANT_WITH_MARGIN}")
+    entry["psh_break_rate"] = round(rate, 3)
+    entry["psh_pool"] = psh_pool
+    log(f"CDR3 length {cdr3_len}: {rate:.0%} of candidates expected at or under "
+        f"{PSH_LONG_BREAK}, so PSH pool {psh_pool} to find about "
+        f"{WANT_UNDER_BREAK}")
     if psh_pool * 3.6 / 60 > 30:
         log(f"  that pool costs {psh_pool * 3.6 / 60:.0f} min of CPU; the epoch "
             f"budget is about 66 min, so the run may not finish")
@@ -440,11 +477,28 @@ def mine_epoch(st, args, params: dict) -> dict:
         best = min(psh[s] for s in sequences)
         entry["psh_best"] = round(best, 2)
         entry["psh_selected_max"] = round(max(psh[s] for s in sequences), 2)
-        if best > PSH_STRICT - args.psh_margin:
-            log(f"best PSH is {best:.1f}; the validator refuses above "
-                f"{PSH_STRICT} and our measurement's deviation is 4.0, so this "
-                f"epoch has no candidate with margin. Skipping rather than "
-                f"spending GPU on a submission that will be refused.")
+        # What that reading means for the verdict, measured on 300 submissions
+        # the validators ruled on rather than assumed from the 89 in their
+        # config -- that is their threshold on their measurement, not ours. See
+        # nova_lab.psh_calibration and FINDINGS 3ter.
+        chance = acceptance_probability(best, cdr3_len)
+        entry["psh_acceptance_estimate"] = round(chance, 2)
+        entry["psh_band"] = band_label(best, cdr3_len)
+        log(f"best PSH {best:.1f} at CDR3 {cdr3_len}: {entry['psh_band']}")
+        if not psh_discriminates(cdr3_len):
+            log("  at this length our PSH does not predict the verdict, so it "
+                "selects candidates here but does not veto the epoch")
+        elif best > PSH_LONG_BREAK:
+            log(f"  above the measured break of {PSH_LONG_BREAK}, where "
+                f"acceptance falls to about {chance:.0%}; submitting anyway, "
+                f"since not submitting is 0%")
+        if chance < PSH_MIN_ACCEPTANCE:
+            # Deliberately almost unreachable: the measured floor is ~25%. The
+            # old rule refused above 89 minus a 4.6 margin, i.e. 84.4, which at
+            # CDR3 17+ rejected every candidate in all nine epochs replayed
+            # offline -- the nine we ranked first in six of.
+            log(f"estimated acceptance {chance:.0%} is below "
+                f"{PSH_MIN_ACCEPTANCE:.0%}, outside anything measured; skipping")
             entry["status"] = "psh_no_margin"
             return _stamp(entry)
 
@@ -555,16 +609,22 @@ def main():
     parser.add_argument("--shortlist", type=int, default=8,
                         help="candidates sent to BoltzGen after the PSH cut; "
                              "~1.6 min each on 2x T4")
-    parser.add_argument("--psh-pool", type=int, default=500,
-                        help="candidates to measure PSH on before selecting; "
-                             "3.6 s each on 4 cores, and only ~21% come in under "
-                             "87.4, so a narrow pool yields nothing")
+    parser.add_argument("--psh-pool", type=int,
+                        help="override the measured pool sizing (candidates to "
+                             "profile with TNP before selecting, 3.6 s each on 4 "
+                             "cores). Left out, the pool is sized from the "
+                             "length's measured rate under the break: ~12 at "
+                             "CDR3 8, ~32 at 18. It used to default to 500 AS A "
+                             "FLOOR, which silently overrode that sizing")
     parser.add_argument("--psh-replicates", type=int, default=3,
                         help="folds averaged for the PSH of the best candidates; "
                              "one measurement deviates by 4.0, k folds by 4.0/sqrt(k)")
-    parser.add_argument("--psh-margin", type=float, default=4.6,
-                        help="required headroom under the validator's PSH limit; "
-                             "4.6 is two deviations of a 3-fold mean (8.0 for one fold)")
+    # --psh-margin is gone: it required 4.6 points of headroom under the
+    # validator's 89, so 84.4, on the assumption that our reading and theirs
+    # are the same measurement. They are not. Sequences the validators accepted
+    # read a median of 92.0 at CDR3 17+ in our pipeline, and the acceptance
+    # probability only collapses past 96. The veto is now the measured curve in
+    # nova_lab.psh_calibration.
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-donor-lag", type=int, default=40,
                         help="refuse to submit if the donor pool is older than this "
