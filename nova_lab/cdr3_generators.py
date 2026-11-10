@@ -25,6 +25,14 @@ from collections import Counter
 
 AAS = "ACDEFGHIKLMNPQRSTVWY"
 J_TAIL = 4
+# The CDR3's second residue is V-encoded and decides the V call: IGHV3-23's
+# germline ends ...YYCAK, IGHV3-66's ...YYCAR. Measured on 1200 candidates, a
+# head of AR, FR or SR is refused on the V call 0-2% of the time and AK, FK or
+# SK 65-77%, while the FIRST residue does not matter. The PSSM is fitted on the
+# CDR3s of every V gene at once, so left free it reinstates the wrong residue
+# whatever the donor was -- which is why filtering donors by V gene did not
+# help (measured: 1751 valid of 5000 against 2163). Keep the donor's head.
+V_HEAD = 2
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +46,7 @@ class ChimericGenerator:
                       j_tail: int, rng: random.Random,
                       framework: dict | None = None) -> str:
         out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
-        mutable = range(max(len(out) - j_tail, 0))
+        mutable = range(min(V_HEAD, len(out)), max(len(out) - j_tail, min(V_HEAD, len(out))))
         if not mutable:
             return "".join(out)
         n_mut = rng.randint(2, 4)
@@ -111,7 +119,7 @@ class PSSMGenerator:
         drawn from archive column frequencies instead of uniform."""
         out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
         pssm = self._get_pssm(cdr3_length)
-        mutable = range(max(len(out) - j_tail, 0))
+        mutable = range(min(V_HEAD, len(out)), max(len(out) - j_tail, min(V_HEAD, len(out))))
         if not mutable:
             return "".join(out)
         n_mut = rng.randint(2, 4)
@@ -126,8 +134,9 @@ class PSSMGenerator:
         pssm = self._get_pssm(cdr3_length)
         out = []
         tail_start = max(cdr3_length - j_tail, 0)
+        head_end = min(V_HEAD, cdr3_length)
         for pos in range(cdr3_length):
-            if pos >= tail_start:
+            if pos < head_end or pos >= tail_start:
                 # Preserve J-tail from donor.
                 if pos < len(donor_cdr3):
                     out.append(donor_cdr3[pos])
@@ -207,7 +216,9 @@ class IgLMGenerator:
             # No framework context — fall back to simple random mutation.
             out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
             tail_start = max(cdr3_length - j_tail, 0)
-            for pos in rng.sample(list(range(tail_start)), min(2, tail_start)):
+            head_end = min(V_HEAD, tail_start)
+            for pos in rng.sample(list(range(head_end, tail_start)),
+                                  min(2, tail_start - head_end)):
                 out[pos] = rng.choice(AAS)
             return "".join(out)
 
@@ -218,21 +229,22 @@ class IgLMGenerator:
         parent_seq = _assemble_regions(parent_regions)
         start = _cdr3_start(parent_regions)
         # Infill just the mutable part (not the J-tail).
+        mutable_start = start + min(V_HEAD, cdr3_length)
         mutable_end = start + max(cdr3_length - j_tail, 0)
 
-        if mutable_end <= start:
+        if mutable_end <= mutable_start:
             return donor_cdr3[:cdr3_length]
 
         seqs = self._model.infill(
             parent_seq, "[HEAVY]", "[CAMEL]",
-            infill_range=(start, mutable_end),
+            infill_range=(mutable_start, mutable_end),
             num_to_generate=100,
         )
 
         # Extract CDR3 from returned full VH sequences and filter for length.
         j_tail_seq = donor_cdr3[cdr3_length - j_tail:cdr3_length] if j_tail else ""
         for seq in seqs:
-            infilled = seq[start:mutable_end]
+            infilled = seq[mutable_start:mutable_end]
             cdr3 = infilled + j_tail_seq
             if len(cdr3) == cdr3_length:
                 return cdr3
@@ -240,7 +252,9 @@ class IgLMGenerator:
         # Fallback: no IgLM result matched the length — random mutation.
         out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
         tail_start = max(cdr3_length - j_tail, 0)
-        for pos in rng.sample(list(range(tail_start)), min(2, tail_start)):
+        head_end = min(V_HEAD, tail_start)
+        for pos in rng.sample(list(range(head_end, tail_start)),
+                              min(2, tail_start - head_end)):
             out[pos] = rng.choice(AAS)
         return "".join(out)
 
@@ -255,21 +269,22 @@ class IgLMGenerator:
         self._load()
         parent_seq = _assemble_regions(framework)
         start = _cdr3_start(framework)
+        mutable_start = start + min(V_HEAD, cdr3_length)
         mutable_end = start + max(cdr3_length - j_tail, 0)
 
-        if mutable_end <= start:
+        if mutable_end <= mutable_start:
             return [framework["CDR3"][:cdr3_length]] * n
 
         seqs = self._model.infill(
             parent_seq, "[HEAVY]", "[CAMEL]",
-            infill_range=(start, mutable_end),
+            infill_range=(mutable_start, mutable_end),
             num_to_generate=n * 3,
         )
 
         j_tail_seq = framework["CDR3"][-j_tail:] if j_tail else ""
         results: list[str] = []
         for seq in seqs:
-            infilled = seq[start:mutable_end]
+            infilled = seq[mutable_start:mutable_end]
             cdr3 = infilled + j_tail_seq
             if len(cdr3) == cdr3_length:
                 results.append(cdr3)
