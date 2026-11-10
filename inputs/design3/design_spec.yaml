@@ -1,0 +1,17 @@
+entities:
+  - file:
+      path: 8AOK.cif
+      include:
+        - chain:
+            id: A
+            res_index: 1..115
+      binding_types:
+        - chain:
+            id: A
+            binding: 37,39,41..44,46,49,51,56,59,94..96,98,100,104..108
+  - file:
+      path:
+        - scaffold0.yaml
+        - scaffold1.yaml
+        - scaffold2.yaml
+        - scaffold3.yaml
