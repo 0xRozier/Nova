@@ -32,14 +32,25 @@ checks and designs only what it does not:
     happens when they are free -- 58% of candidates refused on J identity, 38%
     of unmutated pairs losing the V call.
 
-Indexing. BoltzGen's res_index is the canonical mmcif index, sequential from 1
--- NOT the author numbering, and NOT the IMGT numbering that NanoBodyBuilder2
-writes into its PDB output. The indices here are therefore computed as offsets
-into the plain sequence. That assumption is the one thing in this file that
-cannot be checked offline, so `boltzgen check` must be run on the spec before
-any GPU time: it writes back the structure with the design mask applied, and
---print-mask shows the designed span. Run that first and confirm the span is
-the CDR3.
+Indexing, and what has actually been verified. BoltzGen's res_index is the
+canonical mmcif index, sequential from 1 -- not the author numbering, and not
+the IMGT numbering NanoBodyBuilder2 writes, which has gaps. fold() therefore
+renumbers the structure 1..N so both readings coincide, and verify_span reads
+the residues the span names back out of that file.
+
+All of it was then checked offline, by installing BoltzGen locally (two
+minutes, no GPU: `boltzgen check` needs none) and running it:
+
+  - the spec is valid, exit 0, and writes back design_spec.cif;
+  - chain id: NanoBodyBuilder2 labels the chain H and the spec says B, which
+    check rejected outright until renumber_sequentially set it;
+  - the check output shows the exclusions applied and the insertions NOT
+    materialised -- and the upstream reference, example/nanobody_scaffolds/
+    7eow.yaml wrapped the same way, behaves identically (128 residues to 115),
+    so insertions happen at design time and our spec is not misshapen;
+  - the insertion count is exact: parse_range("11..11") returns [10], the
+    parser then adds 1, so 11 residues are inserted. The `+1` in that code
+    compensates its own 0-indexing rather than being an off-by-one.
 
 Usage:
     python -m scripts.design_nanobody --epoch 26238 --frameworks 4
@@ -327,11 +338,12 @@ def main():
     print(pd.DataFrame(reports)[["scaffold", "cdr3_donor", "fixed_head", "fixed_tail",
                                  "designed_residues", "res_index_designed",
                                  "v_identity", "j_identity"]].to_string(index=False))
-    print(f"\nCheck the indexing BEFORE spending GPU time -- res_index is the")
-    print(f"sequential mmcif index, not IMGT, and that is the one assumption")
-    print(f"this script cannot verify offline:")
-    print(f"    boltzgen check {spec_path}")
-    print(f"then open the written structure and confirm the designed span is the CDR3.")
+    print(f"\nThe span is verified against each structure above. To re-check the")
+    print(f"whole spec, which needs no GPU:")
+    print(f"    boltzgen check {spec_path} --output check_out")
+    print(f"Expect exit 0, and a chain B shorter than the framework by the excluded")
+    print(f"middle: check applies the exclusions and leaves the insertions to the")
+    print(f"design step, exactly as the upstream 7eow example does.")
 
 
 def _as_yaml(obj) -> str:
