@@ -152,6 +152,44 @@ def _cdr3_start(r: dict) -> int:
     return len(r["FR1"]) + len(r["CDR1"]) + len(r["FR2"]) + len(r["CDR2"]) + len(r["FR3"])
 
 
+def _extract_infill(returned: str, parent: str, start: int, end: int) -> str | None:
+    """The residues IgLM generated in place of ``parent[start:end]``.
+
+    iglm.model.utils.iglm_to_infilled rebuilds the answer as
+    ``prefix + generated_infill + suffix``, and the infill's length is whatever
+    the model produced -- nothing constrains it to ``end - start`` (generation
+    runs to the CLS token, bounded only by max_length=150). So the infill ends
+    where the unchanged suffix begins, counted from the RIGHT.
+
+    Slicing ``returned[start:end]`` instead, as this module used to, is wrong
+    the moment the infill is a different length: it returns part of the infill
+    plus part of FR4. Worse, that slice is ``end - start`` wide by construction,
+    so the ``len(cdr3) == cdr3_length`` guard meant to catch variable-length
+    infills could never fire, and the first sequence was always accepted.
+
+    Returns None when the suffix does not match, i.e. when the answer is not a
+    usable infill of this parent.
+    """
+    suffix = parent[end:]
+    if suffix and not returned.endswith(suffix):
+        return None
+    infill_end = len(returned) - len(suffix)
+    if infill_end < start:
+        return None
+    return returned[start:infill_end]
+
+
+def _in_stable_order(sequences, rng: random.Random) -> list[str]:
+    """IgLM returns ``list(set(...))``, whose order varies between processes.
+
+    Taking ``seqs[0]`` therefore makes the generator unreproducible from a
+    seed, which is how three epochs once submitted the same sequence. Sort,
+    then let the seeded rng choose.
+    """
+    ordered = sorted(sequences)
+    return rng.sample(ordered, len(ordered))
+
+
 class IgLMGenerator:
     """CDR3 infilling via IgLM camel heavy-chain model.
 
@@ -231,8 +269,10 @@ class IgLMGenerator:
 
         # Extract CDR3 from returned full VH sequences and filter for length.
         j_tail_seq = donor_cdr3[cdr3_length - j_tail:cdr3_length] if j_tail else ""
-        for seq in seqs:
-            infilled = seq[start:mutable_end]
+        for seq in _in_stable_order(seqs, rng):
+            infilled = _extract_infill(seq, parent_seq, start, mutable_end)
+            if infilled is None:
+                continue
             cdr3 = infilled + j_tail_seq
             if len(cdr3) == cdr3_length:
                 return cdr3
@@ -268,8 +308,10 @@ class IgLMGenerator:
 
         j_tail_seq = framework["CDR3"][-j_tail:] if j_tail else ""
         results: list[str] = []
-        for seq in seqs:
-            infilled = seq[start:mutable_end]
+        for seq in _in_stable_order(seqs, rng):
+            infilled = _extract_infill(seq, parent_seq, start, mutable_end)
+            if infilled is None:
+                continue
             cdr3 = infilled + j_tail_seq
             if len(cdr3) == cdr3_length:
                 results.append(cdr3)
