@@ -23,9 +23,12 @@ utils/nanobodies.py:164, a hard rejection there):
     CDR3 identity >= 0.85                  -> duplicate (same clonotype)
     CDR3 >= 0.80 with CDR1 and CDR2 >= 0.90 -> duplicate
 
-For a 16-residue CDR3 in a 123-residue sequence that means at least 3 CDR3
-substitutions (13/16 = 81% < 85%) and at least 7 substitutions in all
-(116/123 = 94% < 95%). The 3 count toward the 7, so 4 more go elsewhere.
+The third tier binds here, because our variants keep CDR1 and CDR2 whole and
+so sit at 100% on both. The CDR3 must therefore come in under 0.80, not 0.85:
+for 16 residues that is 4 substitutions (12/16 = 75%), not 3. Learned the hard
+way -- the first run built its variants with 3, read 81.25%, and had all 24
+refused as duplicates by tier 3. Plus at least 7 substitutions in all
+(116/123 = 94% < 95%), so 3 more go in the framework.
 
 Where the other 4 go matters. Framework positions mostly do not contact the
 target, and moving them TOWARD the archive consensus -- which is close to the
@@ -65,6 +68,9 @@ from nova_lab.nanobodies import (NanobodyArchive, check_sequence,
 # more than 5% of the whole sequence and more than 15% of the CDR3.
 WHOLE_IDENTITY_CAP = 0.95
 CDR3_IDENTITY_CAP = 0.85
+# Tier 3: a CDR3 at or above this with CDR1 and CDR2 conserved is a duplicate.
+# Binding for us, since we keep CDR1 and CDR2 whole.
+CDR3_CONSERVED_CDR_CAP = 0.80
 V_HEAD = 2   # V-encoded, left alone
 J_FIXED = 3  # J-encoded, left alone
 AAS = "ACDEFGHIKLMNPQRSTVWY"
@@ -72,8 +78,22 @@ REGION_ORDER = ("FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4")
 
 
 def required_changes(sequence_length: int, cdr3_length: int) -> tuple[int, int]:
-    """(CDR3 substitutions, total substitutions) the rules force, at minimum."""
-    in_cdr3 = int(cdr3_length * (1 - CDR3_IDENTITY_CAP)) + 1
+    """(CDR3 substitutions, total substitutions) the rules force, at minimum.
+
+    is_duplicate has THREE tiers, and the third is the one that matters when
+    CDR1 and CDR2 are left alone:
+
+        identity >= 0.95                              -> duplicate
+        CDR3 >= 0.85                                  -> duplicate
+        CDR3 >= 0.80 AND CDR1 >= 0.90 AND CDR2 >= 0.90 -> duplicate
+
+    Our variants keep CDR1 and CDR2 whole, so they sit at 100% on both and the
+    third tier binds: the CDR3 must come in under 0.80, not 0.85. Measured the
+    hard way -- with 3 substitutions of 16 the CDR3 reads 81.25%, clears tier 2
+    and is caught by tier 3, and all 24 variants of the first run were refused
+    as duplicates. Four substitutions give 75%.
+    """
+    in_cdr3 = int(cdr3_length * (1 - CDR3_CONSERVED_CDR_CAP)) + 1
     total = int(sequence_length * (1 - WHOLE_IDENTITY_CAP)) + 1
     return in_cdr3, max(total, in_cdr3)
 
