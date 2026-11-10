@@ -181,7 +181,27 @@ step("environnement pret")
 os.chdir(DESIGN)
 check_out = OUT / "check_out"
 step("boltzgen check sur la specification")
-out = sh([bg, "check", "design_spec.yaml", "--output", str(check_out)])
+try:
+    out = sh([bg, "check", "design_spec.yaml", "--output", str(check_out)])
+except RuntimeError:
+    print()
+    print("=== SI CE CHECK ECHOUE, LIRE CECI AVANT DE BRICOLER ===")
+    print("La cause la plus probable est le couple exclude / design_insertions.")
+    print("Les scaffolds excluent TOUT le milieu concu du CDR3 puis reinserent")
+    print("exactement le nombre de residus voulu. L exemple amont")
+    print("example/nanobody_scaffolds/7eow.yaml n exclut qu une PARTIE du span")
+    print("concu, ce qui est peut-etre la seule forme supportee.")
+    print()
+    print("Correctif a essayer, dans scripts/design_nanobody.py, scaffold_spec() :")
+    print("  garder quelques residus du donneur dans le span concu, c est-a-dire")
+    print("  exclure start+V_HEAD+k .. donor_middle_end et inserer")
+    print("  designable_count-k residus, avec k petit (1 ou 2).")
+    print("L arithmetique de longueur reste : 2 (tete) + designable_count + 3 (queue).")
+    print()
+    print("L indexation, elle, est deja verifiee hors ligne : design_nanobody.py")
+    print("relit les residus que le span nomme dans la structure et les compare")
+    print("au CDR3 du donneur prive de sa tete et de sa queue (verify_span).")
+    raise
 step("specification valide")
 print("structures ecrites :", sorted(p.name for p in check_out.iterdir()) if check_out.exists() else "(aucune)")
 """),

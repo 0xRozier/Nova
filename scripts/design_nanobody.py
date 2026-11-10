@@ -226,6 +226,48 @@ def fold(sequence: str, out: Path) -> Path:
     return out
 
 
+THREE_TO_ONE = {
+    "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C", "GLN": "Q",
+    "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I", "LEU": "L", "LYS": "K",
+    "MET": "M", "PHE": "F", "PRO": "P", "SER": "S", "THR": "T", "TRP": "W",
+    "TYR": "Y", "VAL": "V",
+}
+
+
+def structure_sequence(pdb: Path) -> str:
+    """The one-letter sequence as the renumbered structure holds it."""
+    seen, out = None, []
+    for line in pdb.read_text().splitlines():
+        if line.startswith("ATOM"):
+            number = line[22:26]
+            if number != seen:
+                seen = number
+                out.append(THREE_TO_ONE.get(line[17:20].strip(), "X"))
+    return "".join(out)
+
+
+def verify_span(pdb: Path, report: dict) -> None:
+    """Prove the res_index span is the CDR3's designable middle, on the file itself.
+
+    This is the check that matters, and it runs offline: read the residues the
+    span actually names out of the structure BoltzGen will read, and compare
+    them to the donor's CDR3 minus the fixed head and tail. `boltzgen check`
+    validates BoltzGen's own parsing and is still worth running, but it does
+    not have to be trusted to catch an arithmetic slip here.
+    """
+    sequence = structure_sequence(pdb)
+    if sequence != report["framework"]:
+        raise ValueError(f"{pdb.name}: the structure's sequence is not the framework's")
+    low, high = (int(x) for x in report["res_index_designed"].split(".."))
+    named = sequence[low - 1:high]
+    expected = report["cdr3_donor"][V_HEAD:len(report["cdr3_donor"]) - J_TAIL_FIXED]
+    if named != expected:
+        raise ValueError(
+            f"{pdb.name}: res_index {low}..{high} names {named!r}, but the CDR3's "
+            f"designable middle is {expected!r}. The spec would design the wrong "
+            f"residues.")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epoch", type=int, help="read the challenge from the chain")
@@ -260,7 +302,8 @@ def main():
         spec, report = scaffold_spec(sequence, cdr3_length, structure.name)
         if args.fold:
             fold(sequence, structure)
-            print(f"  scaffold{i}: structure -> {structure}")
+            verify_span(structure, report)
+            print(f"  scaffold{i}: structure -> {structure}, span verified against it")
         path = args.out / f"scaffold{i}.yaml"
         path.write_text(_as_yaml(spec))
         scaffold_files.append(path.name)
