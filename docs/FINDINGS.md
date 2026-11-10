@@ -1256,3 +1256,50 @@ dimensionnable : 8 parents à ~0,78, leurs variantes à 7 résidus près, notée
 - variantes à ~0,75 → notre générateur se trompait de stratégie, pas de moyens ;
 - variantes à ~0,60 → la règle nous plafonne structurellement, et seule une
   vraie conception monte plus haut — ce que nous avons mesuré ne pas savoir faire.
+
+---
+
+## 16. Perturbation minimale : la PSH chiffre le prix
+
+61 variantes minimales d'un seul parent, criblées hors GPU contre leurs 24
+parents **acceptés par les validateurs**, dans la même chaîne.
+
+| | n | PSH médiane | > 96 (rupture) | min |
+|---|---|---|---|---|
+| **parents acceptés** | 24 | **89,4** | 25 % | 82,3 |
+| v1, substitutions uniformes sur 20 aa | 25 | 100,6 | 72 % | 88,4 |
+| **v2, substitutions hydrophiles** | 52 | **97,1** | **60 %** | 84,5 |
+
+Les parents lisant 89,4 chez nous, la chaîne est calibrée à leur niveau : les
+écarts sont des dégradations réelles, pas la sur-lecture du §3ter.
+
+### Décomposition du coût
+
+| | points de PSH |
+|---|---|
+| mon tirage uniforme (bug) | **+3,5** |
+| perturber, quel que soit le résidu | **+7,7** |
+| total v1 | +11,2 |
+
+Le tirage uniforme sur les 20 acides aminés mettait un résidu hydrophobe dans
+la boucle deux fois sur cinq, alors que la PSH *est* le score de patch
+hydrophobe de la surface des CDR. Corrigé (`DEKNQRSTH`), cela récupère 3,5
+points. Les 7,7 autres sont structurels.
+
+### Ce que la stratégie vaut encore
+
+**40 % des v2 passent sous la rupture de 96** (minimum 84,5), soit une
+vingtaine de variantes soumissibles sur 52. La stratégie n'est donc pas morte :
+elle a un rendement, et ce rendement est mesurable hors GPU gratuitement.
+
+Reste la question qui coûte une session : **le `design_iiptm` survit-il à la
+perturbation ?** La PSH dit que la développabilité se dégrade mais reste
+franchissable pour une variante sur deux. Elle ne dit rien de la liaison.
+
+### Le point de méthode, pour la troisième fois de la journée
+
+Sans les parents mesurés **comme témoin dans la même chaîne**, une PSH de 100,6
+se lisait comme une propriété de la stratégie. J'aurais abandonné la piste pour
+un défaut de trois caractères dans mon générateur. C'est la même discipline qui
+a évité une session Kaggle sur 24 séquences toutes rejetées (§15, niveau 3 de la
+règle de doublon) et qui a fait retirer la simulation du §12bis.
