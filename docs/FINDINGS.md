@@ -25,7 +25,56 @@ déroulé.
 
 ---
 
-## 1. Le fait central : l'admission, pas le classement
+## 0. Où nous en sommes, et où est le problème
+
+*Ajouté le 2026-11-10. Les sections 1 à 10 ont été écrites avant ce qui suit et
+restent exactes sur leur objet, mais la section 1 n'annonce plus « le fait
+central » : l'admission a été comprise et corrigée, et ce qui bloque
+aujourd'hui est ailleurs.*
+
+### Ce qu'il faut pour gagner, et ce que nous produisons
+
+| | `design_iiptm` |
+|---|---|
+| requis pour gagner une époque (CDR3 = 16) | **0,777** |
+| médiane du champ à cette longueur | 0,697 |
+| **notre meilleur mesuré** | **0,673** |
+| notre production en sélection PSH (production réelle) | 0,375 |
+
+### Les cinq mesures qui situent le problème (§15)
+
+| candidat | verdict |
+|---|---|
+| **le GPU** | **non** — notre distribution est **bornée à 0,674** (0/148 au-dessus de 0,68 ; queue de forme c = −0,82). Noter plus ne trouve rien de plus. |
+| **les donneurs** | **non** — ils scorent 0,729-0,794 et viennent tous du régime actuel |
+| **la distance à l'archive** | **non** — ρ = −0,07, p = 0,4 |
+| **trop peu de surface de conception** | **non** — trois CDR conçus font pire qu'un (0,169 contre 0,214) |
+| **la recombinaison** | **oui** — charpente d'une séquence à 0,745 + CDR3 d'une à 0,729 → 0,48. Les pièces ne se transfèrent pas. |
+
+### Ce qui a été réparé, et ce que ça valait
+
+| | avant | après |
+|---|---|---|
+| sélection des candidats (§12, §13) | PSH, **0,375** | substitut `design_iiptm`, **0,616** |
+| budget d'époque (§7bis) | 49 min sur 67 | ~28 min |
+| vivier de donneurs (§5ter) | 63 époques de retard | 3 |
+| identité J du générateur (§7ter) | 58 % de refus | 0 |
+
+La sélection valait **+0,241** et était gratuite. Elle nous fait passer des 14 %
+les plus faibles au **38ᵉ percentile** du champ — et **0 époque gagnée sur 8**,
+comme avant.
+
+### La leçon de méthode, qui a tenu à chaque fois
+
+**Un mécanisme établi ne dit pas quelle part du résultat il explique.** Quatre
+mécanismes réels et bien mesurés n'ont rien rapporté ; une simulation à moi a
+rendu une valeur impossible (1,042 pour une métrique bornée par 1) ; un plateau
+prédit à 0,756 s'est révélé sur-promis de 0,137 hors de sa plage de calibration.
+Seule la mesure de bout en bout a tranché, à chaque fois.
+
+---
+
+## 1. L'admission : le premier obstacle, compris et corrigé
 
 Sur 71 époques, **le taux de rejet médian est de 50 %** et seulement 2 époques
 sur 61 passent sous 10 %. Il varie énormément selon l'opérateur, et c'est lui
