@@ -62,8 +62,53 @@ def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> s
     return "".join(out)
 
 
+def j_compatible_pool(donors: pd.DataFrame, cdr3_pool: list[str],
+                      log=print) -> dict[str, list[str]]:
+    """For each framework's FR4, the CDR3 donors whose tail clears the J floor.
+
+    The IMGT J segment spans the last three CDR3 residues *plus* the eleven of
+    FR4 -- fourteen positions in all. A chimera therefore takes its J gene from
+    two donors at once: the tail from the CDR3 donor, FR4 from the framework
+    donor. When the two imply different IGHJ genes the pair reads 12/14 =
+    85.7 % against a floor of 86 and the validator refuses it.
+
+    Measured on epoch 26238: 2919 of 5000 candidates died there, every one of
+    them on that same 85.7 -- 58 % of the generator's output, thrown away for
+    three tenths of a point. Holding the body fixed and crossing nine tails
+    with the four observed FR4 variants, tails split cleanly: FDY, FDV, FDP and
+    MDV clear every FR4, RDV and YDV clear half, DDY, LDY and MDG clear one in
+    four.
+
+    This is not a narrowing into some unusual corner: 69 % of the 2536 accepted
+    submissions in the field use one of those four tails, and FDY alone is half
+    of them. Sequences that pass have germline-compatible tails because they
+    have to.
+    """
+    by_fr4: dict[str, list[str]] = {}
+    probes = 0
+    for fr4 in {dict(d)["FR4"] for d in donors["regions"]}:
+        probe_regions = next(dict(d) for d in donors["regions"] if dict(d)["FR4"] == fr4)
+        keep = []
+        for donor_cdr3 in cdr3_pool:
+            trial = dict(probe_regions)
+            trial["CDR3"] = donor_cdr3
+            identity = germline_identity(assemble(trial))
+            probes += 1
+            if identity and identity["J"]["identity_pct"] >= MIN_HUMAN_J_IDENTITY:
+                keep.append(donor_cdr3)
+        by_fr4[fr4] = keep
+    usable = sum(len(v) for v in by_fr4.values())
+    total = len(by_fr4) * len(cdr3_pool)
+    log(f"J pairing: {usable} of {total} (framework, CDR3 donor) pairs clear the "
+        f"J floor of {MIN_HUMAN_J_IDENTITY}  [{probes} probes]")
+    for fr4, keep in sorted(by_fr4.items()):
+        if len(keep) < len(cdr3_pool):
+            log(f"  {fr4}: {len(keep)}/{len(cdr3_pool)} CDR3 donors compatible")
+    return by_fr4
+
+
 def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Random,
-             generator=None) -> list[str]:
+             generator=None, pool_by_fr4: dict[str, list[str]] | None = None) -> list[str]:
     """Framework from a donor, CDR3 of the required length, CDRs mutated lightly.
 
     CDR1 and CDR2 are scored against the V reference, so changing them eats into
@@ -78,7 +123,12 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
         attempts += 1
         donor = donors.iloc[rng.randrange(len(donors))]
         r = dict(donor["regions"])
-        donor_cdr3 = rng.choice(cdr3_pool)
+        # Draw the CDR3 donor from the ones whose J tail agrees with this
+        # framework's FR4: a mismatched pair is refused on J identity, and that
+        # was 58% of the output. Fall back to the whole pool rather than loop
+        # forever when a framework has no compatible donor.
+        pool = (pool_by_fr4 or {}).get(r["FR4"]) or cdr3_pool
+        donor_cdr3 = rng.choice(pool)
         cdr3_length = len(donor_cdr3)
         if generator is not None:
             r["CDR3"] = generator.generate_cdr3(donor_cdr3, cdr3_length, J_TAIL, rng,
@@ -194,7 +244,9 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     log(f"CDR3 generator: {generator_name}")
 
     rng = random.Random(seed)
-    generated = generate(donors, cdr3_donors, candidates, rng, generator=generator)
+    pool_by_fr4 = j_compatible_pool(donors, cdr3_donors, log=log)
+    generated = generate(donors, cdr3_donors, candidates, rng, generator=generator,
+                         pool_by_fr4=pool_by_fr4)
     out["generated"] = len(generated)
     log(f"generated {len(generated)} distinct candidates; checking validity...")
 
