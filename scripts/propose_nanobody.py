@@ -128,7 +128,8 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
 def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
             n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
             archive_cutoff: int | None = None, generator_name: str = "chimeric",
-            skip_surrogate: bool = False, log=print) -> dict:
+            skip_surrogate: bool = False, skip_archive: bool = False,
+            log=print) -> dict:
     """Build and rank candidates for one epoch. Pure CPU, no chain write.
 
     `params` is what scripts.check_nanobody.resolve_epoch returns: it must carry
@@ -231,12 +232,21 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
         # Mining path: PSH + BoltzGen do the real selection, so skip the
         # surrogate entirely and just pass valid, de-duplicated candidates.
         log(f"skip_surrogate=True: passing {len(valid)} valid candidates directly (no surrogate ranking)")
+        if skip_archive:
+            # Measured on 2026-11-10: the archive rule costs 5.6 s per candidate
+            # (a difflib alignment against each of 14424 archived sequences), so
+            # a pool of 300 spends 28 min -- 28 of propose's 31 minutes, and 42%
+            # of the whole epoch budget -- to screen candidates PSH then throws
+            # away 97% of. The caller runs the rule on the handful that survive
+            # instead; the sequence actually submitted is still fully checked.
+            log("  archive rule deferred to the caller, after the PSH cut")
         rows = []
         for seq in valid:
             r = regions(seq)
             g = germline_identity(seq)
             warnings = []
-            if check_sequence(seq, allowed_v, cdr3_len, archive, warnings=warnings):
+            if not skip_archive and check_sequence(seq, allowed_v, cdr3_len,
+                                                   archive, warnings=warnings):
                 continue
             rows.append({"sequence": seq, "cdr3": r["CDR3"] if r else "",
                          "predicted_rank_sum": np.nan, "v_identity": g["V"]["identity_pct"] if g else np.nan,

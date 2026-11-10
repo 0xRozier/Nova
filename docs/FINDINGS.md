@@ -413,6 +413,53 @@ Lancer le mineur avec `/home/user/venv/bin/python -m scripts.mine`, jamais
 
 ---
 
+## 7bis. Le budget d'époque, enfin mesuré
+
+Époque 26238, départ à 2 blocs de la frontière, **67 min de budget** (fin
+d'époque moins les 30 blocs sans soumission moins 12 blocs de sécurité). Premier
+passage complet de la chaîne.
+
+| Étage | Temps | Part du budget |
+|---|---|---|
+| `propose` | **1853 s (30,9 min)** | 46 % |
+| `psh_select` (300 candidats, puis 3 replis sur 24) | 1058 s (17,6 min) | 26 % |
+| `developability` (TNP + A3D sur 8) | 33 s | 1 % |
+| `boltzgen` | indisponible ici | — |
+| **total** | **2946 s (49,1 min)** | 73 %, **18 min restants** |
+
+Donc le budget tient — mais BoltzGen n'a pas tourné (binaire absent de ce
+conteneur, pas de GPU). À ~1,6 min par candidat sur 2×T4, 7 candidats coûtent
+~11 min : 49 + 11 = 60 min sur 67. **7 min de marge, c'est trop peu.**
+
+### 28 des 31 minutes de `propose` servaient à rien
+
+Mesuré directement, par opération et par candidat :
+
+| opération | ms/candidat | pour 300 |
+|---|---|---|
+| `regions` (ANARCI) | 18 | 0,1 min |
+| `germline_identity` (hmmer) | 15 | 0,1 min |
+| `check_sequence` sans archive | <1 | 0,0 min |
+| **`duplicate_of` (archive)** | **5 595** | **28,0 min** |
+
+La règle d'archive aligne le candidat contre **chacune des 14 424** séquences
+archivées avec `difflib`. `propose` l'appliquait au lot entier — 300 candidats —
+alors que la PSH en jette ensuite 97 %. Et le coût a grandi de 52 % aujourd'hui
+même, quand l'archive est passée de 9 466 à 14 424 séquences : un étage dont le
+prix suit la taille de l'archive, dans une boucle qui tourne à chaque époque.
+
+Corrigé : `propose(skip_archive=True)` et la règle tourne dans le mineur sur la
+poignée qui survit à la PSH. **44 s pour 8 candidats**, mesuré. La séquence
+réellement soumise reste intégralement vérifiée, et un doublon reste un refus
+certain — pas de repli « soumettre quand même », contrairement au crible de
+développabilité.
+
+Budget attendu après correctif : ~22 min au lieu de 49, soit **45 min
+disponibles** pour BoltzGen au lieu de 18. De quoi tripler le pool PSH sur les
+époques longues, qui en ont besoin.
+
+---
+
 ## 8. Ce qui reste ouvert
 
 **Bloquant pour un nouveau run :**

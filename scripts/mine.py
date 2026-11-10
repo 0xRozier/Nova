@@ -242,6 +242,27 @@ def psh_select(sequences: list[str], keep: int, work: Path,
     return ranked[:keep], mean
 
 
+def archive_screen(sequences: list[str], target: str, allowed_v: str,
+                   cdr3_len: int) -> list[str]:
+    """The archive-duplicate rule, run on the few candidates PSH left.
+
+    5.6 s per candidate, measured: a difflib alignment against each of the
+    14424 archived sequences. On the handful that reach here that is under a
+    minute; on the pool propose used to screen it was 28 of the epoch's 67.
+    """
+    from nova_lab.nanobodies import NanobodyArchive, check_sequence
+    archive = NanobodyArchive(target)
+    kept = []
+    for seq in sequences:
+        problems = check_sequence(seq, allowed_v, cdr3_len, archive)
+        if problems:
+            log(f"  dropped: {problems[0]}")
+        else:
+            kept.append(seq)
+    log(f"archive rule: {len(kept)} of {len(sequences)} are new")
+    return kept
+
+
 def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
     """True per sequence if both halves of the validator's gate pass.
 
@@ -397,7 +418,8 @@ def mine_epoch(st, args, params: dict) -> dict:
                          n_donors=args.donors, n_cdr3=args.cdr3_pool,
                          shortlist=max(psh_pool, args.shortlist),
                          seed=args.seed + epoch,
-                         generator_name=args.generator, skip_surrogate=True, log=log)
+                         generator_name=args.generator, skip_surrogate=True,
+                         skip_archive=True, log=log)
     shortlist = result["shortlist"]
     entry.update({"generated": result["generated"], "valid": result["valid"],
                   "status": result["status"]})
@@ -425,6 +447,20 @@ def mine_epoch(st, args, params: dict) -> dict:
                 f"spending GPU on a submission that will be refused.")
             entry["status"] = "psh_no_margin"
             return _stamp(entry)
+
+    # The archive rule, now that the pool is a handful rather than hundreds.
+    # propose skipped it: at 5.6 s per candidate it costs 28 min on a pool of
+    # 300, and PSH discards 97% of them. A duplicate is a certain rejection, so
+    # this one cannot be downgraded to a warning -- unlike the developability
+    # screen below, there is no "submit the best anyway".
+    with timed("archive", timings):
+        kept = archive_screen(sequences, args.target, params["allowed_v"], cdr3_len)
+    entry["archive_rejected"] = len(sequences) - len(kept)
+    if not kept:
+        log("every surviving candidate duplicates the archive; nothing to submit")
+        entry["status"] = "all_duplicates"
+        return _stamp(entry)
+    sequences = kept
 
     with timed("developability", timings):
         verdict = developability_screen(sequences, work / "tnp")
