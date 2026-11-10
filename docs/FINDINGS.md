@@ -958,3 +958,38 @@ Toutes cherchaient à améliorer la **fabrication** quand le défaut était dans
 C'est la leçon de méthode de ce projet : **un mécanisme établi ne dit pas quelle
 part du résultat il explique.** Les trois mécanismes étaient réels et mesurés.
 Aucun n'était le goulot.
+
+### 12bis. Une simulation à moi, invalide, et ce qui la remplace
+
+Pour chiffrer le gain du criblage large j'ai simulé la malédiction du
+vainqueur : vivier de taille n, prédictions tirées d'une gaussienne ajustée sur
+nos 208 points, valeur réelle = régression + bruit. Résultat annoncé à
+n = 40 000 : **1,042**.
+
+`design_iiptm` est borné par 1,0 et le maximum jamais observé sur 6000
+soumissions du champ est 0,794. Le chiffre est impossible, et la cause est la
+modélisation : **une gaussienne a des queues non bornées**, donc le maximum de
+n tirages croît sans limite avec n. La simulation ne mesurait rien.
+
+Remplacée par une lecture non paramétrique, qui n'extrapole pas au-delà du
+mesuré — pour chaque tranche de prédiction, les valeurs réelles observées :
+
+| prédit | n | réel médian | réel max |
+|---|---|---|---|
+| 0,12–0,41 | 104 | 0,243 | 0,438 |
+| 0,41–0,51 | 41 | 0,491 | 0,602 |
+| 0,51–0,57 | 31 | 0,553 | 0,667 |
+| 0,57–0,62 | 21 | 0,566 | 0,662 |
+| **0,62–0,67** | **11** | **0,643** | **0,711** |
+
+Deux choses utiles en sortent :
+
+1. **le substitut est bien calibré** dans la plage mesurée — prédire 0,64 donne
+   un réel médian de 0,643, sans biais appréciable ;
+2. **sa tranche haute contient du 0,711 réel**, proche du meilleur par époque du
+   champ (0,757).
+
+Mais la prédiction la plus haute jamais observée sur nos candidats est 0,667.
+**Ce que vaut réellement un candidat prédit au-dessus de ça ne s'extrapole pas :
+il faut le noter.** C'est précisément ce que l'étape Kaggle doit mesurer, et
+c'est la seule façon de savoir si le criblage large nous met au niveau du champ.
