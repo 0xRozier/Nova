@@ -171,8 +171,16 @@ def top_level_spec(scaffold_paths: list[str], target_cif: str) -> dict:
     }
 
 
-def renumber_sequentially(pdb: Path) -> int:
-    """Renumber residues 1..N in place, and return N.
+SCAFFOLD_CHAIN = "B"  # the target takes A; NanoBodyBuilder2 writes H
+
+
+def renumber_sequentially(pdb: Path, chain: str = SCAFFOLD_CHAIN) -> int:
+    """Renumber residues 1..N in place and set the chain id, returning N.
+
+    NanoBodyBuilder2 labels the chain H. The spec names it B, as the upstream
+    nanobody scaffold examples do, and `boltzgen check` fails outright with
+    "Specified chain id B not in file" otherwise -- which is how this was
+    caught, running check locally rather than on Kaggle.
 
     NanoBodyBuilder2 writes IMGT numbering, which has gaps: scaffold0 runs
     1-9, 11, ... to 128 for 120 residues. BoltzGen's res_index is the canonical
@@ -188,7 +196,7 @@ def renumber_sequentially(pdb: Path) -> int:
             key = line[22:27]  # residue number plus insertion code
             if key not in mapping:
                 mapping[key] = len(mapping) + 1
-            out.append(f"{line[:22]}{mapping[key]:>4} {line[27:]}")
+            out.append(f"{line[:21]}{chain}{mapping[key]:>4} {line[27:]}")
         else:
             out.append(line)
     pdb.write_text("".join(out))

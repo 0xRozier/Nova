@@ -275,9 +275,21 @@ res.head(20)
 sh(f"find {out_dir} -maxdepth 3 | head -60")
 """),
     ]
-    cells.insert(2, code(
+    # Before the cell that unpacks it, not after: cells[1] both sets the
+    # parameters and opens the tarball, so PAYLOAD has to exist by then. The
+    # scoring notebook inserts at 2 because there those are two separate cells,
+    # and copying that index shipped a notebook that died on NameError at the
+    # first cell.
+    cells.insert(1, code(
         f"# Charge utile : BoltzGen des validateurs, 8AOK, la specification de conception "
         f"et ses charpentes (tar.xz base64)\nPAYLOAD = \"{payload(spec_dir, nova_dir, target)}\""))
+    sources = ["".join(c["source"]) for c in cells]
+    defines = next(i for i, s in enumerate(sources) if s.startswith("# Charge utile"))
+    uses = next(i for i, s in enumerate(sources) if "b64decode(PAYLOAD)" in s)
+    if defines >= uses:
+        raise AssertionError(
+            f"PAYLOAD is defined in cell {defines} and used in cell {uses}: the "
+            f"notebook would fail on NameError at the first run.")
     return {"cells": cells,
             "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python",
                                         "name": "python3"},
