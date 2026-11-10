@@ -95,7 +95,8 @@ Ne note pas des séquences : elle en **fabrique**. Même BoltzGen embarqué par 
 
 Spans conçus : {spans}
 
-**Réglages Kaggle :** *Accelerator* **GPU T4 x2**, *Internet* **On**.
+> **À régler AVANT de lancer, dans l'éditeur : *Settings → Accelerator → GPU T4 x2*, et *Internet → On*.**
+> Un carnet neuf démarre **sans** GPU, et BoltzGen en réclame un dès `configure`. Le carnet s'arrête maintenant tout de suite avec ce message plutôt que de mourir deux minutes plus tard dans une trace CUDA.
 
 La cellule `check` s'exécute d'abord et **lève** si la spécification est mauvaise : c'est la seule hypothèse invérifiable hors GPU (`res_index` est l'index mmcif séquentiel, pas la numérotation IMGT qu'écrit NanoBodyBuilder2). Elle coûte quelques secondes ; la conception coûte des dizaines de minutes.
 """),
@@ -177,8 +178,20 @@ step("installation de la BoltzGen des validateurs")
 sh(f"uv pip install -q --python {py} {NOVA}/boltzgen pandas requests")
 site = pathlib.Path(sh([py, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"]).strip())
 sh(["cp", str(WORK / "kaggle" / "bittensor.py"), str(site / "bittensor.py")])
-sh(f'{py} -c "import torch, boltzgen, bittensor; print(torch.__version__, torch.cuda.is_available())"')
-step("environnement pret")
+# ASSERTION, pas affichage. Le lancement precedent a imprime
+# "2.7.1+cu126 False" a 80 s puis a continue, pour mourir 20 s plus tard dans
+# configure sur "Found no NVIDIA driver". L accelerateur est un reglage PAR
+# CARNET : un carnet neuf demarre sans GPU, et aucun code ne peut y remedier.
+probe = sh([py, "-c", "import torch; print(torch.__version__, torch.cuda.is_available(), "
+                      "torch.cuda.device_count())"]).split()
+if probe[1] != "True":
+    print("AUCUN GPU VISIBLE : torch.cuda.is_available() = False")
+    print("Dans l editeur Kaggle : Settings -> Accelerator -> GPU T4 x2, puis relancer.")
+    print("BoltzGen reclame le GPU des l etape configure, qui lit la capacite de")
+    print("calcul du materiel : il n y a pas de repli CPU possible.")
+    raise SystemExit("pas de GPU : regler l accelerateur sur GPU T4 x2")
+sh(f'{py} -c "import boltzgen, bittensor"')
+step(f"environnement pret : torch {probe[0]}, {probe[2]} GPU")
 """),
         md("""
 ## 1. `check` — l'indexation est-elle bonne ?
@@ -303,6 +316,19 @@ res.head(20)
         raise AssertionError(
             f"PAYLOAD is defined in cell {defines} and used in cell {uses}: the "
             f"notebook would fail on NameError at the first run.")
+
+    # Every code cell must parse. An escaping slip in a generated cell -- a \\n
+    # that the enclosing literal turned into a real newline -- produced a cell
+    # with an unterminated string, which only showed up when the cell ran.
+    import ast
+    for i, (cell, source) in enumerate(zip(cells, sources)):
+        if cell["cell_type"] != "code":
+            continue
+        try:
+            ast.parse(source)
+        except SyntaxError as error:
+            raise AssertionError(
+                f"cell {i} is not valid Python: {error}") from None
 
     # Every subprocess call must carry BG_ENV. Fixing sh() was not enough: the
     # design step uses Popen directly, so it kept Kaggle's MPLBACKEND and died
