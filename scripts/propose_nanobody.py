@@ -105,17 +105,20 @@ def germline_compatible_pool(donors: pd.DataFrame, cdr3_pool: list[str],
             trial["CDR3"] = donor_cdr3
             identity = germline_identity(assemble(trial))
             probes += 1
-            if (identity
-                    and identity["J"]["identity_pct"] >= MIN_HUMAN_J_IDENTITY
-                    and allowed_v in identity["V"]["genes"]
-                    and identity["V"]["identity_pct"] >= MIN_HUMAN_V_IDENTITY):
+            # J only. Requiring the V call here as well was measured and
+            # removed: it screens the unmutated pair, but the V breakage comes
+            # from the mutations that follow (CDR1 15 %, CDR2 10 %, the CDR3
+            # body), so the V refusals stayed at ~1077 of 5000 either way while
+            # the screen cut the usable pairs to 654 of 2400 and cost 34 valid
+            # candidates. See FINDINGS 7ter.
+            if identity and identity["J"]["identity_pct"] >= MIN_HUMAN_J_IDENTITY:
                 keep.append(donor_cdr3)
         by_framework[donor_sequence] = keep
     usable = sum(len(v) for v in by_framework.values())
     total = len(by_framework) * len(cdr3_pool)
     empty = sum(not v for v in by_framework.values())
-    log(f"germline pairing: {usable} of {total} (framework, CDR3 donor) pairs keep "
-        f"{allowed_v} and clear J >= {MIN_HUMAN_J_IDENTITY}  [{probes} probes]")
+    log(f"J pairing: {usable} of {total} (framework, CDR3 donor) pairs clear "
+        f"J >= {MIN_HUMAN_J_IDENTITY}  [{probes} probes]")
     log(f"  per framework: {min(len(v) for v in by_framework.values())} to "
         f"{max(len(v) for v in by_framework.values())} compatible CDR3 donors of "
         f"{len(cdr3_pool)}; {empty} framework(s) with none")
