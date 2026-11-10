@@ -193,7 +193,13 @@ def main():
             if not built:
                 continue
             child, how = built
-            problems = check_sequence(child, args.allowed_v, args.cdr3, archive)
+            # The cheap gates first, and the archive rule only on what survives
+            # them. The rule costs 5.6 s per candidate -- a difflib alignment
+            # against each of 14424 archived sequences -- so running it inside
+            # the retry loop made this script take 90 minutes and get killed.
+            # FINDINGS 7bis had already fixed exactly this in the miner; this is
+            # the same defect written again in a new file.
+            problems = check_sequence(child, args.allowed_v, args.cdr3)
             if problems:
                 refused[problems[0][:44]] += 1
                 continue
@@ -214,6 +220,24 @@ def main():
             print(f"  {n:>4}  {cause}")
     if not rows:
         raise SystemExit("no variant cleared the gates")
+
+    # Now the archive rule, once per accepted variant. By construction each
+    # differs from its parent by at least the 7 residues the rule requires, so
+    # this should pass -- but "should" is not "does", and a duplicate is a
+    # certain rejection.
+    print(f"\narchive rule on the {len(rows)} accepted variants "
+          f"({len(rows) * 5.6 / 60:.0f} min)...")
+    kept = []
+    for row in rows:
+        problems = check_sequence(row["sequence"], args.allowed_v, args.cdr3, archive)
+        if problems:
+            refused[f"[archive] {problems[0][:34]}"] += 1
+        else:
+            kept.append(row)
+    print(f"  {len(kept)} of {len(rows)} are new")
+    rows = kept
+    if not rows:
+        raise SystemExit("every variant duplicates the archive")
     out = pd.DataFrame(rows)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(args.out, index=False)
