@@ -870,3 +870,91 @@ Le masque de conception contraint la **structure**, pas la séquence finale.
 La piste 1 est à tester d'abord : elle ne coûte pas plus cher et elle corrige en
 même temps l'erreur sur `inverse_folding` (si la séquence est réassignée de toute
 façon, geler CDR1/CDR2 n'avait aucun effet protecteur).
+
+---
+
+## 12. L'erreur n'était pas dans ce que nous fabriquions, mais dans ce que nous choisissions
+
+### Le fait qui retourne le diagnostic
+
+Nos candidats greffés, notés par BoltzGen à l'échelle
+(`results/scores_nanobody_observation_*.csv`) :
+
+| lot | n | médiane | **max** |
+|---|---|---|---|
+| combined | 40 | 0,404 | 0,599 |
+| cutoff | 42 | 0,326 | 0,662 |
+| depth4 | 84 | 0,343 | **0,692** |
+
+**0,692 sur 84 tirages, au-dessus de la médiane du champ (0,664).** Or les 8
+candidats de l'essai à blanc de l'époque 26238 plafonnaient à **0,375**. La
+différence n'est pas le générateur : c'est que la coupe de milliers à huit se
+faisait sur la **PSH**, dont le §3ter avait déjà établi qu'elle ne prédit pas le
+verdict sous 96. **Nous jetions les bons candidats avant de les regarder.**
+
+### Le substitut `design_iiptm`
+
+5956 séquences étiquetées (champ entier + nos candidats notés), 147 traits.
+Validé trois fois, par ordre de confiance décroissante :
+
+| validation | ρ |
+|---|---|
+| 5 plis aléatoires sur tout | 0,913 — **gonflé** |
+| 5 plis groupés **par époque** | 0,882 (les quasi-doublons ne valent que 0,03) |
+| entraîné sur le champ, **classant nos candidats** | **0,569** (p = 6×10⁻¹², n = 124) |
+
+Le troisième est celui à citer. Un modèle qui distinguerait seulement
+« séquence du champ de novembre » (0,66) de « greffe » (0,34) réussirait les
+deux premiers et serait inutile sur notre vivier — l'erreur de forme commise
+trois fois ailleurs dans ce document.
+
+Effet sur la sélection, sur nos 124 candidats notés :
+
+| 8 choisis | `design_iiptm` réel |
+|---|---|
+| **par le substitut** | **médiane 0,572, max 0,649** |
+| au hasard | 0,298 |
+| le vivier entier | 0,335, max 0,667 |
+
+### Le coût, mesuré
+
+| | |
+|---|---|
+| classer 1751 candidats par le substitut | **27 s** = 15,6 ms/candidat |
+| mesurer la PSH des mêmes | **105 min** |
+
+C'est ce rapport qui permet de cribler le vivier **entier** au lieu de 31
+candidats. Pipeline recâblé en conséquence : générer → classer tout par le
+substitut → **admissibilité** PSH sur les meilleurs → archive →
+développabilité → BoltzGen. La PSH redevient un seuil, plus un critère de choix.
+
+### Ce que cela ne règle pas
+
+0,649 reste sous le meilleur par époque du champ (0,757). Ce correctif nous fait
+passer des 12 % les plus faibles à environ la médiane. **Nécessaire, pas
+suffisant.**
+
+Deux réserves sur le substitut lui-même :
+
+- il est entraîné sur un champ qui vient de changer de régime (82 % au-dessus de
+  0,6 contre 2 % en octobre), donc il est **périssable** : il faut relancer
+  `fetch_submissions` + `analyze_nanobodies` + l'entraînement régulièrement ;
+- ρ = 0,569 veut dire qu'il se trompe souvent entre candidats proches. Ce qu'il
+  fait bien, c'est écarter le bas de la distribution — assez pour ne plus
+  soumettre un 0,34 quand le vivier contient un 0,67, pas assez pour garantir le
+  meilleur des 1751.
+
+### Les trois tentatives écartées avant celle-ci
+
+Toutes cherchaient à améliorer la **fabrication** quand le défaut était dans la
+**sélection** :
+
+| tentative | résultat mesuré |
+|---|---|
+| conception BoltzGen contrainte (§11) | 0,214 — pire que le greffage |
+| criblage des donneurs de CDR3 par gène V (§7ter) | 1751 valides contre 2163 |
+| protection de la tête du CDR3 (§7ter) | **0** valide |
+
+C'est la leçon de méthode de ce projet : **un mécanisme établi ne dit pas quelle
+part du résultat il explique.** Les trois mécanismes étaient réels et mesurés.
+Aucun n'était le goulot.
