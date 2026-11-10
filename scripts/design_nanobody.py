@@ -112,13 +112,36 @@ def framework_donors(target: str, allowed_v: str, n: int) -> pd.DataFrame:
     return pd.DataFrame({"sequence": keep})
 
 
-def scaffold_spec(sequence: str, cdr3_length: int, structure_path: str) -> tuple[dict, dict]:
-    """The scaffold half of the spec: fix the framework, design the CDR3.
+def scaffold_spec(sequence: str, cdr3_length: int, structure_path: str,
+                  cdrs: int = 3) -> tuple[dict, dict]:
+    """The scaffold half of the spec: fix the framework, design the CDRs.
 
     Returns (spec, report). The CDR3 is rebuilt to the epoch's length by
     removing the donor's designable middle and inserting exactly as many
     designed residues as are needed, so the result is the imposed length
     whatever the donor's own CDR3 was.
+
+    `cdrs` is 3 (CDR1, CDR2 and the CDR3's middle) or 1 (the CDR3 alone).
+
+    Three is the default because one was measured and failed. FINDINGS 11: with
+    only the CDR3's middle free -- 11 residues, CDR1, CDR2 and both ends of the
+    CDR3 frozen -- the designs read design_iiptm 0.214 against 0.375 for plain
+    grafting, and BoltzGen's own filter cut all 20 on filter_rmsd (median 9.23 A
+    against a 2.5 threshold): the CDR3 folded as designed but the nanobody did
+    not sit where the design put it. Too little surface to build an interface
+    with.
+
+    And that freeze bought nothing. inverse_folding reassigns the whole chain's
+    sequence anyway, which is why the J tails came back as ADY/FAY/FDY rather
+    than the donors' FDP (FINDINGS 11), and FINDINGS 7ter had already measured
+    that mutating CDR1/CDR2 costs nothing appreciable in germline identity.
+    The upstream example designs all three CDRs (res_index 26..34,52..59,
+    98..118); this now does the same.
+
+    Germline compliance is therefore not enforced by the spec at all -- it is
+    screened locally afterwards, which is where our own gates live. Last run
+    only 6 of 20 designs cleared the J floor of 86, so expect to need several
+    designs per usable sequence.
     """
     r = regions(sequence)
     cdr3 = r["CDR3"]
@@ -133,15 +156,23 @@ def scaffold_spec(sequence: str, cdr3_length: int, structure_path: str) -> tuple
             f"are held fixed. Nothing to design.")
     donor_middle_end = start + len(cdr3) - J_TAIL_FIXED - 1
 
+    # CDR1 and CDR2 keep their donor lengths: only the CDR3's length is imposed
+    # by the epoch, so they need no exclude/insert, just the design mask.
+    spans = [f"{designable_start}..{donor_middle_end}"]
+    if cdrs == 3:
+        for name in ("CDR1", "CDR2"):
+            loop = r[name]
+            loop_start = sequence.index(loop) + 1
+            spans.insert(-1, f"{loop_start}..{loop_start + len(loop) - 1}")
+    designed = ",".join(spans)
+
     spec = {
         "path": structure_path,
         "include": [{"chain": {"id": "B"}}],
-        "design": [{"chain": {"id": "B",
-                              "res_index": f"{designable_start}..{donor_middle_end}"}}],
+        "design": [{"chain": {"id": "B", "res_index": designed}}],
         "structure_groups": [
             {"group": {"id": "B", "visibility": 2}},
-            {"group": {"id": "B", "visibility": 0,
-                       "res_index": f"{designable_start}..{donor_middle_end}"}},
+            {"group": {"id": "B", "visibility": 0, "res_index": designed}},
         ],
         # Take out the donor's own designable middle, then insert exactly the
         # number of residues the epoch's length calls for.
@@ -157,8 +188,11 @@ def scaffold_spec(sequence: str, cdr3_length: int, structure_path: str) -> tuple
         "cdr3_target_length": cdr3_length,
         "fixed_head": cdr3[:V_HEAD],
         "fixed_tail": cdr3[-J_TAIL_FIXED:],
-        "designed_residues": designable_count,
-        "res_index_designed": f"{designable_start}..{donor_middle_end}",
+        "designed_residues": designable_count + (
+            len(r["CDR1"]) + len(r["CDR2"]) if cdrs == 3 else 0),
+        "cdrs_designed": cdrs,
+        "res_index_designed": designed,
+        "res_index_cdr3": f"{designable_start}..{donor_middle_end}",
         "v_identity": round(identity["V"]["identity_pct"], 2) if identity else None,
         "j_identity": round(identity["J"]["identity_pct"], 2) if identity else None,
         "cdr1": r["CDR1"], "cdr2": r["CDR2"],
@@ -277,12 +311,12 @@ def verify_span(pdb: Path, report: dict) -> None:
     sequence = structure_sequence(pdb)
     if sequence != report["framework"]:
         raise ValueError(f"{pdb.name}: the structure's sequence is not the framework's")
-    low, high = (int(x) for x in report["res_index_designed"].split(".."))
+    low, high = (int(x) for x in report["res_index_cdr3"].split(".."))
     named = sequence[low - 1:high]
     expected = report["cdr3_donor"][V_HEAD:len(report["cdr3_donor"]) - J_TAIL_FIXED]
     if named != expected:
         raise ValueError(
-            f"{pdb.name}: res_index {low}..{high} names {named!r}, but the CDR3's "
+            f"{pdb.name}: res_index_cdr3 {low}..{high} names {named!r}, but the CDR3's "
             f"designable middle is {expected!r}. The spec would design the wrong "
             f"residues.")
 
@@ -294,6 +328,9 @@ def main():
     parser.add_argument("--cdr3", type=int, help="skip the chain and use this length")
     parser.add_argument("--target", default=NANOBODY_TARGET[0])
     parser.add_argument("--frameworks", type=int, default=4)
+    parser.add_argument("--cdrs", type=int, choices=(1, 3), default=3,
+                        help="design all three CDRs (3, the default) or the "
+                             "CDR3 alone (1, measured at design_iiptm 0.214)")
     parser.add_argument("--out", type=Path, default=Path("inputs/design"))
     parser.add_argument("--nova-dir", type=Path, default=Path("/home/user/nova-upstream"))
     parser.add_argument("--fold", action="store_true",
@@ -318,7 +355,7 @@ def main():
     reports, scaffold_files = [], []
     for i, sequence in enumerate(donors["sequence"]):
         structure = args.out / f"scaffold{i}.pdb"
-        spec, report = scaffold_spec(sequence, cdr3_length, structure.name)
+        spec, report = scaffold_spec(sequence, cdr3_length, structure.name, args.cdrs)
         if args.fold:
             fold(sequence, structure)
             verify_span(structure, report)
