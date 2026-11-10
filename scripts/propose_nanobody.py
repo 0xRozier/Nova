@@ -143,7 +143,14 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
         # framework's FR4: a mismatched pair is refused on J identity, and that
         # was 58% of the output. Fall back to the whole pool rather than loop
         # forever when a framework has no compatible donor.
-        pool = (pool_by_framework or {}).get(donor["sequence"]) or cdr3_pool
+        pool = (cdr3_pool if pool_by_framework is None
+                else pool_by_framework.get(donor["sequence"]) or [])
+        if not pool:
+            # No compatible CDR3 donor for this framework. Falling back to the
+            # whole pool would reinject exactly the incompatible pairs the
+            # screen exists to remove -- measured: 2163 valid candidates became
+            # 1955 when three frameworks of forty fell back. Skip the draw.
+            continue
         donor_cdr3 = rng.choice(pool)
         cdr3_length = len(donor_cdr3)
         if generator is not None:
@@ -261,6 +268,15 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
 
     rng = random.Random(seed)
     pool_by_framework = germline_compatible_pool(donors, cdr3_donors, allowed_v, log=log)
+    usable_donors = donors[[bool(pool_by_framework.get(s)) for s in donors["sequence"]]]
+    if usable_donors.empty:
+        log("no framework has a germline-compatible CDR3 donor; keeping all of them "
+            "and letting the offline checks decide")
+    else:
+        if len(usable_donors) < len(donors):
+            log(f"  dropping {len(donors) - len(usable_donors)} framework(s) with no "
+                f"compatible CDR3 donor")
+        donors = usable_donors
     generated = generate(donors, cdr3_donors, candidates, rng, generator=generator,
                          pool_by_framework=pool_by_framework)
     out["generated"] = len(generated)
