@@ -739,8 +739,45 @@ valeur.
 Il reste donc que **le champ s'est réellement amélioré** : en octobre 2 % des
 soumissions dépassaient 0,6, aujourd'hui 75 %. Le plafond était déjà atteignable
 en octobre (quelqu'un faisait 0,704) ; maintenant presque tout le monde
-l'atteint. Une méthode est devenue publique, ou copiée, entre le 29 octobre et
-le 6 novembre.
+l'atteint.
+
+### La bascule datée : une courbe d'adoption, pas un palier
+
+Les 141 époques manquantes (26026-26169) ont été récupérées. Le champ noté
+couvre désormais **5833 soumissions sur 260 époques sans trou**, et la
+transition est **graduelle** :
+
+| bloc de 20 époques | jours avant 26234 | part > 0,6 | médiane |
+|---|---|---|---|
+| 25960 | 13,7 | 0,4 % | 0,220 |
+| 26000 | 11,7 | 1,8 % | 0,241 |
+| 26020 | 10,7 | 9,2 % | 0,301 |
+| 26040 | 9,7 | 23 % | 0,468 |
+| 26080 | 7,7 | 35 % | 0,527 |
+| 26120 | 5,7 | 58 % | 0,623 |
+| 26180 | 2,7 | 67 % | 0,656 |
+| 26200 | 1,7 | **82 %** | 0,683 |
+
+**C'est décisif contre l'hypothèse d'un changement de notation**, qui serait un
+palier net à une date unique et identique pour tous. Une diffusion sur 14 jours
+ne peut être qu'une méthode qui se propage.
+
+L'ordre des adoptants le confirme — première époque au-dessus de 0,6 par dépôt :
+
+| dépôt | première > 0,6 | soumissions récentes |
+|---|---|---|
+| `frankji-groundcontrol` | 25969 | 29 |
+| `QTTECH2023` | 26004 | **248** |
+| `cczulaika` | 26019 | 3 |
+| `saon-miner` | 26028 | **168** |
+| `bitty-labs` (9 dépôts) | 26040-26076 | 130 au total |
+| `thomasvangurp` | 26040 | 22 |
+
+Les neuf dépôts de `bitty-labs` basculent en huit époques : un seul opérateur
+qui déploie. **Quinze dépôts ont acquis la méthode en deux semaines, donc elle
+est copiable** — ce n'est pas un avantage propriétaire. C'est cohérent avec
+BoltzGen-1, qui est public sur Hugging Face et dont les exemples de conception
+de nanobodies sont dans le dépôt des validateurs lui-même (§11).
 
 ### Ce que cela fait aux estimations de ce document
 
