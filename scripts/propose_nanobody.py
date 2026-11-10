@@ -51,6 +51,12 @@ def assemble(r: dict) -> str:
     return r["FR1"] + r["CDR1"] + r["FR2"] + r["CDR2"] + r["FR3"] + r["CDR3"] + r["FR4"]
 
 
+# How often a candidate's CDR1 / CDR2 is mutated as well as its CDR3. Exposed
+# as constants and as generate() arguments so the cost can be measured.
+P_MUTATE_CDR1 = 0.15
+P_MUTATE_CDR2 = 0.10
+
+
 def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> str:
     """n point substitutions, leaving the last `keep_tail` residues alone."""
     out = list(seq)
@@ -127,11 +133,15 @@ def germline_compatible_pool(donors: pd.DataFrame, cdr3_pool: list[str],
 
 def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Random,
              generator=None,
-             pool_by_framework: dict[str, list[str]] | None = None) -> list[str]:
+             pool_by_framework: dict[str, list[str]] | None = None,
+             p_cdr1: float = P_MUTATE_CDR1,
+             p_cdr2: float = P_MUTATE_CDR2) -> list[str]:
     """Framework from a donor, CDR3 of the required length, CDRs mutated lightly.
 
     CDR1 and CDR2 are scored against the V reference, so changing them eats into
-    the germline identity margin: CDR3 carries most of the variation.
+    the germline identity margin: CDR3 carries most of the variation. The two
+    probabilities are arguments so that cost can be measured rather than
+    asserted -- the sentence above sat in this docstring unquantified.
 
     When *generator* is given, CDR3 creation is delegated to it instead of the
     inline uniform-random mutate_region.
@@ -161,9 +171,9 @@ def generate(donors: pd.DataFrame, cdr3_pool: list[str], n: int, rng: random.Ran
                                                 framework=r)
         else:
             r["CDR3"] = mutate_region(donor_cdr3, rng, rng.randint(2, 4), keep_tail=J_TAIL)
-        if rng.random() < 0.15:
+        if rng.random() < p_cdr1:
             r["CDR1"] = mutate_region(r["CDR1"], rng, 1)
-        if rng.random() < 0.1:
+        if rng.random() < p_cdr2:
             r["CDR2"] = mutate_region(r["CDR2"], rng, 1)
         seq = assemble(r)
         if seq not in seen:
