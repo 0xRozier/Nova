@@ -74,6 +74,15 @@ CDR3_CONSERVED_CDR_CAP = 0.80
 V_HEAD = 2   # V-encoded, left alone
 J_FIXED = 3  # J-encoded, left alone
 AAS = "ACDEFGHIKLMNPQRSTVWY"
+# PSH is the hydrophobic patch score of the CDR SURFACE, and substituting from
+# a uniform draw over all twenty puts a hydrophobic residue in the binding loop
+# two times in five. Measured: variants built that way read PSH 100.6 median
+# against 89.4 for their accepted parents, +11.2 points, and 72% breach the
+# measured break of 96 against 25% of parents. So substitute from the
+# hydrophilic residues only. C is excluded anyway (the canonical cysteines are
+# structural and filter_cysteine rejects extras), and G and P are kept out of
+# this set because they change the loop's backbone rather than its surface.
+HYDROPHILIC = "DEKNQRSTH"
 REGION_ORDER = ("FR1", "CDR1", "FR2", "CDR2", "FR3", "CDR3", "FR4")
 
 
@@ -150,7 +159,7 @@ def variant(parent: str, cdr3_length: int, fr_consensus: dict,
     if len(free) < in_cdr3:
         return None
     for position in rng.sample(free, in_cdr3):
-        loop[position] = rng.choice([a for a in AAS if a != loop[position]])
+        loop[position] = rng.choice([a for a in HYDROPHILIC if a != loop[position]])
 
     # The rest go in the framework, toward the archive consensus: those
     # positions do not contact the target and the move raises V identity
