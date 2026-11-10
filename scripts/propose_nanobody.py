@@ -51,6 +51,10 @@ def assemble(r: dict) -> str:
     return r["FR1"] + r["CDR1"] + r["FR2"] + r["CDR2"] + r["FR3"] + r["CDR3"] + r["FR4"]
 
 
+# Below this many length-matched CDR3 donors from the epoch's own V gene, the
+# pool is too thin to graft from and the whole length-matched pool is kept.
+MIN_SAME_V_CDR3_DONORS = 15
+
 # How often a candidate's CDR1 / CDR2 is mutated as well as its CDR3. Exposed
 # as constants and as generate() arguments so the cost can be measured.
 P_MUTATE_CDR1 = 0.15
@@ -263,6 +267,24 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     if right_length.empty:
         right_length = df[df["cdr3"].str.len() == cdr3_len]
         log(f"no compliant CDR3 of length {cdr3_len}; falling back to the whole archive")
+
+    # ... and from the epoch's own V gene. The CDR3's second residue is
+    # V-encoded -- IGHV3-23 germline ends ...YYCAK, IGHV3-66 ...YYCAR -- and in
+    # the archive it tracks the gene: of the sequences calling IGHV3-23, 48%
+    # carry K there against 3% of those calling IGHV3-66, which carry R 56% of
+    # the time. Grafting a CDR3 from another gene therefore hands the candidate
+    # the wrong germline signature, and the validator calls the other gene.
+    # Measured on 1200 candidates: a head of AR, FR or SR is refused on the V
+    # call 0-2% of the time, AK, FK or SK 65-77%, and 86% of our output had a
+    # non-AR head because the donor's gene was never considered.
+    same_v = right_length[right_length["v_genes"].str.split(",")
+                          .apply(lambda g: allowed_v in g)]
+    if len(same_v) >= MIN_SAME_V_CDR3_DONORS:
+        right_length = same_v
+    elif not same_v.empty:
+        log(f"only {len(same_v)} CDR3 donors of length {cdr3_len} call {allowed_v}; "
+            f"keeping the whole length-matched pool rather than graft from "
+            f"{len(same_v)} sequences")
     cdr3_donors = list(right_length.nsmallest(n_cdr3, "true_rank_sum")["cdr3"])
     if not cdr3_donors:
         log(f"no archived CDR3 of length {cdr3_len}; cannot graft")
