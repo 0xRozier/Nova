@@ -993,3 +993,70 @@ Mais la prédiction la plus haute jamais observée sur nos candidats est 0,667.
 **Ce que vaut réellement un candidat prédit au-dessus de ça ne s'extrapole pas :
 il faut le noter.** C'est précisément ce que l'étape Kaggle doit mesurer, et
 c'est la seule façon de savoir si le criblage large nous met au niveau du champ.
+
+---
+
+## 13. La sélection est réparée ; le plafond du générateur, non
+
+24 candidats prédits 0,726–0,752, notés par le BoltzGen des validateurs sur
+Kaggle (40,6 min, 1,7 min/séquence). `results/scores_surrogate_top24.csv`.
+
+| | `design_iiptm` |
+|---|---|
+| prédit par le substitut | 0,726 – 0,752 |
+| **réel** | **médiane 0,616, max 0,673, min 0,296** |
+| biais | **le substitut sur-promet de +0,137** |
+| ρ prédit/réel **dans** la tranche | **+0,31** |
+
+### Ce qui est gagné, et c'est réel
+
+| sélection | `design_iiptm` obtenu |
+|---|---|
+| par la PSH (essai de l'époque 26238) | 0,375 |
+| **par le substitut** | **médiane 0,616** |
+
+**+0,241.** Le correctif de sélection fonctionne, et il est gratuit.
+
+### Ce qui ne suffit pas, et c'est décisif
+
+Comparé au champ **à CDR3 = 16** (200 soumissions, 8 époques récentes) :
+
+| | |
+|---|---|
+| médiane du champ | 0,697 |
+| 90ᵉ percentile | 0,771 |
+| meilleur par époque (médiane) | **0,777** |
+| **notre max : 0,673** | **38ᵉ percentile** |
+| époques gagnables avec 0,673 | **0 / 8** |
+| époques gagnables avec l'ancien 0,375 | 0 / 8 |
+
+Nous passons des 14 % les plus faibles au 38ᵉ percentile. **Toujours sous la
+médiane du champ, et zéro époque gagnée.**
+
+### Trois choses que ce lot établit
+
+1. **Le plateau prédit à 0,756 était une illusion.** Le substitut sur-promet de
+   0,137 dans sa tranche haute, hors de la plage où il était calibré (≤ 0,667).
+   Refuser d'extrapoler était justifié — le §12bis avait raison de retirer la
+   simulation.
+2. **Dans la tranche haute, le substitut ne sait plus rien** (ρ = +0,31 contre
+   0,569 globalement). Affiner la sélection *à l'intérieur* de cette tranche ne
+   rapportera rien : il n'y a plus d'information à exploiter.
+3. **Le vrai plafond du greffage est ~0,67**, pas 0,756. Il faut 0,777 pour
+   gagner une époque à cette longueur. **L'écart restant, ~0,10, n'est plus un
+   écart de sélection — c'est un écart de qualité du générateur.**
+
+### Ce que cela ordonne pour la suite
+
+La sélection est au bout de ce qu'elle peut donner. Le seul levier restant est
+le **générateur**, et la tentative de conception BoltzGen du §11 a échoué pour
+une raison identifiée : nous ne lui avions laissé que **11 résidus** en gelant
+CDR1, CDR2 et les deux extrémités du CDR3, quand l'exemple amont conçoit **les
+trois CDR**. Ce gel ne protégeait rien — `inverse_folding` réassigne la séquence
+de toute façon (§11), et §7ter avait mesuré que muter CDR1/CDR2 ne coûte rien en
+identité germinale.
+
+**C'est maintenant la seule expérience qui vaille**, et son coût est une session
+Kaggle. Les 24 mesures de ce lot rejoignent l'entraînement du substitut : elles
+sont 24 observations neuves dans la bande où il n'en avait que 11, et où il vient
+de se tromper de 0,137.
