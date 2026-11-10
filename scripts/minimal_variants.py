@@ -231,7 +231,12 @@ def main():
                 "true_rank_sum": "", "repo": "",
                 "v_identity": round(identity["V"]["identity_pct"], 2) if identity else "",
                 "parent_design_iiptm": round(parent.design_iiptm, 4),
-                "parent_cdr3": parent.cdr3, **how})
+                "parent_cdr3": parent.cdr3,
+                # The parent's own sequence, so the pair can be recovered
+                # exactly. Matching on a rounded design_iiptm failed: the
+                # batch stores 4 decimals and the dataset keeps full
+                # precision, so every join came back empty.
+                "parent_sequence": parent.sequence, **how})
             made += 1
         print(f"  parent at {parent.design_iiptm:.3f}: {made} variants")
     if refused:
