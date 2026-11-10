@@ -1123,3 +1123,87 @@ testable dans nos moyens actuels :
 devenir.** Le correctif de sélection valait +0,241 et était gratuit ; il nous
 met au 38ᵉ percentile du champ. Les ~0,10 restants demandent une qualité de
 générateur que ni le greffage ni la conception contrainte n'atteignent.
+
+---
+
+## 15. Où est exactement le problème
+
+Question posée après le §14 : le goulot est-il le GPU ? Cinq mesures le situent,
+et aucune ne le met là où je l'avais cherché.
+
+### 1. Ce n'est pas le GPU
+
+Nos 148 candidats notés par BoltzGen :
+
+| seuil | nos candidats |
+|---|---|
+| > 0,650 | 7 / 148 |
+| > 0,680 | **0 / 148** |
+| > 0,777 (requis) | **0 / 148** |
+
+Queue ajustée par une Pareto généralisée au-delà du 80ᵉ percentile : forme
+**c = −0,82**, fortement négative, donc **bornée**, borne implicite **0,674**.
+
+Le GPU serait le goulot si la queue atteignait 0,777 *rarement* : il faudrait
+alors du débit pour tirer assez. Mais sept candidats s'agglutinent entre 0,65 et
+0,673 puis plus rien — signature d'un plafond, pas d'une queue qui s'amincit.
+**Noter dix mille candidats d'une distribution bornée à 0,674 donne 0,674.**
+
+### 2. Ce ne sont pas les donneurs
+
+| | `design_iiptm` |
+|---|---|
+| nos charpentes donneuses (40) | médiane **0,745**, max 0,765 |
+| nos donneurs de CDR3 (60) | médiane **0,729**, max 0,794 |
+| **notre production** | **médiane 0,48, max 0,674** |
+
+100 % des donneurs viennent du nouveau régime (époque ≥ 26170). Les choisir par
+`design_iiptm` au lieu de `rank_sum` ne change rien (0,745 contre 0,746).
+
+### 3. Ce n'est pas la distance à l'archive
+
+Spearman entre l'identité du CDR3 au plus proche CDR3 archivé et le
+`design_iiptm` : **ρ = −0,07, p = 0,4**. La bande la plus proche autorisée
+(0,80-0,85) score comme la plus lointaine (0,500 contre 0,490).
+
+### 4. C'est la recombinaison
+
+Nous prenons la charpente d'une séquence à 0,745 et le CDR3 d'une séquence à
+0,729, et nous produisons 0,48. **Les pièces ne se transfèrent pas** : la
+liaison d'un nanobody dépend de l'appariement *spécifique* entre sa charpente et
+son CDR3 — la boucle est présentée par la charpente qui la porte. Mélanger deux
+bons parents donne une chimère qui lie moins bien que chacun d'eux.
+
+Cela explique aussi l'échec de la conception (§11, §14) : concevoir un CDR3 sur
+une charpente qui ne l'a jamais porté est le même problème, et concevoir les
+trois CDR l'aggrave puisque plus rien n'est apparié.
+
+### 5. Et la règle rend le correctif évident illégal
+
+| règle | ce qu'elle impose |
+|---|---|
+| identité séquence entière ≥ 0,95 refusée | ≥ **7 résidus** différents sur 123 |
+| identité CDR3 ≥ 0,85 refusée | ≥ 3 résidus sur 16 |
+
+Les deux s'appliquent ensemble. Placer ces 7 différences dans la charpente
+entame l'identité germinale ; les placer dans le CDR3 en réécrit **44 %** — soit
+exactement là où la liaison se décide.
+
+**La structure du piège :** de bonnes séquences existent dans l'archive, nous
+n'avons pas le droit de soumettre leurs quasi-copies, et la perturbation que la
+règle exige tombe sur le site de liaison.
+
+### Ce qui n'a jamais été essayé
+
+Notre générateur n'a **jamais** tenté la perturbation minimale d'**un seul**
+parent : il mélange toujours deux parents. Ce sont deux choses différentes —
+mélanger casse l'appariement charpente/CDR3 *et* perturbe ; perturber
+minimalement conserve l'appariement et ne change que 7 résidus.
+
+C'est la cinquième hypothèse de cette enquête et les quatre précédentes ont été
+réfutées. Mais elle est la seule qui reste à coût d'une session, et elle est
+dimensionnable : 8 parents à ~0,78, leurs variantes à 7 résidus près, notées.
+
+- variantes à ~0,75 → notre générateur se trompait de stratégie, pas de moyens ;
+- variantes à ~0,60 → la règle nous plafonne structurellement, et seule une
+  vraie conception monte plus haut — ce que nous avons mesuré ne pas savoir faire.
