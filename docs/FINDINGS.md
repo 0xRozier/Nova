@@ -794,3 +794,79 @@ rendent pas la séquence compétitive.
 
 **Conséquence directe : ne pas engager de TAO.** L'espérance de gain mesurée
 contre le champ actuel est de zéro victoire sur 35 époques.
+
+---
+
+## 11. La conception BoltzGen contrainte : testée, et elle ne transfère pas
+
+Lancée sur Kaggle (2×T4), 20 designs, pipeline complet en 5 étapes sans échec :
+design 775,7 s + inverse_folding 33,1 s + folding 1099,6 s + analysis 39,4 s +
+filtering 15,0 s ≈ **32 min**. Données : `results/boltzgen_design_attempt1.csv`.
+
+### La mécanique a marché
+
+| ce qui était demandé | obtenu |
+|---|---|
+| CDR3 de longueur 16 | **20/20** exactement 16 |
+| tête `AR` figée (gène V) | **20/20** |
+| identité V ≥ 82 | **20/20**, médiane 87,8 |
+
+L'arithmétique `exclude` + `design_insertions` était donc juste, et l'indexation
+aussi. L'outillage est bon.
+
+### Le score, lui, est pire que le greffage
+
+| | `design_iiptm` |
+|---|---|
+| **designs BoltzGen contraints** | **médiane 0,214, max 0,311** |
+| notre greffage | 0,375 |
+| médiane du champ réel | 0,664 |
+| meilleur par époque du champ | 0,757 |
+
+Aucun design au-dessus de 0,664. **La méthode telle que je l'ai contrainte ne
+transfère pas** — elle fait moins bien que ce qu'elle devait remplacer.
+
+### Le mécanisme de l'échec est identifié
+
+Le filtrage interne de BoltzGen a écarté les 20 designs sur un seul critère :
+
+```
+filter_rmsd (seuil 2,5) : 0/20 passent   — mediane 9,23 A
+filter_rmsd_design      : 7/20 passent   — mediane 2,66 A
+```
+
+L'écart entre les deux est l'explication : le CDR3 conçu se replie **localement**
+comme prévu (`bb_rmsd_design` 1,04 à 2,68 Å), mais **le nanobody ne se repose pas
+là où la conception l'avait placé** (`bb_rmsd` 3,6 à 9,5 Å). La pose de
+l'interface n'est pas reproduite au repliement indépendant — et c'est exactement
+ce que `design_iiptm` mesure, d'où 0,21.
+
+### Et une hypothèse de ma part qui était fausse
+
+Je croyais que figer une région dans la spécification figeait sa **séquence**.
+C'est faux : l'étape `inverse_folding` réassigne la séquence de toute la chaîne.
+
+- les queues de CDR3 obtenues sont `ADY, FAY, FDY, FEY, FPY, LDY, MDY, VDY` —
+  **pas** les `FDP`/`FDH` des donneurs que j'avais déclarés fixes ;
+- l'identité V monte à 87,8 contre 84-86 chez les donneurs : le modèle a rendu
+  la charpente *plus* germinale qu'elle n'était ;
+- conséquence directe : **seuls 6/20 passent le plancher J de 86** (médiane 85,7),
+  le défaut même que §7ter avait corrigé côté générateur.
+
+Le masque de conception contraint la **structure**, pas la séquence finale.
+
+### Deux pistes, par ordre de coût
+
+1. **Trop peu de liberté.** Nous n'avons laissé que 11 résidus conçus, en gelant
+   CDR1, CDR2 et les deux extrémités du CDR3. L'exemple amont
+   `nanobody_scaffolds/7eow.yaml` conçoit **les trois CDR** (26..34, 52..59,
+   98..118). Avec une seule boucle courte, le modèle ne peut pas construire
+   d'interface. Et §7ter a mesuré que muter CDR1/CDR2 ne coûte rien de
+   mesurable sur l'identité germinale — donc les geler coûtait sans rapporter.
+2. **Vingt designs, quand le CLI dit « typiquement 10 000 ».** Le filtrage est
+   conçu pour tailler dans des milliers ; le meilleur de 20 n'est pas le
+   meilleur de 10 000. À 1,6 min/design, 200 designs font ~5 h de Kaggle.
+
+La piste 1 est à tester d'abord : elle ne coûte pas plus cher et elle corrige en
+même temps l'erreur sur `inverse_folding` (si la séquence est réassignée de toute
+façon, geler CDR1/CDR2 n'avait aucun effet protecteur).
