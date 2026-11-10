@@ -1060,3 +1060,66 @@ identité germinale.
 Kaggle. Les 24 mesures de ce lot rejoignent l'entraînement du substitut : elles
 sont 24 observations neuves dans la bande où il n'en avait que 11, et où il vient
 de se tromper de 0,137.
+
+---
+
+## 14. Trois CDR conçus au lieu d'un : réfutation nette
+
+60 designs, pipeline complet sur 2×T4 (design 2076 s + inverse_folding 59 s +
+folding 3023 s + analysis 61 s + filtering 18 s ≈ **1 h 25**).
+`results/boltzgen_design_3cdr.csv`.
+
+27 résidus conçus au lieu de 11 — CDR1 + CDR2 + milieu du CDR3, la forme de
+l'exemple amont.
+
+| | `design_iiptm` |
+|---|---|
+| conception **1 CDR** (§11) | médiane 0,214, max 0,311 |
+| conception **3 CDR** | **médiane 0,169, max 0,367** |
+| greffage + sélection par substitut (§13) | **0,616, max 0,673** |
+| champ à CDR3 = 16 | 0,697, meilleur par époque 0,777 |
+
+Part des designs au-dessus de notre propre greffage sélectionné (0,616) : **0 %**.
+
+### L'hypothèse causale du §11 était fausse, et c'est le résultat utile
+
+Le §11 attribuait le faible score au défaut de pose : `filter_rmsd` médian à
+9,23 Å pour un seuil de 2,5, « le CDR3 se replie comme prévu mais le nanobody
+ne se pose pas où la conception l'a mis ». Avec trois CDR la pose s'améliore
+réellement — **5/60 passent `filter_rmsd` contre 0/20**, et
+`filter_rmsd_design` 24/60 contre 7/20.
+
+**Mais ces 5 designs à pose correcte scorent 0,200 à 0,356.** Corriger la pose
+ne remonte pas `design_iiptm` d'un point. Les deux grandeurs sont indépendantes,
+et l'explication causale du §11 — comme l'hypothèse « trop peu de surface » qui
+en découlait — est réfutée par la mesure.
+
+### Ce que cela dit de la méthode des meneurs
+
+**La conception BoltzGen contrainte à une charpente de nanobody ne produit pas
+de `design_iiptm` élevé, quelle que soit la surface qu'on lui laisse.** La
+prémisse du §11 — « les meneurs conçoivent avec le modèle qui note » — n'est
+donc pas vérifiée dans cette forme. Deux hypothèses survivent, et aucune n'est
+testable dans nos moyens actuels :
+
+1. **conception libre à grande échelle** : sans charpente imposée, puis filtrage
+   sur la conformité germinale. Cohérent avec le `--num_designs` « typiquement
+   10 000 » du CLI — mais 10 000 designs font ~10 jours de Kaggle ;
+2. **notation massive** : générer largement et noter des centaines de candidats
+   par époque avec de vrais GPU, ce que notre substitut approxime gratuitement
+   et imparfaitement.
+
+### État honnête de la compétitivité
+
+| approche | mesurée | gagne une époque ? |
+|---|---|---|
+| greffage + sélection PSH (production) | 0,375 | 0/8 |
+| **greffage + substitut** | **0,616 / max 0,673** | **0/8** |
+| conception 1 CDR | 0,214 | non |
+| conception 3 CDR | 0,169 | non |
+| **ce qu'il faut** | **0,777** | — |
+
+**Nous ne sommes pas compétitifs, et je n'ai pas de chemin mesuré pour le
+devenir.** Le correctif de sélection valait +0,241 et était gratuit ; il nous
+met au 38ᵉ percentile du champ. Les ~0,10 restants demandent une qualité de
+générateur que ni le greffage ni la conception contrainte n'atteignent.
