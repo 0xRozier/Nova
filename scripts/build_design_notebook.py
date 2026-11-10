@@ -117,7 +117,15 @@ DESIGN = WORK / "design"
 def step(msg):
     print(f"[{{time.strftime('%H:%M:%S')}}] +{{(time.time() - T0) / 60:5.1f}} min  {{msg}}", flush=True)
 
+# Kaggle exports MPLBACKEND=module://matplotlib_inline.backend_inline. BoltzGen
+# imports biotite, which imports matplotlib, which reads that at import time and
+# refuses it because matplotlib_inline lives in Kaggle's python and not in this
+# venv. scripts/boltzgen_score.py already carried this fix in subprocess_env();
+# writing a bare subprocess.run here lost it and cost a Kaggle run.
+BG_ENV = {{**os.environ, "MPLBACKEND": "Agg"}}
+
 def sh(cmd, **kw):
+    kw.setdefault("env", BG_ENV)
     res = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True, **kw)
     if res.stdout:
         print(res.stdout[-4000:])
@@ -185,22 +193,20 @@ try:
     out = sh([bg, "check", "design_spec.yaml", "--output", str(check_out)])
 except RuntimeError:
     print()
-    print("=== SI CE CHECK ECHOUE, LIRE CECI AVANT DE BRICOLER ===")
-    print("La cause la plus probable est le couple exclude / design_insertions.")
-    print("Les scaffolds excluent TOUT le milieu concu du CDR3 puis reinserent")
-    print("exactement le nombre de residus voulu. L exemple amont")
-    print("example/nanobody_scaffolds/7eow.yaml n exclut qu une PARTIE du span")
-    print("concu, ce qui est peut-etre la seule forme supportee.")
+    print("=== LIRE CECI AVANT DE BRICOLER LA SPECIFICATION ===")
+    print("Cette meme specification a ete validee hors ligne : boltzgen check")
+    print("sort en 0 et ecrit design_spec.cif, chaine A 115 residus et chaine B")
+    print("la charpente moins le milieu exclu. L indexation est verifiee contre")
+    print("la structure elle-meme (verify_span), et le comportement est identique")
+    print("a celui de l exemple amont 7eow.yaml.")
     print()
-    print("Correctif a essayer, dans scripts/design_nanobody.py, scaffold_spec() :")
-    print("  garder quelques residus du donneur dans le span concu, c est-a-dire")
-    print("  exclure start+V_HEAD+k .. donor_middle_end et inserer")
-    print("  designable_count-k residus, avec k petit (1 ou 2).")
-    print("L arithmetique de longueur reste : 2 (tete) + designable_count + 3 (queue).")
+    print("Donc une erreur ici est d abord une erreur d ENVIRONNEMENT, pas de")
+    print("specification. Lire la trace ci-dessus : si elle ne parle pas de")
+    print("chain id, de res_index ou de design spec, ce n est pas le yaml.")
     print()
-    print("L indexation, elle, est deja verifiee hors ligne : design_nanobody.py")
-    print("relit les residus que le span nomme dans la structure et les compare")
-    print("au CDR3 du donneur prive de sa tete et de sa queue (verify_span).")
+    print("Si la trace EST une erreur de specification, la piste restante est le")
+    print("couple exclude / design_insertions : garder k residus du donneur dans")
+    print("le span concu, exclure le reste, inserer designable_count-k, k petit.")
     raise
 step("specification valide")
 print("structures ecrites :", sorted(p.name for p in check_out.iterdir()) if check_out.exists() else "(aucune)")
