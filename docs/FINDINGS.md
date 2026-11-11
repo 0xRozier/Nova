@@ -1435,3 +1435,89 @@ l'archive, la surface de conception — ont toutes été réfutées par la mesur
 de l'excuser (§13 : une charpente à 0,745 et un CDR3 à 0,729 donnent 0,48), et
 elle a contre elle qu'une session de GPU peut la réfuter aussi. Rien n'est
 acquis avant ces 34 mesures.
+
+## 19. Le verdict : la règle d'unicité est bien le plafond. Cinquième hypothèse réfutée.
+
+34 séquences, 52 min de GPU, 1,5 min/séquence — le chiffre du budget d'époque
+est confirmé une troisième fois (design 1231 s, pliage 1794 s, analyse 53 s).
+Mesures dans `data/measurements/minimal2_gpu_scores.csv`.
+
+### Le témoin tient
+
+Les 14 parents re-notent leur valeur archivée : **médiane −0,008**, écart-type
+0,022, pire −0,062. La chaîne mesure donc les séquences et non la session, et
+toute chute au-delà de ~0,05 est réelle.
+
+### Les 20 variantes : 20 sur 20 en dessous de leur parent
+
+| | |
+|---|---|
+| Δ médian variante − parent (re-mesuré) | **−0,172** |
+| pire | −0,617 |
+| meilleure | −0,021 |
+| `design_iiptm` des variantes | médiane **0,562**, max **0,718**, min 0,149 |
+| `design_iiptm` des parents | médiane 0,756, max 0,788 |
+| variantes ≥ 0,74 | **0 / 20** |
+| effondrements ≤ 0,25 | **6 / 20** |
+
+C'est le scénario « vers 0,60 » annoncé au §18, et il faut le dire sans
+l'arrondir : **la médiane est à 0,562**.
+
+### Le coup de grâce, à longueur de CDR3 égale
+
+Dans le régime récent (époque ≥ 26170, gagnant médian 0,753), en ne comparant
+qu'aux époques qui imposent la longueur de la séquence :
+
+| | notre meilleur | époques gagnées |
+|---|---|---|
+| **parents** (archivés, donc **non soumissibles**) | 0,788 à CDR3 = 18 | **6 / 6** |
+| **variantes minimales** (soumissibles) | 0,718 à CDR3 = 18 | **0 / 6** |
+
+Les séquences qui gagneraient sont exactement celles que nous ne pouvons pas
+soumettre, et **la distance légale minimale à ces séquences coûte déjà plus que
+la marge**. La règle d'unicité n'est pas un obstacle contournable à la marge :
+c'est le plafond lui-même.
+
+(Un piège évité : « 4 époques sur 8 » en mélangeant les longueurs. Une séquence
+à CDR3 = 18 ne peut être soumise que dans une époque qui impose 18. C'est le
+confondant de longueur du §12, et il transformait un 0/6 en 4/8.)
+
+### Rien de mesurable hors GPU ne prédit la chute
+
+| prédicteur | ρ de Spearman vs la chute | p |
+|---|---|---|
+| ΔPSH | −0,05 | 0,83 |
+| PSH absolue | +0,10 | 0,69 |
+| identité V | −0,03 | 0,90 |
+| A3D moyenne | +0,02 | 0,94 |
+| A3D pic | +0,38 | 0,10 |
+| score du parent | **−0,47** | **0,04** |
+
+Le seul signal significatif va dans le mauvais sens : **plus le parent est bon,
+plus la variante tombe.** Et deux variantes légales du *même* parent à 0,776
+atterrissent à 0,711 et 0,182 — une étendue de 0,529. L'issue dépend donc des
+résidus tirés, pas du parent choisi, et aucune porte de développabilité ne la
+voit venir. Il n'existe pas de criblage hors GPU pour cette stratégie.
+
+### Ce qui reste vrai, et qui est maigre
+
+0,718 est **notre meilleur candidat soumissible jamais mesuré** (contre 0,673
+par greffage), soit le 71ᵉ percentile du champ à CDR3 = 18 au lieu du 50ᵉ.
+C'est un progrès réel et insuffisant : zéro époque gagnée dans les deux cas.
+
+### Bilan des cinq hypothèses
+
+| # | hypothèse | verdict |
+|---|---|---|
+| 1 | le GPU (puissance de calcul) | réfutée (§12bis : distribution bornée à 0,674) |
+| 2 | les donneurs (pool de CDR3) | réfutée (§10 : donneurs à 0,729–0,794) |
+| 3 | la distance à l'archive | réfutée (ρ = −0,07) |
+| 4 | la surface de conception (3 CDR) | réfutée (§12 : pire qu'1 CDR) |
+| 5 | **la recombinaison / la perturbation minimale** | **réfutée ici : −0,172 médian, 0/6 époques** |
+
+Il ne reste pas de chemin par recombinaison ni par perturbation d'un candidat
+existant. Le seul chemin restant est **une vraie conception de novo** — que
+nous avons mesuré deux fois ne pas savoir faire (BoltzGen en mode design, §11 ;
+les trois CDR, §12) — ou un modèle de liaison à nous, entraîné pour proposer,
+pas pour trier. Aucune soumission n'est justifiée en l'état, et aucun TAO ne
+doit être engagé.
