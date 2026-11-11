@@ -1370,3 +1370,68 @@ lot n'a pas de doublon, **chaque variante a son parent dans le lot**, les gardes
 forcés à `MPLBACKEND=Agg` sous le backend de Kaggle. Le contrôle a été testé
 par mutation : garde GPU retirée, cellule PAYLOAD déplacée, parent retiré du
 lot — il refuse les trois. Il ne lance rien et n'a pas besoin de GPU.
+
+## 18. Bilan de la nuit du 10 au 11 novembre
+
+Cinq commits, aucune dépense, aucun GPU loué, aucune soumission. Rien n'a été
+lancé sur Kaggle : seul l'utilisateur le fait.
+
+### Ce qui a été mesuré
+
+1. **Le niveau 3 de la règle de doublon lie** (§15). Mon arithmétique n'avait
+   compté que deux niveaux sur trois : il faut 4 substitutions dans le CDR3, pas
+   3. Les 24 premières variantes étaient toutes irrecevables. Attrapé hors GPU.
+2. **La PSH est le seul prix de la perturbation minimale** (§16, §17). +11,2
+   points en v1, dont **+3,5 de mon propre défaut** (tirage uniforme sur les 20
+   acides aminés, donc un résidu hydrophobe dans la boucle deux fois sur cinq,
+   là où la PSH *est* le score de patch hydrophobe des CDR) et **+7,7
+   structurels**, le prix de perturber quel que soit le résidu. L'A3D, le V et
+   le J ne bougent pas — le ΔJ médian est de 0,0 dans les quatre groupes.
+3. **Le rendement : 20 variantes sur 61** franchissent toutes les portes
+   (PSH < 96, A3D sous les deux plafonds), issues de 14 parents distincts.
+   Mesuré gratuitement, hors GPU.
+4. **L'A3D était récupérable du cache** plutôt que recalculable : des heures de
+   re-pliage évitées en lisant `residues/<sha256>/residue-scores.csv` (§17).
+
+### Ce qui a échoué, et pourquoi
+
+- **Mon générateur de variantes injectait du hydrophobe au hasard.** Trois
+  caractères (`rng.choice(AAS)` → `HYDROPHILIC`). Sans les parents mesurés
+  comme témoin dans la même chaîne, une PSH de 100,6 se serait lue comme une
+  propriété de la stratégie et j'aurais abandonné la piste.
+- **La vérification du CDR3 par deux niveaux au lieu de trois.** Même cause
+  racine que le reste : avoir raisonné au lieu de relire le code qui juge.
+- **Le premier criblage a été tué à la limite de temps**, la vérification
+  d'archive étant dans la boucle de réessai — le défaut exact que le §7bis
+  avait corrigé 40 minutes plus tôt. Déplacé hors de la boucle.
+
+### L'état du lot, prêt à lancer
+
+`kaggle_minimal2_gpu.ipynb` + `inputs/minimal2_gpu.csv` : **34 séquences**, les
+20 variantes et leurs 14 parents, parent d'abord. **Réglages Kaggle :
+*Accelerator* GPU T4 x2, *Internet* On**, puis *Save Version → Save & Run All
+(Commit)*. ~52 min de GPU à 1,5 min/séquence. `TOP = 2` note une paire
+parent/variante pour un test rapide. Vérifié en local par
+`scripts/verify_boltzgen_notebook.py`, lui-même testé par mutation.
+
+### Ce que le lot tranchera
+
+- **Variantes autour de 0,78**, c'est-à-dire au niveau de leurs parents → notre
+  générateur se trompait de *stratégie* et non de moyens. Partir d'un candidat
+  qui lie et le perturber au minimum légal préserve la liaison ; il reste à
+  industrialiser un rendement de 33 %.
+- **Variantes autour de 0,60** → la règle d'unicité nous plafonne
+  structurellement : ce qui est assez loin de l'archive pour être accepté est
+  trop loin du parent pour lier. Il ne resterait alors de chemin que par une
+  vraie conception *de novo*, que nous avons mesuré **deux fois** ne pas savoir
+  faire (BoltzGen en mode design, §11 ; les trois CDR, §12).
+
+### À quoi s'en tenir
+
+C'est **la cinquième hypothèse** sur l'origine de notre écart aux 0,78 du
+plateau. Les quatre précédentes — le GPU, les donneurs, la distance à
+l'archive, la surface de conception — ont toutes été réfutées par la mesure
+(§0). Celle-ci a pour elle d'être la première à expliquer le chiffre plutôt que
+de l'excuser (§13 : une charpente à 0,745 et un CDR3 à 0,729 donnent 0,48), et
+elle a contre elle qu'une session de GPU peut la réfuter aussi. Rien n'est
+acquis avant ces 34 mesures.
