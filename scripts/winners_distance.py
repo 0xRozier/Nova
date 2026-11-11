@@ -31,7 +31,11 @@ for w in winners.itertuples():
     s, p = best
     ident = whole_identity(w.sequence, p.sequence)
     tier3 = s["CDR3"] >= 0.80 and s["CDR1"] >= 0.90 and s["CDR2"] >= 0.90
+    # Le voisin LUI-MEME, pas le gagnant de son epoque : une premiere version
+    # avait compare chaque gagnant au gagnant de l epoque de son voisin, ce qui
+    # ne mesure pas son pas. La sequence est donc stockee.
     rows.append(dict(epoch=int(w.epoch), L=w.L, iiptm=w.design_iiptm,
+                     nn_sequence=p.sequence, nn_cdr3=p.cdr3, cdr3=w.cdr3,
                      cdr3_sim=s["CDR3"], cdr1=s["CDR1"], cdr2=s["CDR2"],
                      whole=ident, nn_iiptm=p.design_iiptm, nn_epoch=int(p.epoch),
                      tier3=tier3))

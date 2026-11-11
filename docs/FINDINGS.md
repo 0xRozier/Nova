@@ -1602,3 +1602,80 @@ distance, et il faudra chercher *où* ils substituent et non *combien*.
 criblage PSH/A3D. La liaison est le discriminant, elle coûte 1,5 min/séquence
 sur GPU, et le criblage coûte des heures de CPU pour une information qui ne
 sert que si la liaison tient. Ne cribler que ce qui score.
+
+## 21. Le balayage de distance : plus loin est strictement pire. Sixième hypothèse réfutée.
+
+32 séquences, 50,1 min de GPU (1,6 min/séquence). Mesures dans
+`data/measurements/sweep18_gpu_scores.csv`.
+
+### Le témoin tient, et cette fois entre deux sessions
+
+Trois parents déjà notés au §19 ont été re-notés ici : +0,014, −0,018, −0,010.
+**Écart maximal 0,018.** La chaîne transfère donc d'une session à l'autre, pas
+seulement au sein d'une session. Le parent jamais noté sort à 0,781.
+
+### Les quatre bras, mêmes parents, même chaîne, une seule variable
+
+| substitutions | identité CDR3 au parent | n | médiane | max | effondrées (< 0,30) | survivantes : médiane |
+|---|---|---|---|---|---|---|
+| 4 (minimum légal) | 0,778 | 8 | 0,439 | **0,718** | 4/8 (50 %) | **0,707** |
+| 6 (bande des gagnants) | 0,667 | 7 | 0,633 | 0,669 | 3/7 (43 %) | 0,645 |
+| 8 | 0,556 | 9 | 0,177 | 0,673 | 5/9 (56 %) | 0,614 |
+| 10 | 0,444 | 12 | 0,475 | 0,655 | 5/12 (42 %) | 0,559 |
+
+**L'hypothèse du §20 est réfutée.** Perturber plus ne score pas mieux : parmi
+les survivantes, le score descend monotonement avec la distance — 0,707 →
+0,645 → 0,614 → 0,559, **ρ = −0,64, p = 0,003**. Et la meilleure variante des
+36 perturbations mesurées reste celle du minimum légal, à 0,718.
+
+Donc la similarité de 0,667 des gagnants **n'est pas la cause de leur
+réussite**. C'était mon hypothèse de mécanisme au §20 ; elle est fausse, et
+c'est la sixième.
+
+### Ce que le balayage montre en plus, et qui est nouveau
+
+La distribution est **bimodale dans tous les bras** : un groupe effondré vers
+0,13 et un groupe survivant vers 0,6. Et le taux d'effondrement **ne dépend pas
+de la distance** (42 à 56 %, sans tendance) ni du nombre de substitutions
+(effondrées 7,3 en moyenne, survivantes 7,5 ; Mann-Whitney p = 0,81).
+
+Il y a donc **deux mécanismes distincts**, et un seul est lié à la distance :
+
+1. un effondrement tout-ou-rien, qui frappe une variante sur deux quelle que
+   soit la perturbation — et dont la signature (`design_iiptm` ≈ 0,13,
+   `interaction_pae` > 22) est celle du §11 : la pose n'est pas reproduite au
+   repliement indépendant ;
+2. une dégradation graduelle des survivantes, proportionnelle à la distance.
+
+### Ce que je ne peux PAS conclure, et pourquoi
+
+J'ai calculé par position du CDR3 des écarts de ±0,3 à ±0,43. **Ils ne valent
+rien et je ne les reporte pas comme résultat** : avec 36 variantes, 13
+positions testables, chaque variante en touchant 4 à 10 (donc des appartenances
+fortement corrélées) et une coupure effondrée/survivante à 17/19, toute
+position plus souvent touchée chez les effondrées produit mécaniquement un
+écart négatif. Le dispositif ne sépare pas un effet de position de « quelle
+variante s'est effondrée ».
+
+Pour y répondre il faudrait varier **la position à nombre de substitutions
+constant** : même parent, même compte, positions choisies (périphérie du
+CDR3 contre apex). C'est un dispositif propre, et il coûte une session.
+
+### Une erreur de ma part à l'étape précédente
+
+J'ai d'abord mesuré « où substituent les gagnants » en comparant chaque gagnant
+au **gagnant de l'époque de son plus proche voisin**, et non à ce voisin
+lui-même. Cela ne mesure pas son pas, et les chiffres qui en sortaient (47 % du
+mot) sont faux. `scripts/winners_distance.py` stocke désormais la séquence du
+voisin, et la mesure est relancée. Le résultat principal ci-dessus n'en dépend
+pas.
+
+### Où en est la compétitivité, sans arrondir
+
+| | `design_iiptm` | époques gagnées (CDR3 = 18, régime récent) |
+|---|---|---|
+| meilleur parent archivé, **non soumissible** | 0,788 | 6/6 |
+| meilleure variante soumissible, 36 mesurées | **0,718** | **0/6** |
+
+Six hypothèses, six réfutations par la mesure. Aucune soumission justifiée,
+aucun TAO engagé.
