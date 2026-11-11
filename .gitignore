@@ -1,5 +1,8 @@
 data/*
 !data/prebuilt/
+# Les mesures qui ont coute des heures de CPU et qu un run ulterieur ecrase :
+# les journaux de preflight sont la provenance des deltas, pas un artefact.
+!data/measurements/
 __pycache__/
 *.pyc
 .venv/

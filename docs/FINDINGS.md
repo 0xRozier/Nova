@@ -1303,3 +1303,70 @@ se lisait comme une propriété de la stratégie. J'aurais abandonné la piste p
 un défaut de trois caractères dans mon générateur. C'est la même discipline qui
 a évité une session Kaggle sur 24 séquences toutes rejetées (§15, niveau 3 de la
 règle de doublon) et qui a fait retirer la simulation du §12bis.
+
+## 17. Le reste de la portée, gratuitement : A3D, V, J — et le lot GPU prêt
+
+Les 61 variantes v2 ont été appariées à leur parent sur **tout ce qui se mesure
+sans GPU**. La PSH venait des journaux de preflight ; l'Aggrescan3D a été
+*récupérée* du cache de résidus (`data/preflight/run/a3d{1,2,3}/residues/<sha256>/
+residue-scores.csv`) au lieu d'être recalculée — la moyenne et le pic sont la
+moyenne et le maximum de la colonne de score, vérifiés à sept décimales contre
+`summary/aggrescan3d.csv`. Le fichier de résumé n'avait gardé que le dernier
+lot ; le cache de résidus, lui, garde les 151 séquences. L'identité V/J est
+recalculée par ANARCI, ce qui est gratuit.
+(`scripts/minimal_variant_deltas.py`, sortie dans `data/measurements/minimal2_deltas.csv`.)
+
+| groupe | n | soumissibles | ΔPSH méd. | ΔA3D moy. | ΔA3D pic | ΔV | ΔJ |
+|---|---|---|---|---|---|---|---|
+| IGHV3-74/16 | 13 | 4 | +6,0 | −0,030 | +0,014 | +2,0 | 0,0 |
+| IGHV3-74/18 | 15 | 8 | +4,5 | −0,086 | −0,024 | +1,0 | 0,0 |
+| IGHV3-66/12 | 17 | 4 | +4,4 | −0,012 | +0,009 | 0,0 | 0,0 |
+| IGHV3-64/18 | 16 | 4 | +13,1 | −0,016 | +0,003 | +0,5 | 0,0 |
+
+**La PSH est le seul prix.** ΔPSH apparié : médiane +5,7, 39 variantes sur 52
+dégradées, pire +24,8, meilleure −11,1. En face :
+
+- **A3D : neutre ou favorable.** Les médianes de ΔA3D moyenne sont toutes
+  négatives, c'est-à-dire *plus loin* du plafond (−0,680). Neuf variantes ont
+  quand même été refusées, dont six sur A3D — mais à la marge, pas par
+  effondrement. L'A3D n'est pas le goulot de cette stratégie.
+- **J : rigoureusement inchangée.** ΔJ médian de 0,0 dans les quatre groupes.
+  C'était attendu — la perturbation ne touche que la tête du CDR3 et deux
+  positions de charpente, jamais les 3 derniers résidus ni FR4 — mais c'est
+  maintenant mesuré, après deux hypothèses fausses sur le segment J (§7ter).
+- **V : légèrement meilleure** (+0 à +2 points), toutes au-dessus du plancher
+  de 82 (82,5 à 86,7).
+
+**20 variantes sur 61 franchissent toutes les portes** (PSH < 96 et A3D sous les
+deux plafonds), issues de 14 parents distincts.
+
+### Le lot GPU
+
+`inputs/minimal2_gpu.csv` : 34 séquences = les 20 variantes **et leurs 14
+parents**, rangées parent d'abord. Les parents ne sont pas du remplissage :
+chacun porte son `design_iiptm` archivé, et **s'ils ne re-notent pas près de
+cette valeur, la session a mesuré la session et pas les séquences**. ~52 min de
+GPU à 1,5 min/séquence. Carnet : `kaggle_minimal2_gpu.ipynb`.
+
+Ce que le lot tranche, et c'est pour cela qu'il valait la peine :
+
+- variantes près de **0,78** → notre générateur avait la mauvaise *stratégie*,
+  pas les mauvais moyens : partir d'un candidat qui lie et le perturber au
+  minimum légal préserve la liaison, et il reste à industrialiser le rendement
+  de 33 %.
+- variantes près de **0,60** → la règle d'unicité nous plafonne
+  structurellement : tout ce qui est assez loin de l'archive pour être accepté
+  est trop loin du parent pour lier. Ce serait la réponse la plus utile des
+  deux, parce qu'elle fermerait définitivement la piste de la recombinaison
+  (§13) comme celle de la perturbation.
+
+### `scripts/verify_boltzgen_notebook.py`
+
+Trois sessions Kaggle ont été perdues sur des défauts qu'un contrôle local
+attrapait (§14). Ils sont maintenant des assertions : chaque cellule s'analyse,
+`PAYLOAD` est défini avant son usage, la charge utile se déballe vraiment, le
+lot n'a pas de doublon, **chaque variante a son parent dans le lot**, les gardes
+« pas de GPU » et « run déjà existant » sont présentes, et les enfants sont
+forcés à `MPLBACKEND=Agg` sous le backend de Kaggle. Le contrôle a été testé
+par mutation : garde GPU retirée, cellule PAYLOAD déplacée, parent retiré du
+lot — il refuse les trois. Il ne lance rien et n'a pas besoin de GPU.
