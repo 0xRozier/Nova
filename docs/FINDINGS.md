@@ -1521,3 +1521,84 @@ nous avons mesuré deux fois ne pas savoir faire (BoltzGen en mode design, §11 
 les trois CDR, §12) — ou un modèle de liaison à nous, entraîné pour proposer,
 pas pour trier. Aucune soumission n'est justifiée en l'état, et aucun TAO ne
 doit être engagé.
+
+## 20. Non. Les gagnants ne font pas de conception *de novo* — ils remontent une lignée.
+
+Avant d'engager quoi que ce soit dans le *de novo*, une mesure gratuite :
+**comment les gagnants satisfont-ils la règle d'unicité ?** Pour chacun des 63
+gagnants d'époque du régime récent, sa distance à l'archive *telle qu'elle
+était* — uniquement les soumissions d'époques strictement antérieures.
+(`scripts/winners_distance.py`, `scripts/winners_lineage.py`,
+`data/measurements/winners_distance.csv`.)
+
+### Le contrôle d'abord, parce que sans lui le chiffre ne vaut rien
+
+| | similarité CDR3 |
+|---|---|
+| deux soumissions au hasard, **même longueur** | **0,333** |
+| gagnant → son plus proche ancêtre archivé | **0,667** |
+| écart au hasard | **+0,312**, et 61/63 au-dessus |
+
+Les gagnants ne sortent donc pas de nulle part : ils sont **deux fois plus
+proches d'une soumission antérieure que le hasard ne le voudrait**.
+
+### Et ce dont ils sont proches, c'est d'un gagnant
+
+| | |
+|---|---|
+| gagnants dont le plus proche ancêtre est lui-même un gagnant | **45 / 63** |
+| gain sur cet ancêtre | **+0,074** de médiane, 59/63 en hausse |
+| gain sur les seules chaînes gagnant → gagnant | +0,049 |
+
+Les lignées se lisent époque par époque :
+
+```
+CDR3=18 : 0,759 → 0,762 → 0,762 → 0,772 → 0,785 → 0,772
+CDR3=15 : 0,722 → 0,745 → 0,769 → 0,775 → 0,774 → 0,761 → 0,765 → 0,780
+```
+
+**C'est une montée de colline, pas une conception.** Chaque époque reprend le
+meilleur candidat connu — l'archive est publique, donc celui de n'importe qui —
+en change environ un tiers du CDR3, mesure, et soumet ce qui a gagné. Le gain
+par pas est de +0,05, et il s'accumule sur des dizaines d'époques.
+
+### Ce que cela corrige de notre §19
+
+Le §19 concluait « la règle d'unicité est le plafond ». **C'est faux, et c'est
+ma cinquième erreur de généralisation.** Le bon énoncé est plus étroit :
+
+> perturber **au minimum légal**, **une seule fois**, **sans sélection**,
+> détruit le score.
+
+Ce que nous avons fait et ce que font les gagnants diffèrent sur trois axes, et
+nous nous sommes trompés sur les trois :
+
+| | nous (§19) | les gagnants |
+|---|---|---|
+| distance au parent (CDR3) | **0,75–0,80**, le minimum légal | **0,667**, un tiers du mot |
+| nombre de tours | **1** | des dizaines, une par époque |
+| sélection entre les tours | **aucune** | on ne garde que ce qui monte |
+
+Le plus contre-intuitif est le premier : **perturber *plus* score mieux que
+perturber au minimum.** Notre bande 0,75–0,80 est à la fois la plus proche que
+la règle autorise et, mesurée, la pire. Hypothèse de mécanisme — à tester, pas
+à croire : à 4 substitutions sur 16 la règle force la distance *dans le CDR3*,
+donc on touche forcément des positions de contact ; à 6 on a le choix des
+positions et on peut garder les contacts en déplaçant la périphérie.
+
+### Le test qui s'ensuit, une seule variable
+
+Mêmes parents, même chaîne, **seul le nombre de substitutions dans le CDR3
+change** : 4 (déjà mesuré, §19, qui sert de bras témoin sans coûter un GPU), 6,
+8, 10. `inputs/sweep18_s{6,8,10}.csv`, IGHV3-74, CDR3 = 18.
+
+Si le score remonte avec la distance, la bande des gagnants est accessible et
+le vrai sujet devient la boucle de sélection — c'est-à-dire un GPU dans les 67
+minutes de l'époque, ce qui est un problème d'infrastructure et non de méthode.
+S'il descend encore, alors la montée des gagnants vient d'autre chose que de la
+distance, et il faudra chercher *où* ils substituent et non *combien*.
+
+**Inversion d'ordre assumée :** cette fois la liaison est mesurée **avant** le
+criblage PSH/A3D. La liaison est le discriminant, elle coûte 1,5 min/séquence
+sur GPU, et le criblage coûte des heures de CPU pour une information qui ne
+sert que si la liaison tient. Ne cribler que ce qui score.

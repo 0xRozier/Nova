@@ -107,6 +107,30 @@ def required_changes(sequence_length: int, cdr3_length: int) -> tuple[int, int]:
     return in_cdr3, max(total, in_cdr3)
 
 
+def changes_for(sequence_length: int, cdr3_length: int,
+                in_cdr3: int | None = None) -> tuple[int, int]:
+    """Same, but allowing MORE CDR3 substitutions than the rules force.
+
+    The minimum turned out to be the wrong place to stand (FINDINGS 19: 20 of
+    20 minimal variants scored below their parent, median -0.172). The epochs'
+    actual winners sit at a CDR3 similarity of 0.667 to their nearest archived
+    ancestor -- roughly a third of the loop changed, where the minimum changes
+    a quarter -- and gain +0.074 over it (FINDINGS 20). So the substitution
+    count has to be a dial, not a constant, or that band cannot be tested.
+    """
+    minimum, total = required_changes(sequence_length, cdr3_length)
+    if in_cdr3 is None:
+        return minimum, total
+    if in_cdr3 < minimum:
+        raise ValueError(
+            f"{in_cdr3} CDR3 substitutions would leave the loop at "
+            f"{1 - in_cdr3 / cdr3_length:.0%} identity, and tier 3 of "
+            f"is_duplicate refuses anything at or above 80% while CDR1 and "
+            f"CDR2 are untouched: the minimum here is {minimum}"
+        )
+    return in_cdr3, max(total, in_cdr3)
+
+
 def consensus(sequences: list[str], region: str) -> dict[int, str]:
     """Most common residue per position of a region, over the archive.
 
@@ -148,12 +172,16 @@ def parents(target: str, allowed_v: str, cdr3_length: int,
 
 
 def variant(parent: str, cdr3_length: int, fr_consensus: dict,
-            rng: random.Random) -> tuple[str, dict] | None:
-    """One minimally perturbed child of this parent, or None if it cannot be built."""
+            rng: random.Random, cdr3_subs: int | None = None) -> tuple[str, dict] | None:
+    """One perturbed child of this parent, or None if it cannot be built.
+
+    cdr3_subs=None keeps the legal minimum; a larger number walks out to the
+    band the winners occupy.
+    """
     r = regions(parent)
     if not r:
         return None
-    in_cdr3, total = required_changes(len(parent), cdr3_length)
+    in_cdr3, total = changes_for(len(parent), cdr3_length, cdr3_subs)
     loop = list(r["CDR3"])
     free = list(range(V_HEAD, len(loop) - J_FIXED))
     if len(free) < in_cdr3:
@@ -193,6 +221,9 @@ def main():
     parser.add_argument("--cdr3", type=int, required=True)
     parser.add_argument("--parents", type=int, default=8)
     parser.add_argument("--per-parent", type=int, default=3)
+    parser.add_argument("--cdr3-subs", type=int,
+                        help="CDR3 substitutions per variant (default: the legal "
+                             "minimum). Higher walks toward the winners' band.")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", type=Path,
                         default=Path("inputs/kaggle_minimal_variants.csv"))
@@ -204,9 +235,12 @@ def main():
                          f"{args.cdr3}-residue CDR3")
     print(f"{len(pool)} parents, their own design_iiptm "
           f"{pool.design_iiptm.min():.3f}-{pool.design_iiptm.max():.3f}")
-    in_cdr3, total = required_changes(len(pool.sequence.iat[0]), args.cdr3)
-    print(f"the rules force {in_cdr3} CDR3 substitutions and {total} in all; "
-          f"a graft changes all {args.cdr3}")
+    in_cdr3, total = changes_for(len(pool.sequence.iat[0]), args.cdr3, args.cdr3_subs)
+    minimum, _ = required_changes(len(pool.sequence.iat[0]), args.cdr3)
+    print(f"{in_cdr3} CDR3 substitutions and {total} in all "
+          f"(the rules force {minimum}); a graft changes all {args.cdr3}")
+    print(f"  CDR3 identity to the parent: {1 - in_cdr3 / args.cdr3:.0%}  "
+          f"(winners sit near 67%, the minimum here is {1 - minimum / args.cdr3:.0%})")
 
     archive = NanobodyArchive(args.target)
     fr_consensus = {region: consensus(list(archive.sequences), region)
@@ -218,7 +252,8 @@ def main():
         for _ in range(args.per_parent * 40):
             if made >= args.per_parent:
                 break
-            built = variant(parent.sequence, args.cdr3, fr_consensus, rng)
+            built = variant(parent.sequence, args.cdr3, fr_consensus, rng,
+                            args.cdr3_subs)
             if not built:
                 continue
             child, how = built
