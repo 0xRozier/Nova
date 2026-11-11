@@ -1706,10 +1706,36 @@ pas le plafond de la bande. Il faut 0,777.
 
 ### Le dispositif, et ce qu'il interdit de conclure à l'avance
 
-48 variantes, **toutes à 4 substitutions**, mêmes 6 parents, un seul bras
-(`inputs/tail18_s4.csv`). Avec ~50 % d'effondrement attendu, cela donne une
-vingtaine de survivantes au lieu de 4 — assez pour lire la queue haute de la
-distribution là où elle compte.
+**37 variantes** toutes à 4 substitutions, mêmes 6 parents, un seul bras
+(48 demandées, 37 obtenues : les réessais n'ont pas tous franchi les portes).
+Avec ~50 % d'effondrement attendu, cela donne une vingtaine de survivantes au
+lieu de 4 — assez pour lire la queue haute de la distribution là où elle compte.
+
+Le lot complet fait **44 séquences, ~1 h 10 de GPU** : 37 variantes, 1 parent en
+re-contrôle (la chaîne a déjà été validée deux fois, à 0,022 intra-session au
+§19 et 0,018 inter-session au §21) et **6 réplicats** dont il faut parler à part.
+
+### Six séquences pour la question qui changerait le plus de choses
+
+L'effondrement frappe une variante sur deux sans dépendre de la distance ni du
+nombre de substitutions (§21). Or l'étape de design de BoltzGen **est
+stochastique** — le carnet porte un `REPLICATE` exactement pour cela. Donc :
+l'effondrement est-il une propriété de la séquence, ou du tirage ?
+
+Trois survivantes (0,718 / 0,711 / 0,710) et trois effondrées (0,103 / 0,112 /
+0,115) déjà mesurées repassent dans ce lot, prises aux extrêmes des deux côtés
+de la coupure pour que le verdict ne tienne pas à la zone grise.
+
+- **Une effondrée re-note haut** → l'effondrement est du bruit de tirage. Alors
+  le « 20 sur 20 en dessous du parent » du §19 est en partie un artefact, et la
+  sélection n'a pas besoin de mieux concevoir : elle a besoin de **re-noter**.
+- **Elle s'effondre encore** → c'est la séquence, et la moitié de ce que produit
+  la perturbation est structurellement perdue.
+
+Piège qui invaliderait le test : BoltzGen **reprend** un run existant et
+rendrait les anciens résultats au lieu de recalculer. Le nom de run est neuf
+(`tail18_s4`), vérifié comme tel, et le carnet refuse de démarrer si le
+répertoire du run existe déjà.
 
 Et ce qu'on **ne** fera pas avec : ajuster une loi et extrapoler. Le §12bis a
 déjà produit un 1,042 sur une grandeur bornée par 1, en traitant des queues
