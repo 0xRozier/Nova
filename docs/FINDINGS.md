@@ -1679,3 +1679,46 @@ pas.
 
 Six hypothèses, six réfutations par la mesure. Aucune soumission justifiée,
 aucun TAO engagé.
+
+### Correction de la mesure des positions (§21)
+
+Relancée avec la séquence du voisin lui-même : **pas médian 32 % du CDR3**, ce
+qui recoupe exactement la similarité de 0,667 du §20. Les positions touchées se
+répartissent tête 22 % / milieu 43 % / queue 35 %, pour 33 % attendus — et la
+sous-représentation de la tête est mécanique, ses deux premiers résidus étant
+encodés par le gène V. **Pas de préférence de position décelable chez eux non
+plus.**
+
+## 22. Ce qui reste debout : le volume de sélection, et c'est mesurable
+
+Après six réfutations, la liste de ce qui pourrait expliquer l'écart s'est
+vidée de tout ce qui touche à *ce que nous fabriquons*. Les gagnants partent
+d'aussi bon que nous (nos parents re-notent 0,788, soit le sommet de l'archive),
+perturbent à une distance qui nous est mesurée **pire** que la nôtre, et ne
+choisissent pas leurs positions autrement que nous.
+
+Ce qui reste est **combien de candidats sont notés avant de choisir**.
+
+C'est la seule asymétrie non réfutée, et elle est quantifiable. Le bras à 4
+substitutions est le seul dont les survivantes atteignent 0,707, mais il n'en
+compte que **4** : son maximum de 0,718 est le maximum d'un échantillon de 4,
+pas le plafond de la bande. Il faut 0,777.
+
+### Le dispositif, et ce qu'il interdit de conclure à l'avance
+
+48 variantes, **toutes à 4 substitutions**, mêmes 6 parents, un seul bras
+(`inputs/tail18_s4.csv`). Avec ~50 % d'effondrement attendu, cela donne une
+vingtaine de survivantes au lieu de 4 — assez pour lire la queue haute de la
+distribution là où elle compte.
+
+Et ce qu'on **ne** fera pas avec : ajuster une loi et extrapoler. Le §12bis a
+déjà produit un 1,042 sur une grandeur bornée par 1, en traitant des queues
+gaussiennes sur une distribution bornée. La lecture sera non paramétrique :
+combien de survivantes dépassent 0,72, 0,74, 0,75, et le maximum observé.
+
+Si une vingtaine de tirages à la bonne distance ne dépasse pas 0,74, le volume
+de sélection n'est pas l'explication non plus, et la septième hypothèse tombe
+comme les six autres. Si la queue monte, alors le sujet devient entièrement
+**un GPU dans les 67 minutes de l'époque** — c'est-à-dire ce que l'utilisateur
+disait au premier jour, mais mesuré au lieu d'être supposé, et avec un chiffre :
+le nombre de candidats à noter par époque pour que le maximum dépasse 0,777.
