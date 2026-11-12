@@ -1933,3 +1933,102 @@ donneurs, la distance à l'archive, la surface de conception, la recombinaison,
 et la distance de perturbation. La septième — le volume de sélection — est la
 seule qui reste, et elle peut tomber comme les autres. Rien n'est acquis avant
 ces 44 mesures, et aucun TAO ne doit être engagé.
+
+## 26. La septième hypothèse tient : le volume de sélection est la réponse
+
+44 séquences, 63,9 min de GPU. `data/measurements/tail18_s4_scores.csv`. Témoin
+parent : 0,788 → 0,790.
+
+### Les réplicats : l'effondrement est une propriété de la séquence
+
+| | avant | maintenant | |
+|---|---|---|---|
+| survivante | 0,718 | 0,734 | +0,016 |
+| survivante | 0,711 | 0,656 | −0,055 |
+| survivante | 0,710 | 0,691 | −0,019 |
+| effondrée | 0,112 | 0,113 | +0,001 |
+| effondrée | 0,103 | 0,107 | +0,004 |
+| effondrée | 0,115 | 0,177 | +0,062 |
+
+**3 effondrées sur 3 restent effondrées** (maximum 0,177), 3 survivantes sur 3
+restent survivantes (minimum 0,656). Donc **le « 20 sur 20 en dessous du
+parent » du §19 n'est pas du bruit** : l'effondrement est structurel, et la
+sélection ne peut pas le contourner en re-notant. Des deux réponses possibles,
+c'est celle qui ferme une porte.
+
+À noter quand même : les survivantes bougent de ±0,055 d'un tirage à l'autre,
+contre ±0,018 pour les parents. Le bruit de mesure est donc **trois fois plus
+grand sur une variante que sur une séquence archivée**, ce qui compte pour toute
+sélection par seuil.
+
+### La queue haute : pour la première fois, une variante soumissible gagnerait
+
+37 tirages à 4 substitutions, contre 8 au §21. Lecture non paramétrique décidée
+d'avance :
+
+| | |
+|---|---|
+| maximum | **0,76984** |
+| ≥ 0,72 | 4/37 |
+| ≥ 0,74 | 1/37 |
+| ≥ 0,75 | 1/37 |
+| ≥ 0,777 | 0/37 |
+| effondrées | 4/37 (11 %) |
+
+Et contre le champ, à longueur de CDR3 égale et dans le régime récent :
+
+| | `design_iiptm` | époques gagnées (CDR3 = 18) |
+|---|---|---|
+| ancien record soumissible (§19) | 0,718 | **0/6** |
+| **ce lot** | **0,770** | **3/6** |
+| meilleur parent, non soumissible | 0,790 | 6/6 |
+
+Gagnants récents à CDR3 = 18 : 0,759 / 0,762 / 0,762 / 0,772 / 0,772 / 0,785.
+**0,770 en bat trois.** C'est la première fois en sept hypothèses qu'une
+séquence que nous pouvons réellement soumettre franchit un seuil de victoire.
+
+### Ce que cela coûte, chiffré — et pourquoi ce n'est pas gagné
+
+0,770 est **un maximum sur 37 tirages**, pas un résultat qu'on refait à volonté.
+En fréquence : P(un tirage ≥ 0,75) = 1/37 = 2,7 % [IC95 0,1–14,2 %].
+
+| candidats notés | P(au moins un ≥ 0,75) | GPU |
+|---|---|---|
+| **31** (ce que l'époque permet) | **57 %** | 0,8 h |
+| 50 | 75 % | 1,2 h |
+| 84 | 90 % | 2,1 h |
+
+Le budget d'époque laisse ~47 min à BoltzGen, soit **~31 candidats**. On tirerait
+donc un candidat ≥ 0,75 environ une époque sur deux — et 0,75 ne suffit pas
+toujours, la médiane des gagnants récents à CDR3 = 18 étant 0,767.
+
+**C'est le diagnostic que l'utilisateur donnait au premier jour** — « le goulot
+est le GPU » — mais mesuré au lieu d'être supposé, et avec un chiffre : il ne
+s'agit pas de puissance brute mais de **débit de sélection dans la fenêtre de
+67 minutes**, et il en faudrait 2 à 3 fois plus que ce que l'époque permet pour
+viser la victoire de façon fiable.
+
+### Une anomalie que je ne sais pas expliquer
+
+Le taux d'effondrement est de **11 % ici contre 50 %** sur les 8 variantes du
+même bras au §21 (Fisher p = 0,024). Même générateur, mêmes parents, seule la
+graine diffère (0 contre 42). La différence est réelle et **inexpliquée**. Elle
+doit être traitée comme une variance de tirage non comprise, pas comme un
+acquis : si le vrai taux est 50 %, le nombre de candidats utiles par époque
+tombe de moitié et les probabilités ci-dessus avec lui.
+
+### État des sept hypothèses
+
+| # | hypothèse | verdict |
+|---|---|---|
+| 1 | le GPU comme puissance de calcul | réfutée (§12bis) |
+| 2 | les donneurs | réfutée (§10) |
+| 3 | la distance à l'archive | réfutée (ρ = −0,07) |
+| 4 | la surface de conception | réfutée (§12) |
+| 5 | la recombinaison | réfutée (§19) |
+| 6 | la distance de perturbation | réfutée (§21) |
+| 7 | **le volume de sélection** | **soutenue (§26)** |
+
+Première hypothèse qui survit à sa mesure. Elle reste à confirmer sur un second
+tirage indépendant — un maximum sur 37 n'est pas une capacité — et rien ne
+justifie encore d'engager du TAO.
