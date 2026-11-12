@@ -2616,3 +2616,57 @@ soumettre ce candidat tel quel, en acceptant les 6 millièmes de marge sur une
 fonction de similarité que nous n'avons jamais confrontée au validateur, ou de
 dépenser 2 minutes de GPU sur une variante à 8 substitutions pour tripler cette
 marge, au risque que son score retombe.
+
+## 34. « Serons-nous capables de reproduire ce résultat régulièrement ? » — Non, et voici le taux
+
+Sur **155 perturbations minimales distinctes** mesurées à CDR3 = 18, en six
+sessions :
+
+| seuil | atteint | taux |
+|---|---|---|
+| ≥ 0,772 (médiane des gagnants) | **1/155** | 1 sur 155 |
+| ≥ 0,780 (notre candidat) | 1/155 | 1 sur 155 |
+| ≥ 0,785 (meilleur gagnant récent) | **0/155** | — |
+
+Médiane de nos tirages **0,602**, 90ᵉ percentile 0,705, maximum 0,783. **Le
+candidat n'est pas un résultat typique de la méthode : c'est son maximum sur
+155.**
+
+### La nuance qui est tout le sujet
+
+Nous savons comment nous l'avons **tiré**, pas comment le **produire**. La
+procédure est connue — perturber au minimum légal un parent du haut de
+l'archive — mais rien ne prédit lequel des 155 tirages sera le bon :
+
+| prédicteur | mesure |
+|---|---|
+| PSH, A3D, identité V | ρ ≈ 0 (§19) |
+| positions substituées | p = 0,894 et 0,944 (§31, §33) |
+| distance de perturbation | le minimum est le meilleur, et il plafonne (§21) |
+| classifieur sur la séquence seule | AUC 0,61 contre 0,52 au hasard (§29) |
+
+Nous savons échantillonner une distribution dont le 99,4ᵉ percentile est ce
+qu'il faut. C'est très différent de savoir fabriquer ce percentile.
+
+### Le prix de « régulièrement »
+
+| tirages par couple | P(au moins un ≥ 0,772) | GPU |
+|---|---|---|
+| 31 (ce que l'époque permettait) | 18 % | 0,8 h |
+| 100 | 48 % | 2,7 h |
+| 150 | 62 % | 4,0 h |
+| **250** | **80 %** | **6,7 h** |
+
+Le §29 tablait sur 100 candidats par couple avec un taux estimé sur un seul
+lot ; le taux réel sur 155 tirages demande **~250 par couple**. Pour les 8
+couples les plus fréquents — 32 % des époques — cela fait **~54 h de GPU**, soit
+deux semaines de quota Kaggle. Faisable sans louer un seul GPU, mais ce n'est
+pas « régulièrement » : c'est une campagne, et elle couvre un tiers des époques.
+
+### Ce que cela ne dit pas
+
+Que le candidat soit le maximum de 155 ne le rend pas suspect : il a été
+**répliqué** (0,783 puis 0,789, dans deux sessions dont les témoins étaient à
+0,782 et 0,786), ce qui est précisément le contrôle que le §28 exigeait et que
+le 0,770 du §26 avait échoué. Sa valeur est solide ; c'est sa **fréquence
+d'apparition** qui est faible.
