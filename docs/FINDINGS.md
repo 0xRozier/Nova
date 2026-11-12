@@ -1835,3 +1835,16 @@ Si la périphérie préserve et que le milieu détruit, la position est le levie
 le générateur doit cesser de tirer au hasard. Si les deux bras se valent, alors
 la position n'explique rien non plus, et il ne restera que le volume de
 sélection du §22.
+
+**Générés** : `inputs/pos18_periph.csv` (13 variantes, 6 parents) et
+`inputs/pos18_milieu.csv` (9 variantes, 5 parents). Vérifié séquence par
+séquence que les positions réellement modifiées sont exactement l'ensemble
+imposé, et rien d'autre, dans les deux bras.
+
+Une asymétrie de rendement à ne pas lire comme un résultat : le bras milieu
+rend 9 variantes contre 13, et perd un parent entièrement, parce que davantage
+de candidats sont refusés par nos propres portes déterministes. Cela *pourrait*
+vouloir dire que substituer au centre de la boucle casse plus souvent une porte
+(cystéines canoniques, marqueurs VHH) — mais la cause exacte des refus n'a pas
+été capturée dans ce lancement, donc la seule chose établie est la différence de
+rendement. À vérifier avant d'en tirer quoi que ce soit.
