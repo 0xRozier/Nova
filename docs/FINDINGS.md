@@ -2832,3 +2832,67 @@ Le taux de reproductibilité reste 1 sur 182 (§36) : ce lot ne cherche pas un
 meilleur candidat, il qualifie celui que nous avons. Et aucune de ces variantes
 n'a de PSH ni d'A3D mesurées — le criblage des quatre meilleures v8 tourne, et
 celui des v9 devra suivre avant toute décision.
+
+## 38. Le classement du §36 était du bruit, et l'additivité tient
+
+22 séquences, 34,7 min. Témoins : parent 0,77996, candidat à 7 substitutions
+0,78077 en **quatrième** mesure (0,78312 / 0,78889 / 0,77907 / 0,78077, moyenne
+**0,78296**).
+
+### Les dix v8, deuxième mesure : retour à la moyenne
+
+| mouvement | 1ʳᵉ | 2ᵉ | écart | moyenne |
+|---|---|---|---|---|
+| FR210Q→K | 0,78405 | 0,77538 | −0,009 | 0,77971 |
+| FR320S→T | 0,78354 | 0,77268 | −0,011 | 0,77811 |
+| FR213D→E | 0,78125 | **0,78659** | +0,005 | **0,78392** |
+| FR11Q→E | 0,77967 | 0,77870 | −0,001 | 0,77919 |
+| FR12Q→V | 0,77805 | 0,76949 | −0,009 | 0,77377 |
+| FR211Q→E | 0,76996 | 0,78157 | +0,012 | 0,77577 |
+| FR112I→V | 0,75742 | 0,77772 | +0,020 | 0,76757 |
+| FR123S→A | 0,74666 | 0,76662 | +0,020 | 0,75664 |
+| FR31E→D | 0,73301 | 0,76037 | +0,027 | 0,74669 |
+| **FR217R→D** | 0,62448 | **0,61423** | −0,010 | **0,61936** |
+
+Les quatre « meilleures » du §36 perdent 0,004 en moyenne, les cinq suivantes
+gagnent **+0,014**. C'est un retour à la moyenne de manuel : **le classement du
+§36 était du bruit**, et c'est exactement pourquoi les dix ont été répliquées
+plutôt que les quatre.
+
+**La nuance au §15 doit donc être corrigée à son tour.** Le §36 concluait qu'une
+position de charpente « peut compter autant qu'une position de CDR3 » en
+s'appuyant sur deux cas, `FR217R→D` (−0,155) et `FR31E→D` (−0,046). Seul le
+premier survit : `FR31E→D` remonte à 0,760 et rejoint le peloton. L'énoncé juste
+est plus étroit : **neuf mouvements de charpente sur dix sont gratuits, un seul
+coûte, et il coûte beaucoup** (0,619 contre 0,783, confirmé sur deux mesures).
+
+### Les dix combinaisons à 9 substitutions : l'additivité tient
+
+| | |
+|---|---|
+| ≥ 0,75 | **9/10** |
+| maximum | **0,78604** (FR210Q→K + FR320S→T) |
+| exception | FR320S→T + FR213D→E à 0,69146 |
+
+Deux mouvements gratuits restent gratuits ensemble, à une paire près sur dix.
+**Un candidat à 9 substitutions garde donc le score avec une marge d'unicité de
+0,022 — presque quatre fois celle du candidat actuel.**
+
+### L'état des trois candidats
+
+| | substitutions | mesures | moyenne | marge d'unicité |
+|---|---|---|---|---|
+| candidat initial | 7 | **4** | 0,78296 | 0,006 |
+| FR213D→E | 8 | **2** | 0,78392 | 0,014 |
+| FR210Q→K + FR320S→T | 9 | 1 | 0,78604 | **0,022** |
+
+Les trois valent la même chose à 0,003 près, soit un cinquième de σ. **Le choix
+ne se joue donc pas sur le score mais sur la marge et sur le nombre de
+mesures.** Le v9 est le meilleur de dix et n'a qu'une mesure : le §38 vient de
+montrer, sur les v8, ce que vaut un classement à une mesure.
+
+### Ce qui manque toujours
+
+Aucune PSH ni A3D sur les v8 et les v9. Le criblage des quatre meilleures v8 a
+été lancé et doit être relevé ; celui des v9 reste à faire. Sans lui, aucun de
+ces candidats n'est soumissible, quel que soit son `design_iiptm`.
