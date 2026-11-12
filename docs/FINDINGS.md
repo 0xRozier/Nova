@@ -1748,3 +1748,90 @@ comme les six autres. Si la queue monte, alors le sujet devient entièrement
 **un GPU dans les 67 minutes de l'époque** — c'est-à-dire ce que l'utilisateur
 disait au premier jour, mais mesuré au lieu d'être supposé, et avec un chiffre :
 le nombre de candidats à noter par époque pour que le maximum dépasse 0,777.
+
+## 23. Le mécanisme de l'effondrement : la séquence se replie encore, l'interface part d'un coup
+
+Sur les 48 variantes mesurées (19 effondrées, 29 survivantes) et leurs 15
+parents, toutes les métriques que BoltzGen rend en même temps que le score.
+
+| métrique | effondrées | survivantes | parents |
+|---|---|---|---|
+| `design_iiptm` | 0,146 | 0,633 | 0,761 |
+| `design_ptm` | **0,735** | **0,797** | 0,824 |
+| `design_to_target_iptm` | 0,149 | 0,592 | 0,650 |
+| `min_design_to_target_pae` | 18,16 | 3,06 | 2,17 |
+| `interaction_pae` | 24,20 | 11,03 | 9,13 |
+| `delta_sasa_refolded` | 620 | 887 | 894 |
+| `plip_hbonds_refolded` | 3 | 9 | 9 |
+
+### Deux formes de dégradation, et c'est tout le résultat
+
+En cherchant le plus grand trou dans chaque distribution, rapporté à son
+étendue :
+
+| métrique | plus grand trou | |
+|---|---|---|
+| `design_iiptm` | **38 %** de l'étendue, entre 0,243 et 0,475 | **bimodal franc** |
+| `interaction_pae` | 34 %, entre 15,9 et 21,3 | bimodal |
+| `min_design_to_target_pae` | 28 %, entre 7,5 et 12,8 | bimodal |
+| `design_ptm` | **8 %**, entre 0,770 et 0,779 | **continuum** |
+
+**Zéro variante entre 0,30 et 0,45 de `design_iiptm`.** Le trou est réel, pas un
+effet de seuil que j'aurais choisi.
+
+Et `design_ptm` — le repliement du nanobody *seul*, sans la cible — ne montre
+rien de tel : 48 valeurs étalées régulièrement de 0,711 à 0,827, sans trou.
+Donc :
+
+> **la qualité du repliement se dégrade continûment, l'interface s'effondre
+> discontinûment.** Et le repliement ne rate jamais : un nanobody qui ne se
+> replierait plus donnerait un `ptm` vers 0,3–0,4, alors que le minimum observé
+> est 0,711.
+
+C'est la lecture du §11 (« la pose n'est pas retrouvée au repliement
+indépendant »), mais obtenue sur des séquences perturbées et non sur des designs
+BoltzGen, donc par un chemin indépendant. La séquence se replie ; au-delà d'un
+certain point de dégradation du repliement, l'interface basculeen bloc.
+
+### Ce que ces chiffres ne sont PAS
+
+Les deux groupes ne se chevauchent pas en `design_ptm` (effondrées ≤ 0,750,
+survivantes ≥ 0,755) et ρ(`design_ptm`, `design_iiptm`) = +0,88 (p = 3·10⁻¹⁶).
+**Cela ne fournit aucun criblage.** Trois raisons, qu'il faut garder ensemble :
+
+1. **Ces métriques sortent du même tirage que le score.** On ne connaît le
+   `design_ptm` d'une séquence qu'après avoir payé les 1,6 min de GPU qui
+   donnent déjà le `design_iiptm`. Un seuil à 0,75 ne fait économiser
+   rigoureusement rien.
+2. La séparation parfaite tient à **0,004 point** sur un continuum. C'est une
+   coïncidence d'ordre sur 48 valeurs, pas une frontière.
+3. Une corrélation entre une grandeur continue et une grandeur discontinue
+   mesure l'ordre, pas un mécanisme : elle ne dit pas lequel cause l'autre.
+
+Un substitut utilisable devrait prédire l'effondrement **à partir de la séquence
+seule**, et c'est exactement ce qu'aucune de nos grandeurs hors GPU ne fait
+(§19 : PSH ρ = −0,05, A3D ρ = +0,02, identité V ρ = −0,03).
+
+## 24. Le dispositif de position, à nombre de substitutions constant
+
+Le §21 a mesuré des écarts par position allant jusqu'à 0,43 et a refusé de les
+reporter : positions tirées au hasard, 4 à 10 par variante, donc appartenances
+corrélées et confondues avec « quelle variante s'est effondrée ».
+
+`scripts/minimal_variants.py` accepte désormais `--cdr3-positions`, qui **impose
+l'ensemble** au lieu de le tirer. Quatre façons de se tromper sont refusées
+nommément, chacune vérifiée : toucher la tête encodée par le gène V ou la queue
+encodée par J (hors de la fenêtre libre 2–14 pour un CDR3 de 18), en demander
+moins que le minimum légal — avec le calcul d'identité à l'appui —, et répéter
+une position.
+
+Deux bras, mêmes 6 parents, **toujours 4 substitutions** :
+
+- **périphérie** : positions 2, 3, 13, 14 — les bords de la fenêtre libre,
+  contre la tête V et la queue J figées ;
+- **milieu** : positions 7, 8, 9, 10 — le centre de la boucle.
+
+Si la périphérie préserve et que le milieu détruit, la position est le levier et
+le générateur doit cesser de tirer au hasard. Si les deux bras se valent, alors
+la position n'explique rien non plus, et il ne restera que le volume de
+sélection du §22.

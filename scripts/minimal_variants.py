@@ -171,8 +171,46 @@ def parents(target: str, allowed_v: str, cdr3_length: int,
         ["sequence", "cdr3", "design_iiptm", "v_identity", "j_identity", "epoch"]]
 
 
+def free_positions(cdr3_length: int) -> list[int]:
+    """CDR3 positions we may touch: all but the V-encoded head and J-encoded tail."""
+    return list(range(V_HEAD, cdr3_length - J_FIXED))
+
+
+def check_positions(positions: list[int], cdr3_length: int) -> list[int]:
+    """The imposed substitution set, or a refusal explaining what is wrong.
+
+    The §21 could not separate a position effect from "which variant collapsed",
+    because the positions were drawn at random and each variant touched 4 to 10
+    of them. Testing position therefore needs the SET imposed at a constant
+    count -- and imposed sets are easy to get wrong in ways that silently
+    produce an illegal or degenerate batch, so each way is refused by name.
+    """
+    minimum, _ = required_changes(0, cdr3_length)
+    free = set(free_positions(cdr3_length))
+    chosen = sorted(set(positions))
+    if len(chosen) != len(positions):
+        raise ValueError(f"positions repetees dans {positions}")
+    outside = [i for i in chosen if i not in free]
+    if outside:
+        raise ValueError(
+            f"positions {outside} hors de la fenetre libre "
+            f"{min(free)}-{max(free)} : la tete du CDR3 est encodee par le gene V "
+            f"et sa queue par le gene J (§7ter), les toucher casse l identite "
+            f"germinale au lieu de la boucle"
+        )
+    if len(chosen) < minimum:
+        raise ValueError(
+            f"{len(chosen)} positions laisseraient le CDR3 a "
+            f"{1 - len(chosen) / cdr3_length:.0%} d identite, et le niveau 3 de "
+            f"is_duplicate refuse tout ce qui est a 80% ou plus quand CDR1 et "
+            f"CDR2 sont intacts : il en faut au moins {minimum}"
+        )
+    return chosen
+
+
 def variant(parent: str, cdr3_length: int, fr_consensus: dict,
-            rng: random.Random, cdr3_subs: int | None = None) -> tuple[str, dict] | None:
+            rng: random.Random, cdr3_subs: int | None = None,
+            positions: list[int] | None = None) -> tuple[str, dict] | None:
     """One perturbed child of this parent, or None if it cannot be built.
 
     cdr3_subs=None keeps the legal minimum; a larger number walks out to the
@@ -181,12 +219,17 @@ def variant(parent: str, cdr3_length: int, fr_consensus: dict,
     r = regions(parent)
     if not r:
         return None
-    in_cdr3, total = changes_for(len(parent), cdr3_length, cdr3_subs)
+    if positions is not None:
+        chosen = check_positions(positions, cdr3_length)
+        in_cdr3, total = changes_for(len(parent), cdr3_length, len(chosen))
+    else:
+        chosen = None
+        in_cdr3, total = changes_for(len(parent), cdr3_length, cdr3_subs)
     loop = list(r["CDR3"])
-    free = list(range(V_HEAD, len(loop) - J_FIXED))
+    free = free_positions(len(loop))
     if len(free) < in_cdr3:
         return None
-    for position in rng.sample(free, in_cdr3):
+    for position in (chosen if chosen is not None else rng.sample(free, in_cdr3)):
         loop[position] = rng.choice([a for a in HYDROPHILIC if a != loop[position]])
 
     # The rest go in the framework, toward the archive consensus: those
@@ -210,6 +253,7 @@ def variant(parent: str, cdr3_length: int, fr_consensus: dict,
 
     child = "".join(parts[key] for key in REGION_ORDER)
     return child, {"cdr3_substitutions": in_cdr3,
+                   "cdr3_positions": ",".join(str(i) for i in (chosen or [])),
                    "framework_moves": len(changed),
                    "framework_detail": ",".join(changed)}
 
@@ -221,6 +265,11 @@ def main():
     parser.add_argument("--cdr3", type=int, required=True)
     parser.add_argument("--parents", type=int, default=8)
     parser.add_argument("--per-parent", type=int, default=3)
+    parser.add_argument("--cdr3-positions",
+                        help="positions du CDR3 a substituer, 0-indexees et separees "
+                             "par des virgules (ex. 2,3,13,14). Impose l ensemble au "
+                             "lieu de le tirer : c est ce qu il faut pour tester la "
+                             "position a nombre constant (§21).")
     parser.add_argument("--cdr3-subs", type=int,
                         help="CDR3 substitutions per variant (default: the legal "
                              "minimum). Higher walks toward the winners' band.")
@@ -235,6 +284,16 @@ def main():
                          f"{args.cdr3}-residue CDR3")
     print(f"{len(pool)} parents, their own design_iiptm "
           f"{pool.design_iiptm.min():.3f}-{pool.design_iiptm.max():.3f}")
+    imposed = ([int(x) for x in args.cdr3_positions.split(",")]
+               if args.cdr3_positions else None)
+    if imposed is not None:
+        imposed = check_positions(imposed, args.cdr3)
+        print(f"positions imposees : {imposed}  "
+              f"(fenetre libre {free_positions(args.cdr3)[0]}-{free_positions(args.cdr3)[-1]})")
+        if args.cdr3_subs is not None and args.cdr3_subs != len(imposed):
+            raise SystemExit(f"--cdr3-subs {args.cdr3_subs} contredit les "
+                             f"{len(imposed)} positions imposees")
+        args.cdr3_subs = len(imposed)
     in_cdr3, total = changes_for(len(pool.sequence.iat[0]), args.cdr3, args.cdr3_subs)
     minimum, _ = required_changes(len(pool.sequence.iat[0]), args.cdr3)
     print(f"{in_cdr3} CDR3 substitutions and {total} in all "
@@ -253,7 +312,7 @@ def main():
             if made >= args.per_parent:
                 break
             built = variant(parent.sequence, args.cdr3, fr_consensus, rng,
-                            args.cdr3_subs)
+                            args.cdr3_subs, imposed)
             if not built:
                 continue
             child, how = built
