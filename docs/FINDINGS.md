@@ -2314,3 +2314,71 @@ l'affirmation ne serve à décider quoi que ce soit.
 moitié de celui de la périphérie, sur deux graines. **Ce qui ne l'est pas** : la
 raison. Et rien là-dedans ne dit quoi que ce soit sur la liaison, qui est ce que
 la session en cours mesure.
+
+## 31. Le test de position : pas d'effet. Et deux choses que la lecture pré-enregistrée ne couvrait pas.
+
+23 séquences, 36,7 min de GPU. Témoin parent : 0,788 → 0,782.
+Analyse par `scripts/analyze_position.py`, **inchangé depuis son commit e4a4381,
+écrit avant que les données existent**.
+
+### Le verdict pré-enregistré
+
+| bras | n | médiane | max | effondrées |
+|---|---|---|---|---|
+| périphérie 2,3,13,14 | 13 | 0,619 | 0,783 | 0/13 |
+| milieu 7,8,9,10 | 9 | 0,615 | 0,660 | 0/9 |
+
+**Mann-Whitney p = 0,894, delta de Cliff −0,04.** Les deux médianes sont à
+0,004 l'une de l'autre. **Pas d'effet**, et pas seulement « pas d'effet
+large » : le delta de Cliff est nul à la précision disponible.
+
+La position n'est donc pas le levier que les écarts du §21 laissaient espérer —
+ces écarts étaient bien l'artefact que le §21 avait soupçonné. Le plan du §29 ne
+gagne pas le facteur 2 ou 3 que ce test aurait pu lui donner, et le générateur
+peut continuer à tirer ses positions au hasard.
+
+### Hors pré-enregistrement 1 : l'effondrement a disparu
+
+| | effondrées |
+|---|---|
+| positions **imposées** (ce lot) | **0/22** |
+| positions **tirées au hasard** dans 2–14, 4 substitutions, L=18 | 18/82 = 22 % |
+| | Fisher p = **0,0114** |
+
+Ce n'est **pas** une comparaison pré-enregistrée — elle oppose ce lot à
+l'historique, pas un bras à l'autre — donc c'est une hypothèse, pas un résultat.
+Mais elle est précise et testable : les deux ensembles imposés couvrent
+2,3,7,8,9,10,13,14, et **ne touchent jamais 4, 5, 6, 11, 12**. Si
+l'effondrement vient de ces cinq positions, l'éviter rendrait 22 % du budget
+GPU — ce que le classifieur du §29 n'a pas su faire (AUC 0,61).
+
+Le test qui trancherait : un bras imposé sur 4,5,6,11 (quatre des cinq
+suspectes) contre un bras imposé sur 2,3,13,14, même nombre de substitutions.
+Si les suspectes s'effondrent et les autres non, c'est la première règle de
+génération utile que nous aurons.
+
+### Hors pré-enregistrement 2 : un candidat à 0,783, et pourquoi je n'y crois pas encore
+
+La meilleure variante du lot sort à **0,78312**, au-dessus de notre précédent
+record soumissible (0,770) et au niveau du parent re-noté dans la même session
+(0,782). Elle battrait **5 des 6** gagnants récents à CDR3 = 18.
+
+**C'est un maximum, et le §28 a déjà montré ce que valent nos maximums** : le
+0,770 du §26 a re-noté 0,756 au tirage suivant, et les quatre meilleures ont
+toutes baissé, de 0,015 en médiane. À 0,783 − 0,015 ≈ 0,769, le compte retombe
+à 3 époques sur 6.
+
+Donc : **cette séquence doit être re-notée avant qu'on en parle comme d'un
+candidat**, et c'est six minutes de GPU dans n'importe quel prochain lot. Rien
+ne justifie une soumission sur un maximum non répliqué — c'est exactement
+l'erreur du §26.
+
+### Et une note sur le rendement du bras milieu
+
+Le §30 a retiré l'explication par les portes. Les mesures suivantes ont écarté
+les deux autres causes faciles : **aucune collision** (240 variantes distinctes
+sur 240 tentatives dans les deux bras) et les portes passent même légèrement
+mieux au milieu (211/240 contre 206/240). Il ne reste que la règle d'archive,
+dont la mesure tourne encore. Le fait brut — rendement de bout en bout deux fois
+plus faible au milieu — reste établi, sa cause reste inconnue, et le présent
+§31 montre qu'elle n'a aucun rapport avec la liaison.
