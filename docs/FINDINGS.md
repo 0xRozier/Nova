@@ -2441,3 +2441,78 @@ Prédictions, écrites avant le lot :
 3. le 0,783 **baisse** d'environ 0,015 (la baisse médiane des quatre re-mesures
    du §28) et atterrit vers 0,768. S'il se maintient au-dessus de 0,78, c'est le
    premier candidat soumissible sérieux de toute l'enquête.
+
+## 33. Les trois prédictions tiennent, et un candidat répliqué à 0,786
+
+43 séquences, 68,6 min de GPU. Témoin parent : 0,788 → 0,786.
+
+### Prédictions 1 et 2 : c'était la session, pas le mode
+
+| bras | n | médiane | max | effondrées |
+|---|---|---|---|---|
+| positions **tirées** | 21 | 0,619 | 0,712 | 1/21 = 5 % |
+| positions **imposées** 2,3,13,14 | 18 | 0,621 | 0,743 | 1/18 = 6 % |
+| | | | | Fisher **p = 1,000** |
+
+Mann-Whitney sur les scores : **p = 0,944**. Les deux modes sont
+indiscernables. **La prédiction 2 est celle qui se réalise** : le 0/22 du §31
+était un effet de session, et les 22 % de budget perdus en effondrements le
+restent.
+
+Et le taux d'effondrement par session est maintenant 11 % / 31 % / 0 % / 5 %,
+**χ² p = 0,0006**. Il ne dépend ni de la distance (§21), ni du nombre de
+substitutions (§21), ni des positions (§31, §33), ni du mode de tirage — mais il
+varie d'un facteur 6 selon la session. Une cause plausible, non testée : l'étape
+de design de BoltzGen est stochastique et tout un lot partage sa session. Cela
+n'infirme pas le §26 — les séquences effondrées restent effondrées d'une session
+à l'autre — mais cela veut dire que les **séquences limites** basculent selon le
+tirage, et que tout taux mesuré sur un seul lot est trompeur.
+
+### Prédiction 3 : vérifiée au chiffre près, et elle livre un candidat
+
+| mesure §31 | ici | écart |
+|---|---|---|
+| 0,78312 | **0,78889** | **+0,006** |
+| 0,75679 | 0,74191 | −0,015 |
+| 0,73504 | 0,70373 | −0,031 |
+| | **médiane −0,015** | prédit −0,015 |
+
+La médiane prédite était −0,015 ; elle est −0,015. Mais la meilleure des trois
+**n'a pas baissé** : deux mesures indépendantes, 0,78312 et 0,78889, moyenne
+**0,786**, écart 0,006 entre deux sessions dont les témoins parents étaient à
+0,782 et 0,786.
+
+### Le premier candidat sérieux de l'enquête
+
+| | |
+|---|---|
+| estimation | **0,786 ± 0,010** (σ par mesure 0,014 sur 10 paires répétées) |
+| gagnants récents à CDR3 = 18 | 0,759 / 0,762 / 0,762 / 0,772 / 0,772 / 0,785 |
+| battus par la moyenne | **6/6** |
+
+Le validateur ne note qu'une fois, donc en probabilité par époque : 97 %, 96 %,
+95 %, 84 %, 83 %, 52 % — soit **5,1 époques sur 6** en espérance.
+
+C'est le premier candidat de toute l'enquête qui ne soit pas un maximum non
+répliqué, et c'est exactement ce que le §28 exigeait avant d'en parler.
+
+### Ce qui manque, et c'est bloquant
+
+**Sa PSH et son Aggrescan3D n'ont jamais été mesurées.** Le §20 avait inversé
+l'ordre volontairement — liaison d'abord, développabilité ensuite, pour ne pas
+dépenser des heures de CPU sur des séquences qui ne lient pas. La contrepartie
+est que ce candidat **n'est pas soumissible en l'état** : au §17, seules 20
+variantes sur 61 franchissaient PSH < 96 et les deux plafonds A3D, soit une sur
+trois.
+
+Le criblage des six meilleures de ce lot est lancé (3 replis chacune). Tant
+qu'il n'est pas revenu, parler de soumission serait prématuré : une PSH à 100
+rendrait ce 0,786 sans objet.
+
+### Et la décision qui ne m'appartient pas
+
+Si le criblage passe, nous aurons pour la première fois une séquence
+soumissible dont l'espérance bat le champ. Soumettre engage du TAO, et
+l'instruction debout depuis le début est qu'on n'en engage pas pendant la phase
+de recherche. Je ne soumets rien et je ne pousse pas : je donnerai les chiffres,
+la décision est à l'utilisateur.
