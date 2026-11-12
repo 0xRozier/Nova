@@ -2102,3 +2102,90 @@ neuf (`tail18b_s4`), vérifié contre les trois runs déjà consommés, sans quo
 BoltzGen rendrait les anciens résultats au lieu de recalculer — ce qui
 annulerait précisément les 4 re-mesures. *Accelerator* **GPU T4 x2**,
 *Internet* **On**.
+
+## 28. Le second tirage : la queue est réelle mais deux fois plus mince, et le 3/6 était un artefact
+
+50 séquences, 76,7 min de GPU. Témoin parent : 0,790 → 0,788.
+`data/measurements/tail18b_s4_scores.csv`.
+
+### Les prédictions du §27, vérifiées une par une
+
+| prédiction | observé | verdict |
+|---|---|---|
+| les 4 meilleures perdent en moyenne | **4/4 en baisse**, moyenne −0,015 | **vérifiée** |
+| effondrées 8 ± 5 (3–13) | **14/45 = 31 %** | **démentie**, par le haut |
+| ≥ 0,72 : 4 | **1/45** | **démentie**, par le bas |
+| ≥ 0,75 : 0 ou 1 | 0/45 | vérifiée (mais non informative, dit d'avance) |
+| maximum 0,72–0,77 | **0,723** | au bord inférieur |
+
+Deux prédictions sur quatre démenties, et dans le sens défavorable. C'est le
+mérite de les avoir écrites d'abord : sans elles, j'aurais présenté ce lot comme
+« cohérent avec le §26 ».
+
+### Les trois tirages du même bras, côte à côte
+
+| graine | n | effondrées | ≥ 0,72 | max |
+|---|---|---|---|---|
+| 0 | 8 | 50 % | 0 | 0,718 |
+| 42 | 37 | **11 %** | 4 | **0,770** |
+| 1234 | 45 | 31 % | 1 | 0,723 |
+| **groupé** | **90** | **24,4 %** [16–35] | 5,6 % [1,8–12,5] | — |
+
+**C'était le 11 % qui était la chance, pas le 50 %.** Le §26 a été écrit sur le
+tirage le plus favorable des trois, et c'est exactement l'erreur contre laquelle
+le §27 avait été écrit.
+
+### Le candidat : le 3/6 époques ne survit pas
+
+Notre meilleure séquence a maintenant deux mesures : **0,770 puis 0,756**,
+moyenne 0,763.
+
+| | époques gagnées (CDR3 = 18, régime récent) |
+|---|---|
+| à 0,770 (mesure 1) | 3/6 |
+| **à 0,756 (mesure 2)** | **0/6** |
+
+Gagnants : 0,759 / 0,762 / 0,762 / 0,772 / 0,772 / 0,785. La seconde mesure
+passe **sous le plus faible d'entre eux**. Le validateur ne note qu'une fois :
+soumettre cette séquence, c'est tirer une fois dans une distribution dont le
+centre est à 0,763 et l'écart-type par mesure à **0,016** (estimé sur 7 paires
+répétées). Elle est donc à la frontière de la plus facile des six époques, et
+perd les cinq autres.
+
+**Aucun de nos 90 tirages n'atteint 0,772**, la médiane des gagnants.
+
+### Planification révisée
+
+| candidats notés | P(au moins un ≥ 0,75) | GPU |
+|---|---|---|
+| **31** (ce que l'époque permet) | **29 %** | 0,8 h |
+| 62 | 50 % | 1,6 h |
+| 100 | 67 % | 2,5 h |
+| 200 | 89 % | 5,0 h |
+
+Le §26 annonçait 57 % pour 31 candidats, puis 50 % après groupement. C'est
+**29 %**, et un candidat à 0,75 ne gagne de toute façon aucune des six époques
+récentes. Il faudrait viser 0,772, que 0 tirage sur 90 atteint.
+
+### Où en est la septième hypothèse
+
+**Soutenue dans sa forme, démentie dans son ampleur.** Plus de tirages donnent
+bien un meilleur maximum — 8 tirages plafonnent à 0,718, 37 atteignent 0,770 —
+donc le volume de sélection agit. Mais le taux est 2 à 3 fois plus faible que
+l'estimation du §26, et le débit que l'époque autorise reste très loin de ce
+qu'il faudrait : il manque un facteur ~6 (200 candidats contre 31) pour
+seulement 89 % de chance de tirer un ≥ 0,75, qui ne gagne rien.
+
+Donc : la mesure ne réfute pas l'hypothèse, elle en chiffre l'insuffisance. En
+l'état, **aucune soumission n'est justifiée** — notre meilleure séquence perd
+cinq époques sur six et joue la sixième à la pièce — et aucun TAO ne doit être
+engagé.
+
+### Ce que je retiens sur la méthode
+
+Le §26 a été écrit après un seul tirage, et ses deux chiffres clés (11 %
+d'effondrement, 3/6 époques) étaient tous les deux les plus favorables possibles
+— l'un un tirage chanceux, l'autre un maximum sélectionné. Les deux sont tombés
+au second tirage. **Un maximum et un taux sur un seul lot ne sont pas des
+résultats**, et la seule chose qui l'a montré ici est d'avoir écrit les
+prédictions avant de regarder.
