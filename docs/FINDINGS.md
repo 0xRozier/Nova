@@ -2552,3 +2552,67 @@ L'unicité est la seule porte qui ait pu changer depuis la génération, et c'es
 exactement la réserve 3 du §29 : l'archive grossit, un candidat généré il y a
 quelques jours peut être devenu doublon de ce que quelqu'un a soumis depuis. Un
 doublon est un rejet certain, donc cette vérification précède toute décision.
+
+### L'unicité : le candidat passe, mais les marges sont minces par construction
+
+Archive re-téléchargée, **15 803 séquences** (contre 14 424 dans notre jeu de
+données — 1 379 sont arrivées depuis). Verdict complet des portes, archive
+incluse : **aucun problème, soumissible**.
+
+Le plus proche voisin de l'archive est **le parent lui-même** :
+
+| | candidat contre parent | seuil de `is_duplicate` | marge |
+|---|---|---|---|
+| identité entière | 0,944 | ≥ 0,95 → doublon | **0,006** |
+| CDR3 | 0,778 | ≥ 0,85 → doublon | 0,072 |
+| CDR3 avec CDR1 et CDR2 ≥ 0,90 | 0,778 (CDR1 et CDR2 à 1,000) | ≥ 0,80 → doublon | **0,022** |
+
+**Ces marges sont structurelles, pas accidentelles** : 7 substitutions sur 125
+résidus, dont 4 dans le CDR3, c'est exactement la perturbation minimale que la
+règle autorise. Nous sommes donc tout juste à l'intérieur de deux des trois
+seuils, par conception.
+
+Le risque que cela crée, et il faut le nommer : **tout écart entre notre
+reproduction des fonctions de similarité et celle du validateur fait basculer le
+verdict.** Six millièmes de marge sur l'identité entière, cela ne pardonne rien.
+Notre `whole_identity` utilise `difflib.SequenceMatcher`, notre
+`cdr_similarity` reproduit le moteur de recherche de NOVA-nanobody-filter ; les
+deux ont été écrites d'après le code du validateur, mais jamais confrontées à
+un verdict d'unicité réel sur une séquence à 0,944.
+
+### L'atténuation possible, et son coût
+
+Une ou deux substitutions de **charpente** en plus élargiraient la marge sans
+toucher le CDR3 :
+
+| substitutions totales | identité entière | marge sous 0,95 |
+|---|---|---|
+| 7 (le candidat) | 0,944 | 0,006 |
+| 8 | 0,936 | 0,014 |
+| 9 | 0,928 | 0,022 |
+
+La charpente ne contacte pas la cible (§15) et nos déplacements vont vers le
+consensus de l'archive, ce qui remonte l'identité germinale. Mais **changer la
+séquence change le tirage** : le §26 a établi que le score est une propriété de
+la séquence, donc une variante à 8 substitutions est un nouveau tirage dont la
+liaison doit être re-mesurée. Coût : une séquence, ~2 min de GPU, et le risque
+de retomber plus bas que 0,786.
+
+### L'état final, et la décision
+
+| porte | valeur | verdict |
+|---|---|---|
+| `design_iiptm` | 0,786 ± 0,010, deux sessions | **5,1 époques sur 6** en espérance |
+| PSH | 88,9 | ✓ (rupture à 96) |
+| Aggrescan3D | −0,840 / 1,235 | ✓ (plafonds −0,680 / 1,580) |
+| portes déterministes | — | ✓ |
+| unicité, archive de 15 803 | 0,944 / 0,778 | ✓ **à 0,006 du seuil** |
+
+Pour la première fois en onze soumissions rejetées et sept hypothèses, toutes
+les portes sont franchies et mesurées, et le score est répliqué. Soumettre
+engage du TAO, ce que l'instruction debout exclut en phase de recherche : **je
+ne soumets rien et je ne pousse pas.** Les deux options honnêtes sont de
+soumettre ce candidat tel quel, en acceptant les 6 millièmes de marge sur une
+fonction de similarité que nous n'avons jamais confrontée au validateur, ou de
+dépenser 2 minutes de GPU sur une variante à 8 substitutions pour tripler cette
+marge, au risque que son score retombe.
