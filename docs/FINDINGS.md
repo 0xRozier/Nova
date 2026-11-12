@@ -2787,3 +2787,48 @@ v8, il faut le répliquer**, et mesurer sa PSH et son A3D, qui ne le sont pas
 
 En espérance, le candidat à 7 substitutions gagnerait **4,9 époques sur 6** à
 CDR3 = 18.
+
+## 37. Le lot v9 : répliquer, et tester si deux mouvements bon marché sont additifs
+
+22 séquences, ~33 min (`kaggle_v9.ipynb`, run neuf `v9`).
+
+| bras | n | rôle |
+|---|---|---|
+| v8 | 10 | **seconde mesure** des dix variantes à 8 substitutions |
+| v9 | 10 | **première mesure** des combinaisons à 9 substitutions |
+| candidat_7subs | 1 | quatrième mesure, témoin interne |
+| recontrol | 1 | le parent |
+
+### Pourquoi répliquer les dix et pas seulement les quatre meilleures
+
+Le §36 classe dix mouvements de charpente sur **une mesure chacun**, et c'est
+sur ce classement que repose la nuance au §15 (la charpente compte parfois :
+`FR217R→D` coûte 0,155). Avec σ = 0,014 par mesure, un classement d'écarts de
+0,005 entre les quatre premiers **ne veut rien dire**. Les dix repassent donc,
+ce qui donne deux mesures à chacun et rend le classement lisible — y compris
+l'écart de 0,155, qui lui est trop grand pour être du bruit mais mérite d'être
+confirmé.
+
+### Les variantes à 9 substitutions
+
+Les cinq mouvements ayant coûté moins de 0,01 au §36 sont combinés deux à deux :
+dix paires, **toutes** franchissant les portes et l'unicité.
+
+| | identité au parent | marge sous 0,95 |
+|---|---|---|
+| 7 substitutions | 0,944 | 0,006 |
+| 8 substitutions | 0,936 | 0,014 |
+| **9 substitutions** | **0,928** | **0,022** |
+
+La question est l'**additivité** : deux mouvements qui coûtent chacun moins de
+0,01 coûtent-ils moins de 0,02 ensemble ? Rien ne le garantit — le §36 vient
+justement de montrer qu'on ne peut pas raisonner sur la charpente sans mesurer.
+Si c'est additif, nous aurons un candidat à **0,022 de marge**, presque quatre
+fois celle du candidat actuel, pour le même score.
+
+### Ce qui ne change pas
+
+Le taux de reproductibilité reste 1 sur 182 (§36) : ce lot ne cherche pas un
+meilleur candidat, il qualifie celui que nous avons. Et aucune de ces variantes
+n'a de PSH ni d'A3D mesurées — le criblage des quatre meilleures v8 tourne, et
+celui des v9 devra suivre avant toute décision.
