@@ -2273,3 +2273,44 @@ de coût dans l'autre sens.
    moment de soumettre ; elle coûte du CPU, pas du GPU.
 4. **La queue des couples est lourde** : 8 couples ne couvrent que 32 % des
    époques, et la couverture plafonne vite. Les 68 % restants ne sont pas joués.
+
+## 30. Retrait : « nos portes refusent le milieu deux fois plus souvent » est faux
+
+J'ai rapporté il y a une heure, et commité, que nos portes déterministes
+refusent une substitution au centre du CDR3 deux fois plus souvent qu'à ses
+bords : 31/42 contre 18/42, Fisher p = 0,0075, sur deux graines indépendantes.
+
+**La mesure directe de ces portes le contredit.** En répétant 60 tentatives par
+bras et en comptant les causes de refus, sans la règle d'archive :
+
+| bras | acceptés par les portes déterministes |
+|---|---|
+| périphérie 2,3,13,14 | **56/60** |
+| milieu 7,8,9,10 | **52/60** |
+
+Et les causes sont les mêmes des deux côtés — un gène V hors cible après
+substitution de charpente, et deux fois une identité V à 81,6 contre un plancher
+de 82. Rien qui distingue le milieu.
+
+Donc **les 74 % contre 43 % ne viennent pas des portes.** Ils viennent d'ailleurs
+dans la boucle de génération — la règle d'archive, que ce contrôle exclut, ou
+des collisions entre variantes d'un même parent quand les positions sont figées
+et l'alphabet réduit à neuf résidus hydrophiles. C'est en cours de mesure.
+
+### Ce que j'ai mal fait
+
+J'ai calculé un Fisher sur deux nombres lus dans des journaux de génération, et
+j'ai nommé la cause (« nos propres portes ») sans l'avoir mesurée. Les deux
+nombres étaient justes ; l'explication était une supposition présentée comme un
+fait, et elle est fausse. Le p = 0,0075 porte sur un rendement de bout en bout,
+pas sur les portes.
+
+C'est la même faute que les §7ter, §12 et §21 : un chiffre réel, une cause
+devinée. La seule défense qui ait jamais marché ici est de mesurer le mécanisme
+séparément, ce que ce contrôle a fait — en une commande, et avant que
+l'affirmation ne serve à décider quoi que ce soit.
+
+**Ce qui reste établi** : le rendement de bout en bout du bras milieu est la
+moitié de celui de la périphérie, sur deux graines. **Ce qui ne l'est pas** : la
+raison. Et rien là-dedans ne dit quoi que ce soit sur la liaison, qui est ce que
+la session en cours mesure.
