@@ -2721,3 +2721,69 @@ taux estimé sur un seul lot est exactement l'erreur du §26.
 2. **Le taux de 1/155 tient-il ?** 27 tirages de plus ne le trancheront pas seuls,
    mais ils le resserrent, et un second tirage ≥ 0,772 dans ce lot le ferait
    passer de 1/155 à 2/182.
+
+## 36. Le lot v8 : la marge double sans rien coûter, et la charpente n'est pas neutre partout
+
+39 séquences, 58,8 min de GPU.
+
+### Les deux témoins
+
+| | avant | ici | écart |
+|---|---|---|---|
+| parent | 0,781 | 0,78333 | +0,002 |
+| **candidat à 7 substitutions** | 0,786 (2 mesures) | **0,77907** | −0,007 |
+
+La session est bonne, et le candidat tient sa valeur en **troisième mesure** :
+0,78312 / 0,78889 / 0,77907, moyenne **0,78369**, écart-type 0,0049.
+
+### Les dix variantes à 8 substitutions
+
+| mouvement | `design_iiptm` | contre le candidat de cette session |
+|---|---|---|
+| **FR210Q→K** | **0,78405** | +0,005 |
+| **FR320S→T** | 0,78354 | +0,004 |
+| FR213D→E | 0,78125 | +0,002 |
+| FR11Q→E | 0,77967 | +0,001 |
+| FR12Q→V | 0,77805 | −0,001 |
+| FR211Q→E | 0,76996 | −0,009 |
+| FR112I→V | 0,75742 | −0,022 |
+| FR123S→A | 0,74666 | −0,032 |
+| FR31E→D | 0,73301 | −0,046 |
+| FR217R→D | 0,62448 | **−0,155** |
+
+**4 sur 10 égalent ou dépassent le candidat**, pour une marge d'unicité
+**doublée** (0,014 contre 0,006). L'objectif du lot est atteint.
+
+### Ce que cela nuance du §15
+
+Le §15 posait que la charpente ne contacte pas la cible. **C'est vrai pour cinq
+mouvements sur dix et faux pour deux** : `FR217R→D` coûte 0,155 et `FR31E→D`
+0,046. Une position de charpente peut donc compter autant qu'une position de
+CDR3 — et rien ne le laissait prévoir avant la mesure. C'est la raison pour
+laquelle dix mouvements ont été mesurés plutôt qu'un seul choisi par
+raisonnement.
+
+### Le taux de reproductibilité se confirme, et il ne s'améliore pas
+
+Les 27 tirages frais : médiane 0,547, maximum **0,736**, **0 au-dessus de
+0,772**, 9 effondrées sur 27 (33 %).
+
+**Le taux passe de 1/155 à 1 sur 182.** Le §34 tenait sur un seul tirage
+exceptionnel ; 27 tirages de plus ne l'ont pas répété. La réponse à « saurons-
+nous reproduire ce résultat régulièrement » reste non, et se durcit.
+
+### L'état des deux candidats
+
+| | mesures | valeur | marge d'unicité |
+|---|---|---|---|
+| 7 substitutions | **3** | 0,78369 ± 0,005 | 0,006 |
+| 8 substitutions (FR210Q→K) | **1** | 0,78405 | **0,014** |
+
+Les deux valent ~0,784 ; la différence est l'information qu'on en a. Le §28 a
+montré qu'une mesure unique d'un maximum sélectionné redescend — c'est
+exactement le cas du v8, choisi comme le meilleur de dix. **Avant de préférer le
+v8, il faut le répliquer**, et mesurer sa PSH et son A3D, qui ne le sont pas
+(criblage lancé sur les quatre meilleures).
+
+En espérance, le candidat à 7 substitutions gagnerait **4,9 époques sur 6** à
+CDR3 = 18.
