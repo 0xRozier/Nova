@@ -2670,3 +2670,54 @@ Que le candidat soit le maximum de 155 ne le rend pas suspect : il a été
 0,782 et 0,786), ce qui est précisément le contrôle que le §28 exigeait et que
 le 0,770 du §26 avait échoué. Sa valeur est solide ; c'est sa **fréquence
 d'apparition** qui est faible.
+
+## 35. Le lot v8 : élargir la marge d'unicité sans toucher au CDR3
+
+La marge de 0,006 du §33 tient à la construction : 7 substitutions sur 125
+résidus est le minimum légal. L'élargir demande une substitution de plus, et la
+forme la plus conservatrice est de partir **du candidat lui-même** et d'ajouter
+**un seul** mouvement de charpente vers le consensus de l'archive — le CDR3 ne
+bouge pas d'un résidu, et la charpente ne contacte pas la cible (§15).
+
+| | identité au parent | marge sous 0,95 |
+|---|---|---|
+| candidat, 7 substitutions | 0,944 | 0,006 |
+| **variantes v8, 8 substitutions** | **0,936** | **0,014** |
+
+Onze mouvements franchissent les portes déterministes. La vérification
+d'unicité en a écarté un, et la façon dont elle l'a fait vaut d'être notée :
+**`FR330P->A` remonte l'identité à 0,952 au lieu de la baisser**, parce que ce
+mouvement ramenait vers le parent un résidu que le candidat avait déjà changé —
+donc une variante à 6 substitutions, pas 8, et un doublon. Ajouter une
+substitution n'éloigne pas toujours : il faut le mesurer séquence par séquence.
+**10 sur 11** passent toutes les portes, archive de 15 803 incluse.
+
+### Le lot
+
+39 séquences, ~1 h de GPU (`kaggle_v8.ipynb`, run neuf `v8`) :
+
+| bras | n | rôle |
+|---|---|---|
+| v8 | 10 | les variantes à 8 substitutions |
+| candidat_7subs | 1 | **le candidat lui-même, témoin interne** |
+| recontrol | 1 | le parent |
+| frais | 27 | nouvelles perturbations minimales |
+
+Le témoin interne n'est pas optionnel : sans lui, un 0,77 sur une variante v8 ne
+se distingue pas d'une session médiocre. Il a deux mesures antérieures (0,783 et
+0,789) et doit retomber près de 0,786.
+
+Les 27 tirages frais ne sont pas du remplissage. Ils portent l'échantillon du
+§34 de 155 à 182, et c'est sur ce taux — 1 sur 155 aujourd'hui — que repose la
+décision d'engager ou non une campagne de deux semaines de quota Kaggle. Un
+taux estimé sur un seul lot est exactement l'erreur du §26.
+
+### Ce que le lot tranchera
+
+1. **Une variante v8 garde-t-elle 0,786 ?** Si oui, nous aurons un candidat à
+   0,014 de marge au lieu de 0,006, pour le même score. Si toutes retombent vers
+   0,70, c'est que même un résidu de charpente compte, ce qui contredirait le
+   §15 et serait en soi un résultat.
+2. **Le taux de 1/155 tient-il ?** 27 tirages de plus ne le trancheront pas seuls,
+   mais ils le resserrent, et un second tirage ≥ 0,772 dans ce lot le ferait
+   passer de 1/155 à 2/182.
