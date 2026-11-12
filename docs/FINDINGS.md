@@ -2189,3 +2189,87 @@ d'effondrement, 3/6 époques) étaient tous les deux les plus favorables possibl
 au second tirage. **Un maximum et un taux sur un seul lot ne sont pas des
 résultats**, et la seule chose qui l'a montré ici est d'avoir écrit les
 prédictions avant de regarder.
+
+## 29. Le plan : le pré-calcul lève le goulot, et il faut tester là où c'est le plus fragile
+
+Le §28 a laissé la septième hypothèse debout mais insuffisante : il faudrait
+noter ~200 candidats pour 89 % de chance d'un ≥ 0,75, contre ~31 que l'époque
+permet. Ce chiffre de 31 vient d'une contrainte précise, et elle est
+contournable.
+
+### Ce qui change tout : l'époque impose un couple, et l'espace est énumérable
+
+Vérifié sur les 63 époques récentes : **chacune impose exactement un gène V**
+(une intersection non vide des gènes de toutes ses soumissions, dans les 63 cas)
+et une longueur de CDR3. Soit 47 couples distincts, dont 35 vus une seule fois —
+une queue lourde, mais une tête concentrée.
+
+**Donc rien n'oblige à noter dans la fenêtre de 72 minutes.** On peut pré-noter
+des candidats par couple, hors époque, et n'avoir qu'à soumettre le meilleur
+déjà mesuré quand le couple revient. Le plafond de 31 candidats était un
+artefact de la notation en direct.
+
+| candidats par couple | 31 | 60 | 100 | 150 |
+|---|---|---|---|---|
+| IGHV3-74 / L=18 (5 époques) | 46 % | 69 % | **86 %** | 95 % |
+| IGHV3-23 / L=15 (3 époques) | 47 % | 71 % | 87 % | 95 % |
+| IGHV3-23 / L=7 (2 époques) | 88 % | 98 % | 100 % | 100 % |
+
+### Le coût du pré-calcul, sur les 8 couples les plus fréquents
+
+| candidats/couple | GPU total | semaines Kaggle (30 h) | époques couvertes | part des époques gagnées |
+|---|---|---|---|---|
+| 31 | 6,2 h | 0,2 | 32 % | 13,7 % |
+| 60 | 12,0 h | 0,4 | 32 % | 20,3 % |
+| **100** | **20,0 h** | **0,7** | **32 %** | **25,4 %** |
+
+C'est à la portée du quota Kaggle, sans louer un seul GPU.
+
+### Les quatre tests, dans cet ordre, et pourquoi cet ordre
+
+**1. Le test de position** (déjà généré, `inputs/pos18_periph.csv` et
+`pos18_milieu.csv`, 22 variantes, **~35 min**). Dernier levier non testé sur ce
+que nous fabriquons. Si la périphérie préserve et le milieu détruit, tout le
+reste du plan devient 2 à 3 fois plus efficace, parce que le générateur cesse de
+tirer au hasard.
+
+**2. IGHV3-23 / L=7** (~30 variantes + parents, **~1 h**). C'est le couple qui
+affiche 88 %, et c'est aussi **celui dont la justification est la plus faible** :
+à L=7 il ne reste que 2 positions libres dans le CDR3, donc **5 des 7
+substitutions imposées tombent dans la charpente**. La perturbation y est de
+nature différente de tout ce que nous avons mesuré, et la distribution de coût
+du §28 (mesurée à L=18, 4 substitutions dans le CDR3) n'a aucune raison de s'y
+transporter. Tester d'abord là où le chiffre est le plus beau et le moins fondé.
+
+**3. IGHV3-74 / L=21** (~40 variantes, **~1 h**). L'alternative riche en
+liberté : 16 positions libres, 4368 combinaisons, ~10⁸ variantes possibles,
+2 substitutions de charpente seulement. Vérifie le transport de la distribution
+de coût dans l'autre sens.
+
+**4. La campagne de pré-calcul**, seulement si 2 ou 3 confirment le transport :
+100 candidats sur les 8 meilleurs couples, 20 h de GPU étalées.
+
+### Ce qui a été fermé aujourd'hui, sans GPU
+
+- **Les longueurs L=5 et L=6 sont infaisables** : le nombre de substitutions que
+  la règle impose dans le CDR3 dépasse le nombre de positions libres.
+- **Prédire l'effondrement depuis la séquence seule : trop faible pour servir.**
+  Sur 122 variantes à L=18 (36 effondrées), validation croisée groupée par
+  parent : AUC 0,610 en régression logistique, 0,579 en forêt aléatoire, contre
+  **0,516 pour le témoin à étiquettes mélangées**. Il y a donc un signal
+  au-dessus du hasard, mais 0,61 ne permet pas d'écarter un candidat qui coûte
+  1,5 min, et cela ne repose que sur 9 parents indépendants. À reprendre vers
+  n ≈ 300, pas avant. Les 24 % de budget perdus en effondrements restent perdus.
+
+### Les réserves, nommées
+
+1. **Tous les P(gain) héritent d'une queue estimée sur 82 tirages**, où seuls
+   2 ont coûté moins de 0,02. Les intervalles sont larges et le §28 a déjà montré
+   qu'un seul lot surestime.
+2. **Le transport de la distribution de coût à une autre longueur n'est pas
+   vérifié** — c'est précisément l'objet des tests 2 et 3.
+3. **L'archive grossit.** Un candidat pré-noté peut devenir doublon si
+   quelqu'un soumet près de lui. La vérification d'unicité doit être refaite au
+   moment de soumettre ; elle coûte du CPU, pas du GPU.
+4. **La queue des couples est lourde** : 8 couples ne couvrent que 32 % des
+   époques, et la couverture plafonne vite. Les 68 % restants ne sont pas joués.
