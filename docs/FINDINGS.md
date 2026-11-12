@@ -2382,3 +2382,62 @@ mieux au milieu (211/240 contre 206/240). Il ne reste que la règle d'archive,
 dont la mesure tourne encore. Le fait brut — rendement de bout en bout deux fois
 plus faible au milieu — reste établi, sa cause reste inconnue, et le présent
 §31 montre qu'elle n'a aucun rapport avec la liaison.
+
+## 32. Les deux hypothèses du §31, testées gratuitement : l'une morte, l'autre confondue
+
+### 1. Les positions 4,5,6,11,12 ne causent pas l'effondrement — l'inverse, même
+
+Testé sur les 82 variantes à positions aléatoires déjà mesurées, en un seul test
+sur le groupement que le §31 avait énoncé d'avance :
+
+| positions suspectes touchées | n | effondrées |
+|---|---|---|
+| **aucune** | 8 | **3 = 38 %** |
+| au moins une | 74 | 15 = 20 % |
+| | | Fisher p = 0,364 |
+
+Aucune association, et la tendance va dans le sens contraire de l'hypothèse.
+**Piste morte, pour zéro minute de GPU** — là où j'allais proposer une session
+entière pour la tester.
+
+### 2. Le 0/22 est confondu avec la session
+
+| session | effondrées (positions aléatoires, 4 substitutions, L=18) |
+|---|---|
+| tail18 | 4/37 = 11 % |
+| tail18b | 14/45 = 31 % |
+| pos18 (positions imposées) | **0/22 = 0 %** |
+| | **χ² d'homogénéité : p = 0,0029** |
+
+**Le taux d'effondrement n'est pas stable d'une session à l'autre.** Le 0/22 du
+§31 ne peut donc pas être attribué aux positions imposées : les deux
+explications — mode de génération et session — sont inséparables dans les
+données existantes.
+
+Et cela a une conséquence qui dépasse la question : **les taux d'effondrement
+qui servent au §29 sont instables**, donc les probabilités de gain par époque
+qu'ils alimentent sont plus incertaines que leurs intervalles ne le disaient.
+Ces intervalles supposaient un taux unique.
+
+### Ce que le prochain lot doit faire, et c'est la seule façon de trancher
+
+Les deux modes de génération **dans la même session**, une seule variable :
+
+- bras **aléatoire** : positions tirées dans 2–14, 4 substitutions ;
+- bras **imposé** : positions 2,3,13,14, 4 substitutions ;
+- mêmes 6 parents, même chaîne, un parent en re-contrôle.
+
+Plus les **3 meilleures du §31 en réplicats** (0,783 / 0,757 / 0,735), parce
+qu'un maximum non répliqué ne vaut rien et que le §28 l'a déjà montré sur le
+0,770 devenu 0,756.
+
+Prédictions, écrites avant le lot :
+
+1. si les positions imposées suppriment réellement l'effondrement : bras imposé
+   ≈ 0 %, bras aléatoire ≈ 20 %, et un écart significatif ;
+2. si c'était un effet de session : les deux bras au même niveau, quel que soit
+   ce niveau — et alors le 0/22 était du bruit et 22 % du budget GPU restent
+   perdus ;
+3. le 0,783 **baisse** d'environ 0,015 (la baisse médiane des quatre re-mesures
+   du §28) et atterrit vers 0,768. S'il se maintient au-dessus de 0,78, c'est le
+   premier candidat soumissible sérieux de toute l'enquête.
