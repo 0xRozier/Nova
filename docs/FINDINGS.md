@@ -2032,3 +2032,58 @@ tombe de moitié et les probabilités ci-dessus avec lui.
 Première hypothèse qui survit à sa mesure. Elle reste à confirmer sur un second
 tirage indépendant — un maximum sur 37 n'est pas une capacité — et rien ne
 justifie encore d'engager du TAO.
+
+## 27. Le second tirage : prédictions enregistrées AVANT de le lancer
+
+Un maximum sur 37 n'est pas une capacité, et l'anomalie du taux d'effondrement
+(§26) n'est pas expliquée. Le second tirage est donc un vrai test, et il ne vaut
+que si les prédictions sont écrites d'abord. Elles le sont ici.
+
+### Les valeurs groupées, qui servent de référence
+
+Tout le bras à 4 substitutions, CDR3 = 18, graines 0 et 42 confondues :
+
+| | | IC95 |
+|---|---|---|
+| effondrées (< 0,30) | 8/45 = **17,8 %** | 8,0–32,1 % |
+| ≥ 0,72 | 4/45 = 8,9 % | 2,5–21,2 % |
+| ≥ 0,75 | 1/45 = **2,2 %** | 0,1–11,8 % |
+
+L'anomalie du §26 vue de près : 4/8 (graine 0) contre 4/37 (graine 42), Fisher
+p = 0,024, **mais sur 8 observations, et c'est un test parmi plusieurs lancés
+sans correction**. Les intervalles se chevauchent (15,7–84,3 % contre
+3,0–25,4 %). Signal fragile ; pour planifier, la valeur groupée.
+
+Le parent n'explique pas la différence : dans le lot de 37 les effondrements
+sont répartis sur trois parents (1, 2 et 1), et dans celui de 8 il n'y avait que
+1 à 2 variantes par parent, donc des taux par parent sans contenu.
+
+### Prédictions, sur 40 nouvelles variantes (graine 1234, mêmes 6 parents)
+
+1. **effondrées : 7 ± 5** (17,8 % de 40). Au-delà de 14, le taux de 11 % était la
+   chance et les probabilités du §26 tombent de moitié. En dessous de 3, c'est le
+   50 % de la graine 0 qui était la chance.
+2. **≥ 0,72 : 3 ou 4** (8,9 %). Zéro serait un désaveu net.
+3. **≥ 0,75 : 1**, et donc **0 ou 1 est compatible** — c'est la limite de ce
+   tirage, qui ne peut pas départager 2,2 % de 0,5 %. Une seconde variante
+   ≥ 0,75 confirmerait que la queue est réelle ; aucune ne la réfuterait pas.
+4. **maximum attendu : 0,72 à 0,77.** Un maximum au-dessus de 0,78 serait une
+   surprise à ne pas croire sans réplicat.
+
+### Les quatre meilleures du §26 repassent dans le lot
+
+C'est l'autre moitié du test, et c'est celle qui décide d'une soumission
+éventuelle. Les survivantes bougent de ±0,055 d'un tirage à l'autre (§26), donc
+**notre 0,770 pourrait être noté 0,72 par le validateur**, qui ne le note qu'une
+fois. Les quatre variantes ≥ 0,72 (0,770 / 0,737 / 0,728 / 0,725) sont donc
+re-mesurées ici : deux points chacune.
+
+Si 0,770 re-note au-dessus de 0,75, c'est un candidat. S'il re-note vers 0,72,
+alors ce que nous avons n'est pas une séquence à 0,770 mais une séquence dont
+l'espérance est plus basse, et le 3/6 époques du §26 est un artefact du
+maximum.
+
+**Prédiction : les quatre perdent en moyenne, par régression vers la moyenne —
+elles ont été choisies pour être les plus hautes de 37.** Un maximum sélectionné
+re-mesuré redescend presque toujours. Si les quatre tiennent leur valeur, c'est
+que la variance de ±0,055 du §26 était surestimée sur trois points.
