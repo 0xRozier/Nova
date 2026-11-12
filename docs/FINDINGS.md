@@ -1848,3 +1848,88 @@ vouloir dire que substituer au centre de la boucle casse plus souvent une porte
 (cystéines canoniques, marqueurs VHH) — mais la cause exacte des refus n'a pas
 été capturée dans ce lancement, donc la seule chose établie est la différence de
 rendement. À vérifier avant d'en tirer quoi que ce soit.
+
+## 25. Bilan de la nuit du 11 au 12 novembre
+
+Quatre commits, aucune dépense, aucun GPU loué, aucune soumission, aucun
+lancement Kaggle.
+
+### Ce qui a été mesuré
+
+1. **Le mécanisme de l'effondrement est identifié** (§23). En cherchant le plus
+   grand trou de chaque distribution rapporté à son étendue : `design_iiptm`
+   38 % (zéro variante entre 0,30 et 0,45), `interaction_pae` 34 %,
+   `min_design_to_target_pae` 28 % — mais `design_ptm` seulement 8 %, un
+   continuum régulier de 0,711 à 0,827. Donc **le repliement se dégrade
+   continûment, l'interface s'effondre discontinûment**, et le repliement ne
+   rate jamais (un nanobody déplié donnerait 0,3–0,4). C'est la lecture du §11
+   obtenue par un chemin indépendant : sur des séquences perturbées au lieu de
+   designs BoltzGen.
+2. **Et ce n'est pas un criblage**, ce que la section dit explicitement : ces
+   métriques sortent du même tirage que le score, donc un seuil n'économise
+   rien ; la séparation parfaite tient à 0,004 point sur un continuum ; et une
+   corrélation entre une grandeur continue et une discontinue mesure l'ordre,
+   pas un mécanisme.
+3. **Le dispositif de position existe enfin** (§24). `--cdr3-positions` impose
+   l'ensemble des positions au lieu de le tirer, et refuse nommément quatre
+   façons de se tromper — tête encodée par V, queue encodée par J, moins que le
+   minimum légal, position répétée — chacune vérifiée.
+
+### Ce qui a échoué, et pourquoi
+
+- **La génération a rendu 37 variantes sur 48 demandées**, et les deux bras de
+  position 13 et 9 sur 18 : beaucoup de candidats sont refusés par nos propres
+  portes déterministes. Le rendement suffit ici, mais il dit qu'un générateur
+  qui tire au hasard travaille contre les portes.
+- **Un redémarrage du processus de session** vers 21 h 40 a interrompu une
+  suppression de déclencheur en attente d'approbation. Sans conséquence :
+  fichiers et commits vérifiés contre `origin`, et le déclencheur était à tir
+  unique.
+- **Deux travaux faits plus tôt que leur réveil**, donc deux réveils ont trouvé
+  l'ouvrage fait. Pas une perte, mais la preuve qu'une tâche programmée doit
+  commencer par constater l'état plutôt que par refaire.
+
+### Les lots prêts à lancer
+
+Pour les deux : *Accelerator* **GPU T4 x2**, *Internet* **On**, puis
+*Save Version → Save & Run All (Commit)*.
+
+| lot | n | GPU | état |
+|---|---|---|---|
+| **`kaggle_tail18.ipynb`** | 44 | **~1 h 10** | carnet vérifié, prêt |
+| position (périphérie 13 + milieu 9) | 22 + parents | ~40 min | lots générés, carnet à construire |
+
+Le premier passe d'abord : il porte les deux questions qui décident de la suite.
+
+### Ce que le lot de queue haute tranchera
+
+37 variantes à 4 substitutions, la seule bande dont les survivantes atteignent
+0,707. Lecture **non paramétrique décidée d'avance** : combien dépassent 0,72 /
+0,74 / 0,75, et le maximum observé. Pas d'ajustement de loi — le §12bis a déjà
+produit un 1,042 sur une grandeur bornée par 1.
+
+- **Si une vingtaine de tirages ne dépasse pas 0,74** : le volume de sélection
+  n'explique pas l'écart, et la septième hypothèse tombe comme les six autres.
+- **Si la queue monte vers 0,777** : tout le sujet devient *un GPU dans les 67
+  minutes de l'époque*, et il faudra chiffrer combien de candidats noter par
+  époque pour que le maximum y arrive.
+
+### Et ce que les six réplicats trancheront, qui compte davantage
+
+Trois survivantes (0,718 / 0,711 / 0,710) et trois effondrées (0,103 / 0,112 /
+0,115) repassent sous un nom de run neuf.
+
+- **Une effondrée re-note haut** → l'effondrement est du tirage, pas de la
+  séquence. Alors le « 20 sur 20 en dessous du parent » du §19 est en partie un
+  artefact, et la sélection n'a pas besoin de mieux concevoir : elle a besoin de
+  **re-noter**. Cela changerait la lecture de tout ce qui précède.
+- **Elle s'effondre encore** → c'est la séquence, et la moitié de ce que produit
+  la perturbation est structurellement perdue.
+
+### À quoi s'en tenir
+
+Sept hypothèses, **six réfutées par la mesure** : le GPU comme puissance, les
+donneurs, la distance à l'archive, la surface de conception, la recombinaison,
+et la distance de perturbation. La septième — le volume de sélection — est la
+seule qui reste, et elle peut tomber comme les autres. Rien n'est acquis avant
+ces 44 mesures, et aucun TAO ne doit être engagé.
