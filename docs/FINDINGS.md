@@ -2058,7 +2058,13 @@ Le parent n'explique pas la différence : dans le lot de 37 les effondrements
 sont répartis sur trois parents (1, 2 et 1), et dans celui de 8 il n'y avait que
 1 à 2 variantes par parent, donc des taux par parent sans contenu.
 
-### Prédictions, sur 40 nouvelles variantes (graine 1234, mêmes 6 parents)
+### Prédictions, sur les nouvelles variantes (graine 1234, mêmes 6 parents)
+
+La génération a rendu **45** variantes, pas 40. Les prédictions ci-dessous
+étaient écrites en comptes sur 40 ; elles sont rapportées à 45 **au même taux**,
+sans rien changer d'autre — ce sont les taux groupés qui sont la prédiction, pas
+les comptes. Sur 45 : effondrées **8 ± 5**, ≥ 0,72 : **4**, ≥ 0,75 : **1**.
+Zéro chevauchement de séquences avec le premier tirage, vérifié.
 
 1. **effondrées : 7 ± 5** (17,8 % de 40). Au-delà de 14, le taux de 11 % était la
    chance et les probabilités du §26 tombent de moitié. En dessous de 3, c'est le
@@ -2087,3 +2093,12 @@ maximum.
 elles ont été choisies pour être les plus hautes de 37.** Un maximum sélectionné
 re-mesuré redescend presque toujours. Si les quatre tiennent leur valeur, c'est
 que la variance de ±0,055 du §26 était surestimée sur trois points.
+
+### Le lot
+
+`kaggle_tail18b.ipynb` — **50 séquences, ~1 h 15 de GPU** : 45 nouvelles
+variantes, les 4 meilleures du §26 re-mesurées, 1 parent en témoin. Nom de run
+neuf (`tail18b_s4`), vérifié contre les trois runs déjà consommés, sans quoi
+BoltzGen rendrait les anciens résultats au lieu de recalculer — ce qui
+annulerait précisément les 4 re-mesures. *Accelerator* **GPU T4 x2**,
+*Internet* **On**.
