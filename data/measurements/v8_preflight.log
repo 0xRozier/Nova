@@ -1,0 +1,14 @@
+epoch gates: V IGHV3-74, CDR3 18
+
+/home/user/venv-tnp/bin/TNP --file /home/user/Nova/data/preflight/run/fold1/seqs.fasta --ncores 4 --output /home/user/Nova/data/preflight/run/fold1/TNP_output
+TNP exit 0; log -> /home/user/Nova/data/preflight/run/fold1/tnp_stdout.log
+/home/user/venv-tnp/bin/TNP --file /home/user/Nova/data/preflight/run/fold2/seqs.fasta --ncores 4 --output /home/user/Nova/data/preflight/run/fold2/TNP_output
+TNP exit 0; log -> /home/user/Nova/data/preflight/run/fold2/tnp_stdout.log
+/home/user/venv-tnp/bin/TNP --file /home/user/Nova/data/preflight/run/fold3/seqs.fasta --ncores 4 --output /home/user/Nova/data/preflight/run/fold3/TNP_output
+TNP exit 0; log -> /home/user/Nova/data/preflight/run/fold3/tnp_stdout.log
+QQQLVESGGGLIQPGGSLRLSCSASGFTFSSYSM... deterministic gates pass; PSH 92.3 over 3 folds -> 76% chance of refusal (high)
+QQQLVESGGGLIQPGGSLRLSCSASGFTFSSYSM... deterministic gates pass; PSH 97.0 over 3 folds -> 96% chance of refusal (high)
+QQQLVESGGGLIQPGGSLRLSCSASGFTFSSYSM... deterministic gates pass; PSH 92.8 over 3 folds -> 79% chance of refusal (high)
+EQQLVESGGGLIQPGGSLRLSCSASGFTFSSYSM... deterministic gates pass; PSH 98.5 over 3 folds -> 98% chance of refusal (high)
+
+saved to /home/user/Nova/data/preflight/preflight.csv

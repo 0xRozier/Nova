@@ -2896,3 +2896,29 @@ montrer, sur les v8, ce que vaut un classement à une mesure.
 Aucune PSH ni A3D sur les v8 et les v9. Le criblage des quatre meilleures v8 a
 été lancé et doit être relevé ; celui des v9 reste à faire. Sans lui, aucun de
 ces candidats n'est soumissible, quel que soit son `design_iiptm`.
+
+### Le criblage des v8 : la charpente est gratuite pour la liaison, pas pour la PSH
+
+| variante | `design_iiptm` (2 mesures) | PSH | A3D moy / pic | soumissible |
+|---|---|---|---|---|
+| **FR213D→E** | **0,78392** | **92,8** | −0,793 / 1,298 | **oui** |
+| **FR210Q→K** | 0,77971 | **92,3** | −0,784 / 1,231 | **oui** |
+| FR320S→T | 0,77811 | 97,0 | −0,827 / 1,302 | non, PSH |
+| FR11Q→E | 0,77919 | 98,5 | −0,855 / 1,228 | non, PSH |
+
+**2 sur 4 survivent**, et le résultat important n'est pas le compte : le
+candidat à 7 substitutions a une PSH de **88,9**, et **un seul** mouvement de
+charpente la fait monter à **92–98**.
+
+Le §38 avait conclu que neuf mouvements de charpente sur dix sont gratuits. Ils
+le sont **pour la liaison**. Ils ne le sont pas pour la développabilité : ajouter
+un résidu de charpente coûte 3 à 10 points de PSH, et deux des quatre testés
+franchissent la rupture de 96. L'arbitrage « élargir la marge d'unicité ne coûte
+rien » du §35 est donc faux tel qu'il était écrit — **il ne coûte rien en
+liaison, et il coûte en PSH.**
+
+Conséquence directe pour les v9, à 9 substitutions : si un mouvement coûte
+3 à 10 points de PSH, deux pourraient en coûter le double, et partir de 88,9
+laisse peu de place avant 96. **Le criblage des v9 décidera donc s'il existe
+seulement un candidat à 0,022 de marge**, et il est le premier travail de la
+nuit.
