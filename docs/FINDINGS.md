@@ -2516,3 +2516,39 @@ soumissible dont l'espérance bat le champ. Soumettre engage du TAO, et
 l'instruction debout depuis le début est qu'on n'en engage pas pendant la phase
 de recherche. Je ne soumets rien et je ne pousse pas : je donnerai les chiffres,
 la décision est à l'utilisateur.
+
+### Le criblage du candidat (§33)
+
+| `design_iiptm` | PSH | A3D moyenne | A3D pic | soumissible |
+|---|---|---|---|---|
+| **0,78889** | **88,9** | **−0,840** | **1,235** | **oui** |
+| 0,74191 | 90,4 | −0,788 | 1,262 | oui |
+| 0,70373 | 95,8 | −0,827 | 1,161 | oui |
+| 0,74261 | 101,0 | −0,778 | 1,247 | non, PSH |
+| 0,73982 | 110,4 | −0,737 | 1,238 | non, PSH |
+| 0,73583 | 106,5 | −0,988 | 1,205 | non, PSH |
+
+**3 sur 6**, conforme au une-sur-trois du §17. Le candidat passe avec de la
+marge sur les trois portes : PSH 88,9 contre une rupture mesurée à 96, A3D
+−0,840 et 1,235 contre des plafonds de −0,680 et 1,580.
+
+Une mise en garde sur un chiffre que le journal de preflight affiche : il
+annonce « 49 % de risque de refus » à PSH 88,9. Ce n'est pas un signal PSH, mais
+le **taux de base des CDR3 longs**, dont 52 % seulement des soumissions sont
+acceptées toutes causes confondues (§3ter). Le discriminant mesuré est la
+rupture à 96.
+
+État du candidat, porte par porte :
+
+| | |
+|---|---|
+| `design_iiptm` | 0,786 ± 0,010, deux mesures, deux sessions |
+| PSH | 88,9 ✓ |
+| Aggrescan3D | −0,840 / 1,235 ✓ |
+| portes déterministes (gène V, longueur, cystéines, marqueurs, identité germinale) | ✓ |
+| **unicité contre l'archive** | **vérification en cours** |
+
+L'unicité est la seule porte qui ait pu changer depuis la génération, et c'est
+exactement la réserve 3 du §29 : l'archive grossit, un candidat généré il y a
+quelques jours peut être devenu doublon de ce que quelqu'un a soumis depuis. Un
+doublon est un rejet certain, donc cette vérification précède toute décision.
