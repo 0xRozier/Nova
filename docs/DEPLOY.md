@@ -13,13 +13,21 @@
 
 ## Jamais exécuté — à découvrir en production
 
-| Élément | Risque |
+**Cette liste disait trois choses fausses jusqu'au 13 novembre.** La campagne
+des époques 26172-26185 a bel et bien engagé 11 pointeurs sur la chaîne
+(`publish_metadata_extrinsic`, `success: True` dans `journal_final.jsonl`) et
+publié 11 fichiers sur GitHub. Ces deux chemins sont éprouvés en production ;
+ce qui n'a jamais tourné est plus court, et c'est précisément ce qui décide le
+rang.
+
+| Élément | État |
 |---|---|
-| `set_commitment` sur la chaîne | la chaîne limite la fréquence des engagements ; l'erreur est désormais journalisée au lieu de tuer la boucle |
-| le PUT GitHub | un échec est désormais sans conséquence : le fichier part AVANT l'engagement, donc un échec laisse un orphelin inoffensif et non un pointeur mort |
+| `set_commitment` sur la chaîne | **éprouvé** : 11 engagements réussis en production. La chaîne limite la fréquence ; l'erreur est journalisée au lieu de tuer la boucle |
+| le PUT GitHub | **éprouvé** : 11 fichiers publiés, 1 échec en 404 à l'époque 26172. Le fichier part désormais AVANT l'engagement, donc un échec laisse un orphelin inoffensif et non un pointeur mort |
+| le budget temps réel d'une époque | **mesuré** le 13 novembre en essai à blanc : 12,6 min jusqu'à BoltzGen (génération 4 min, PSH 7 min, archive et développabilité 1,5 min), 29 min de marge restantes |
+| **`boltzgen_rank` dans le mineur** | **jamais exécuté, faute de carte.** C'est le bloquant : sans lui le mineur abandonne chaque époque, par choix, car se rabattre sur le modèle de substitution vaut 14 % de victoires contre 48 %. La structure (8AOK.cif) et la MSA sont dans le clone amont ; il manque le paquet BoltzGen, ses poids (~6 Go) et un GPU |
 | la recherche d'UID depuis un portefeuille | testé uniquement avec `--uid` en dur |
-| `boltzgen_rank` dans le mineur | le chemin GPU du mineur n'a jamais tourné faute de carte |
-| le budget temps réel d'une époque | estimé à ~20 min pour 8 candidats, jamais mesuré d'un bout à l'autre |
+| **le taux de victoire, depuis la réparation de la porte PSH** | les 14 à 29 % ont été mesurés sur des candidats choisis par une porte fausse. Le chiffre est à refaire avant d'engager quoi que ce soit |
 
 ## Le dépôt GitHub des soumissions
 
