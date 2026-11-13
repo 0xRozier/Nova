@@ -7,7 +7,8 @@ median PSH of ~98, well above the validator's PSH <= 89 threshold.
 
 Three strategies behind a common interface:
 
-  ChimericGenerator  -- uniform random (baseline, reproduces old behaviour)
+  ChimericGenerator     -- uniform random (baseline, reproduces old behaviour)
+  HydrophilicGenerator  -- the same, biased against the residues PSH counts
   PSSMGenerator      -- position-specific frequencies from archive CDR3s
   IgLMGenerator      -- language model infilling (requires torch + iglm)
 
@@ -25,6 +26,13 @@ from collections import Counter
 
 AAS = "ACDEFGHIKLMNPQRSTVWY"
 J_TAIL = 4
+
+# Kyte-Doolittle hydropathy: positive is hydrophobic. This is the scale TNP's
+# PSH is built on, which is why it is the one to bias against.
+HYDROPATHY = {"A": 1.8, "R": -4.5, "N": -3.5, "D": -3.5, "C": 2.5, "Q": -3.5,
+              "E": -3.5, "G": -0.4, "H": -3.2, "I": 4.5, "L": 3.8, "K": -3.9,
+              "M": 1.9, "F": 2.8, "P": -1.6, "S": -0.8, "T": -0.7, "W": -0.9,
+              "Y": -1.3, "V": 4.2}
 
 
 # ---------------------------------------------------------------------------
@@ -45,6 +53,88 @@ class ChimericGenerator:
         for pos in rng.sample(list(mutable), min(n_mut, len(mutable))):
             out[pos] = rng.choice(AAS)
         return "".join(out)
+
+
+# ---------------------------------------------------------------------------
+# Hydrophilic: the chimeric mutation, aimed at the gate that refuses us
+# ---------------------------------------------------------------------------
+
+class HydrophilicGenerator:
+    """Chimeric mutations, but spent where PSH is made and away from it.
+
+    MEASURED, AND IT DOES NOT WORK. Kept so the idea is not had twice.
+
+    The number it exists to move: at CDR3 18 a fresh chimeric candidate reads a
+    median PSH of 100.6 against the accepted field's 83.5, and only 15 % come
+    in under the validator's 89
+    (results/psh_fresh_candidates_by_length.csv). The README has blamed the
+    uniform mutation alphabet for that since this file was written -- "40 % of
+    AAs are hydrophobic while natural nanobody CDR3s are enriched in polar
+    residues" -- so this biases both halves of the mutation towards polar.
+
+    On the sequence it does exactly that: median CDR3 hydropathy drops by more
+    than 2 units (tests/test_generators.py). On the quantity that decides the
+    epoch it does almost nothing. 100 candidates per arm at CDR3 18, same
+    donors, same seed, profiled on the validator's own install
+    (results/psh_generator_ab_cdr3_18.csv):
+
+        chimeric      median PSH 100.2    14/100 at or under 89
+        hydrophilic   median PSH  97.4    13/100 at or under 89
+
+    2.8 points of median (Mann-Whitney p = 0.064) and no change at all in the
+    rate that matters (Fisher p = 1.0). PSH is a *patch* score on a predicted
+    structure: what counts is which residues end up exposed and next to each
+    other, not the CDR3's summed hydropathy. The same conclusion comes out of
+    trying to predict PSH from the sequence at all -- within a fixed CDR3
+    length, a LightGBM on the 147 region features reaches Spearman 0.25-0.31,
+    and plain summed CDR hydropathy 0.10-0.22.
+
+    So the lever for a long CDR3 is not a cleverer alphabet, it is measuring
+    more candidates and taking the tail: the best of these 100 reads 74.7.
+    scripts.mine sizes its pool for that. If this is revisited, the thing to
+    bias is exposure, which needs the structure, which is the 3.5 s we are
+    trying to avoid.
+
+    Two changes, both on the same axis:
+
+      - the positions to mutate are drawn towards the donor's most hydrophobic
+        residues, since those are the ones contributing to the patch;
+      - the replacement is drawn away from hydrophobic residues.
+
+    Both are soft, exp(+-beta * hydropathy), because a CDR3 of nothing but
+    charged residues is not a binder: `beta` is the one knob and 0 reproduces
+    ChimericGenerator exactly. The J tail stays untouched, as everywhere else
+    here -- mutating it cost 285 candidates in 800 (README, "the end of the
+    CDR3 is coded by the J gene").
+    """
+
+    def __init__(self, beta: float = 0.4):
+        self.beta = beta
+        self._weights = [2.718281828459045 ** (-beta * HYDROPATHY[a]) for a in AAS]
+
+    def generate_cdr3(self, donor_cdr3: str, cdr3_length: int,
+                      j_tail: int, rng: random.Random,
+                      framework: dict | None = None) -> str:
+        out = list(donor_cdr3[:cdr3_length].ljust(cdr3_length, "G"))
+        mutable = list(range(max(len(out) - j_tail, 0)))
+        if not mutable:
+            return "".join(out)
+        n_mut = rng.randint(2, 4)
+        positions = self._pick_positions(out, mutable, min(n_mut, len(mutable)), rng)
+        for pos in positions:
+            out[pos] = rng.choices(AAS, weights=self._weights, k=1)[0]
+        return "".join(out)
+
+    def _pick_positions(self, residues, mutable, n, rng):
+        """Without replacement, favouring the hydrophobic positions."""
+        pool = list(mutable)
+        chosen = []
+        for _ in range(n):
+            weights = [2.718281828459045 ** (self.beta * HYDROPATHY.get(residues[p], 0.0))
+                       for p in pool]
+            pick = rng.choices(range(len(pool)), weights=weights, k=1)[0]
+            chosen.append(pool.pop(pick))
+        return chosen
 
 
 # ---------------------------------------------------------------------------
@@ -338,7 +428,7 @@ class PSSMDeNovoGenerator(PSSMGenerator):
         return self.generate_de_novo(donor_cdr3, cdr3_length, j_tail, rng)
 
 
-GENERATORS = {"chimeric", "pssm", "pssm_denovo", "iglm"}
+GENERATORS = {"chimeric", "hydrophilic", "pssm", "pssm_denovo", "iglm"}
 
 
 def make_generator(name: str, cdr3_sequences: list[str] | None = None,
@@ -346,6 +436,8 @@ def make_generator(name: str, cdr3_sequences: list[str] | None = None,
     """Build a generator by name.  *cdr3_sequences* is required for ``pssm``."""
     if name == "chimeric":
         return ChimericGenerator()
+    if name == "hydrophilic":
+        return HydrophilicGenerator()
     if name == "pssm":
         if not cdr3_sequences:
             raise ValueError("PSSMGenerator requires cdr3_sequences from the archive")

@@ -3,7 +3,10 @@
 ## Testé de bout en bout, ici
 
 - génération, contrôle de validité hors ligne, parité avec le validateur (`pytest tests`)
-- porte de développabilité complète : TNP **et** Aggrescan3D, contrôle positif propre
+- porte de développabilité complète : TNP **et** Aggrescan3D, contrôle positif
+  propre, sur l'installation que le validateur fait tourner — les 36
+  soumissions qu'il a acceptées à l'époque 26174 lisent toutes sous son seuil
+  de 89 (`scripts.doctor`, `scripts.preflight --calibrate`)
 - classement BoltzGen, et son accord avec les validateurs (86 % sur 118 paires)
 - chiffrement timelock, format de fichier, et le verrou lui-même (drand HTTP 425)
 - la boucle du mineur en essai à blanc, portes comprises
@@ -13,16 +16,19 @@
 | Élément | Risque |
 |---|---|
 | `set_commitment` sur la chaîne | la chaîne limite la fréquence des engagements ; l'erreur est désormais journalisée au lieu de tuer la boucle |
-| le PUT GitHub | un échec après l'engagement laisse un pointeur orphelin et l'époque est perdue |
+| le PUT GitHub | un échec est désormais sans conséquence : le fichier part AVANT l'engagement, donc un échec laisse un orphelin inoffensif et non un pointeur mort |
 | la recherche d'UID depuis un portefeuille | testé uniquement avec `--uid` en dur |
 | `boltzgen_rank` dans le mineur | le chemin GPU du mineur n'a jamais tourné faute de carte |
 | le budget temps réel d'une époque | estimé à ~20 min pour 8 candidats, jamais mesuré d'un bout à l'autre |
 
 ## Le dépôt GitHub des soumissions
 
-**Rien n'a été créé.** Le `0xRozier/nova-submissions` visible dans les journaux
-d'essai est un nom inventé pour l'essai à blanc : sans `--live`, le mineur
-s'arrête avant tout appel à GitHub. Aucun dépôt, aucun jeton n'existe.
+**Il existe depuis la campagne de novembre** : `0xRozier/sn68-submissions`, visible
+dans les pointeurs engagés de `journal_final.jsonl`. Le paragraphe qui disait
+ici que rien n'avait été créé datait d'avant cette campagne. Ce qui suit reste
+la marche à suivre pour en remonter un, et la liste de ce qu'il faut vérifier
+sur celui qui existe — notamment qu'il est **public**, puisque l'époque 26172 a
+été perdue sur un HTTP 404 au PUT.
 
 À faire, et c'est à vous : un jeton d'accès est un secret et ne doit jamais
 passer par cette conversation.
@@ -66,11 +72,69 @@ et les deux premiers coûtent cher en silence.
 1. **BoltzGen + ses poids** (~6 Go) et le clone amont (`--nova-dir`).
    Sans lui, le mineur se rabat sur le modèle de substitution : 14 % de
    victoires au lieu de 29 %, soit pire qu'un tirage au hasard.
-2. **TNP + Aggrescan3D.** TNP dans son propre venv avec torch CPU uniquement
-   (la version CUDA remplit le disque), **plus le correctif d'ImmuneBuilder 1.2**
-   à `refine.py:346` où `{'Threads', str(n)}` doit devenir
-   `{'Threads': str(n)}`. Puis `sh install/install-aggrescan3d.sh` dans le dépôt
-   du filtre. Sans eux, 39 % des soumissions partent au rejet silencieux.
+2. **La porte de développabilité, exactement comme le validateur l'installe.**
+   C'est la partie la plus facile à rater en silence : elle a coûté les douze
+   époques de production. Les épingles viennent de
+   `NOVA-nanobody-filter/install/requirements-minimal.txt` et de
+   `install/install.sh` du filtre, pas de nos souvenirs.
+
+   Dans un venv à part, Python 3.12, torch **CPU uniquement** (la version CUDA
+   remplit le disque) :
+
+   ```sh
+   python3.12 -m venv /home/user/venv-tnp
+   /home/user/venv-tnp/bin/pip install torch --index-url https://download.pytorch.org/whl/cpu
+   /home/user/venv-tnp/bin/pip install numpy scipy scikit-learn biopython==1.86 freesasa openmm anarci
+   /home/user/venv-tnp/bin/pip install "git+https://github.com/openmm/pdbfixer.git@v1.12"
+   /home/user/venv-tnp/bin/pip install "git+https://github.com/oxpig/ImmuneBuilder.git@0df4e2ad82a1aa60f37ea9dae335d1198159ef78"
+   /home/user/venv-tnp/bin/pip install "git+https://github.com/oxpig/TNP.git@29dcac72f1380e8538e8870f45a699d3c6156162"
+   ```
+
+   Puis les trois choses sans lesquelles TNP répond quand même, et répond faux :
+
+   ```sh
+   # le correctif process_pdb du filtre : sans lui DSSP echoue sur TOUS les modeles
+   cp /home/user/nanofilter/install/patches/TNP/process_pdb.py \
+      /home/user/venv-tnp/lib/python3.12/site-packages/scripts/process_pdb.py
+   ```
+
+   ```sh
+   # le typo set/dict d ImmuneBuilder 1.2 : sinon 3 sequences sur 37 reviennent sans modele
+   sed -i "346s/{'Threads', str(n_threads)}/{'Threads': str(n_threads)}/" \
+      /home/user/venv-tnp/lib/python3.12/site-packages/ImmuneBuilder/refine.py
+   ```
+
+   ```sh
+   # DSSP 3.1.4, et PAS celui d apt : mkdssp 4.x refuse les modeles de
+   # NanoBodyBuilder2 (pas de ligne HEADER) et TNP rend alors une PSH qui n est
+   # pas celle du validateur. Meme structure : 89,50 sans DSSP, 91,21 avec.
+   git clone --depth 1 https://github.com/cmbi/dssp.git && cd dssp \
+     && ./autogen.sh && CXXFLAGS="-std=c++14 -Wno-error" ./configure --prefix=/home/user/dssp3 \
+     && make -j"$(nproc)" CXXFLAGS="-std=c++14 -Wno-error -O2" && make install \
+     && ln -sf /home/user/dssp3/bin/mkdssp /home/user/venv-tnp/bin/mkdssp \
+     && ln -sf /home/user/dssp3/bin/mkdssp /home/user/venv-tnp/bin/dssp
+   ```
+
+   Enfin Aggrescan3D et sa FreeSASA épinglée, depuis le dépôt du filtre :
+
+   ```sh
+   sh /home/user/nanofilter/install/install-aggrescan3d.sh
+   ```
+
+   Les chemins par défaut sont `/home/user/venv-tnp/bin/TNP` et
+   `/home/user/nanofilter` ; `NOVA_TNP`, `NOVA_DSSP` et `NOVA_NANOFILTER` les
+   déplacent. Il faut aussi `hmmscan` (`apt install hmmer`) : sans lui ANARCI
+   rend `None` **sans lever d'erreur**, et tout le reste se construit sur du
+   vide.
+
+   **Puis vérifier, parce qu'aucun de ces outils ne refuse de répondre :**
+
+   ```sh
+   python -m scripts.doctor
+   ```
+
+   Il fait tourner la chaîne entière sur un nanobody clinique et sort en code 1
+   si un nombre manque. Ne démarrez pas le mineur avant qu'il soit vert.
 3. L'archive, le jeu de données et la MSA. **Ne reconstruisez pas à froid** :
    `python -m scripts.bootstrap` dit ce qui manque et ce que ça coûte.
 
@@ -115,12 +179,20 @@ $PY -m scripts.fetch_submissions --last 60   # dechiffrer ce qui a ete soumis
 $PY -m scripts.analyze_nanobodies            # joindre les metriques publiees
 $PY -m scripts.build_nanobody_dataset        # re-telecharger l'archive, refeaturiser
 
+$PY -m scripts.doctor                # les outils mesurent-ils ce que mesure le validateur ?
+$PY -m scripts.preflight --calibrate # et le disent-ils des 36 acceptees de 26174 ?
 $PY -m scripts.check_config          # les regles du subnet ont-elles bouge ?
 $PY -m pytest tests -q               # parite + aller-retour du chiffrement
 $PY -m scripts.mine --once --wallet mon --hotkey default   # a blanc, avec GPU
 ```
 
-Le troisième doit montrer `ranked_by: boltzgen` dans le journal et tenir dans le
+`scripts.doctor` et `scripts.preflight --calibrate` sont les deux qui
+manquaient en novembre. Le second doit afficher **0 acceptee au-dessus de 89** :
+s il en affiche davantage, notre echelle PSH a derive de la leur et la porte
+mesure autre chose — c est exactement l etat dans lequel les douze epoques de
+production ont ete perdues.
+
+Le dernier doit montrer `ranked_by: boltzgen` dans le journal et tenir dans le
 budget d'époque. S'il affiche `surrogate`, BoltzGen n'est pas joignable et il ne
 faut pas passer en `--live`.
 
@@ -129,9 +201,21 @@ engagé correspond au fichier publié, et que `status` vaut `submitted`.
 
 ## Attentes chiffrées
 
-- taux de victoire mesuré : **14 à 29 %** contre le champ complet, les deux
+**À lire en sachant que la seule campagne réelle a fait 0 sur 12.** Les chiffres
+ci-dessous sont des rejeux hors ligne ; ils supposent que la soumission est
+acceptée, ce qui n'était jamais arrivé avant que la porte PSH soit réparée.
+
+- taux de victoire en rejeu : **14 à 29 %** contre le champ complet, les deux
   portes appliquées (IC 95 % de 3 % à 52 %, sur 21 époques seulement)
+- campagne réelle, époques 26172-26185 : **11 soumissions, 0 notée**, toutes
+  refusées sur PSH (`docs/POST_MORTEM.md`). La cause était l'installation, pas
+  les séquences, et elle est corrigée ; rien ne le confirme encore en production
 - seuil de rentabilité : 0,3 à 1 %
 - place médiane 2ᵉ sur 18, top 3 dans 81 % des époques
-- point faible connu : les CDR3 courts (≤8), environ une époque sur cinq,
-  place médiane 9
+- points faibles connus :
+  - les CDR3 courts (≤8), environ une époque sur cinq, place médiane 9 ;
+  - les CDR3 longs (≥17) pour la PSH : le candidat médian lit **100,6** là où
+    le champ accepté lit 83,5, donc **15 %** seulement passent 89. C'est un
+    problème de génération et aucun vivier ne le règle — il n'achète que la
+    queue, où le meilleur de 100 lit 74,7. Le biais d'hydrophobicité a été
+    essayé et mesuré sans effet (`results/psh_generator_ab_cdr3_18.csv`).

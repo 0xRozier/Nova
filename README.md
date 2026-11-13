@@ -48,6 +48,9 @@ source .venv/bin/activate
 | État du journal d'observation | `python -m scripts.observe --report` |
 | Lot GPU unique couvrant toutes les époques journalisées | `python -m scripts.observe --combined-batch` |
 | Verdict réel d'un lot d'observation noté par BoltzGen | `python -m scripts.review_observation data/observation/batches/...` |
+| **Cette machine mesure-t-elle ce que mesure le validateur ?** (à lancer avant tout) | `python -m scripts.doctor` |
+| **Nos portes disent-elles ce que le validateur a dit ?** (36 acceptées, 1 refusée) | `python -m scripts.preflight --calibrate` |
+| Cribler des candidats avant de soumettre : portes déterministes, PSH, Aggrescan3D | `python -m scripts.preflight --file candidats.txt` |
 | **Les règles ont-elles bougé ?** (cible, seuils, catégories V vs dépôt amont) | `python -m scripts.check_config` |
 | **Le mineur** (essai à blanc : rien n'est envoyé) | `python -m scripts.mine --once --wallet mon --hotkey default` |
 | Le mineur, pour de vrai | `python -m scripts.mine --wallet mon --hotkey default --live` |
@@ -710,9 +713,11 @@ vide.
 
 **Rien ne quitte la machine sans `--live`.** Par défaut le mineur exécute tout,
 écrit le fichier qu'il publierait, et s'arrête avant la chaîne et GitHub. En
-mode réel il engage le pointeur *avant* de publier, comme le mineur de
-référence, pour qu'un push raté laisse un pointeur orphelin plutôt qu'un fichier
-non référencé.
+mode réel il **publie d'abord, engage ensuite** : l'inverse du mineur de
+référence, et l'inverse de ce que ce paragraphe disait jusqu'au 13 novembre.
+L'époque 26172 a été perdue exactement comme ça — pointeur engagé, puis
+HTTP 404 au PUT, donc une référence morte. Un fichier publié que rien ne
+désigne est au contraire inoffensif.
 
 Variables d'environnement, mêmes noms que le mineur de référence :
 `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME`, `GITHUB_REPO_BRANCH`,
@@ -782,6 +787,17 @@ rejets inconnaissables » que j'invoquais étaient mesurables tout du long.
 Les seuils rouges de TNP correspondent exactement à la configuration du
 validateur (L 20/39, L3 5/23, C 0,5634/1,6132, PSH 73,4039/155,4699, PPC 1,1853,
 PNC 1,8838) : c'est la porte réelle, pas une approximation.
+
+> **Le chiffre de PSH de cette section et des suivantes est à jeter**
+> (§43 de `docs/FINDINGS.md`). Il a été mesuré par une installation dont
+> l'étape DSSP échouait : TNP imprime une ligne d'erreur et rend une PSH
+> calculée autrement. Sur l'installation que le validateur fait tourner —
+> TNP au commit 29dcac7, le correctif `process_pdb` du filtre, `mkdssp` 3.1.4
+> depuis `cmbi/dssp` — les 36 soumissions qu'il a acceptées à l'époque 26174
+> lisent **toutes** sous son seuil de 89 (médiane 83,5, maximum 88,9), et
+> l'écart-type d'une mesure est 1,74 et non 4,01. `python -m scripts.doctor`
+> vérifie l'installation ; `python -m scripts.preflight --calibrate` vérifie
+> qu'elle lit bien comme eux.
 
 **Contrôle positif — les 84 soumissions réelles que les validateurs ont
 acceptées : 0 rejet sur 84.** Le dispositif est donc valide, et ce qui suit veut
@@ -941,8 +957,56 @@ candidats sur GPU au lieu de les trier avec le modèle de substitution porte une
 entrée unique de 14 % à 48 % pour 6,4 min de 2×T4 par époque. Réparer le tri
 d'abord, multiplier les hotkeys ensuite — pas l'inverse.
 
+## La porte PSH, réparée — et ce qu'elle change au choix du candidat
+
+**La PSH n'était pas bruitée : notre DSSP ne tournait pas.** Détail complet au
+§43 de `docs/FINDINGS.md`. Le résumé opérationnel :
+
+- `mkdssp` 4.x refuse les modèles de NanoBodyBuilder2 ; TNP imprime une ligne
+  d'erreur et rend quand même une PSH, calculée autrement. Le validateur
+  construit la **3.1.4** depuis `cmbi/dssp` et applique à TNP le correctif
+  `process_pdb` du filtre.
+- Sur cette installation, les **36 soumissions acceptées** à l'époque 26174
+  lisent toutes **sous le seuil de 89** (médiane 83,5, maximum 88,9, aucune
+  au-dessus). L'écart-type d'une mesure est **1,74**, pas 4,01.
+- Validé sur 296 soumissions dont on connaît le verdict (époques 26299-26306) :
+  36 % des refusées dépassent 89 contre 8 % des acceptées, et le rapport est
+  maximal **au seuil que le validateur utilise** (4,6× à 89 contre 2,3× à 87).
+- Donc le plafond maison à 96 disparaît du mineur. La PSH est un **coût**, pas
+  une porte : on mesure, on price P(refus), et on multiplie par la qualité
+  prédite.
+
+**Et le candidat recommandé change.** Re-mesurés à 3 plis
+(`results/psh_candidates_v8v9.csv`) :
+
+| variante | PSH | P(refus) | design_iiptm | n | iiptm × P(passage) |
+|---|---|---|---|---|---|
+| **FR211Q→E** | **84,4** | **1 %** | 0,776 | 2 | **0,767** |
+| FR12Q→V | 86,3 | 9 % | 0,774 | 2 | 0,707 |
+| FR210Q→K | 87,2 | 18 % | 0,780 | 2 | 0,638 |
+| FR213D→E *(recommandé au §42)* | 88,6 | **42 %** | 0,784 | 2 | 0,453 |
+| FR210Q→K+FR213D→E *(finaliste §42)* | 90,9 | **82 %** | 0,781 | 1 | 0,138 |
+
+Le candidat sur lequel ce dépôt s'était arrêté avait **42 % de chances d'être
+refusé avant d'être noté**, et l'un des cinq finalistes 82 %. `FR211Q→E` offre
+la même liaison à 0,004 près — un quart d'un écart-type de mesure — pour 1 % de
+risque.
+
+**Ce qui reste cassé, et que rien de tout ça ne répare :** à CDR3 18 le candidat
+médian du générateur lit **100,6** là où le champ accepté lit 83,5, donc 15 %
+seulement passent. Biaiser les mutations vers les résidus polaires a été
+implémenté, mesuré, et **ne marche pas** : 14/100 contre 13/100 sous le seuil
+(`results/psh_generator_ab_cdr3_18.csv`). La PSH est un score de *patch* sur une
+structure prédite, pas une somme d'hydropathie. Le seul levier qui reste à CDR3
+long est de mesurer plus de candidats et de prendre la queue — le meilleur de
+ces 100 lit 74,7.
+
 ## Limites
 
+- **Un outil présent et faux est pire qu'un outil absent.** Six pannes
+  silencieuses ont été trouvées le 13 novembre, chacune ayant duré d'une semaine
+  à un mois sans jamais produire de message d'erreur (§43). `scripts.doctor`
+  existe pour ça et sort en code 1 ; à lancer avant toute session.
 - Le modèle de substitution n'est pas Boltz-2 et ne généralise pas aux molécules nouvelles (voir ci-dessus).
 - Le backtest ne choisit que parmi des molécules déjà soumises (et déjà
   plutôt bonnes) : c'est une indication, pas une preuve.
@@ -952,4 +1016,7 @@ d'abord, multiplier les hotkeys ensuite — pas l'inverse.
   depuis des séquences postérieures à l'époque, ce qui a produit 4 des 5
   victoires apparentes du premier lot. Le seul taux de victoire exploitable est
   mesuré avec la troncature.
-- La développabilité structurale reste hors de portée hors ligne (prédiction de structure requise).
+- La développabilité structurale **est** vérifiable hors ligne, sur CPU, et
+  l'était depuis le début (TNP + Aggrescan3D, ~3,5 s par séquence). Ce que nous
+  ne savons toujours pas, c'est pourquoi 64 % des refus du champ tombent : la
+  PSH n'en explique que 36 %.

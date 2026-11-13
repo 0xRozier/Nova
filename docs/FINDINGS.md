@@ -3138,3 +3138,207 @@ qu'on n'en engage pas en phase de recherche. **Rien n'a été soumis, et je ne
 pousse pas à le faire.** Le tableau est là pour que l'arbitrage se fasse sur des
 chiffres mesurés plutôt que sur une impression — c'est tout ce qu'il prétend
 être.
+
+## 43. La PSH n'était pas bruitée : notre DSSP ne tournait pas
+
+### Ce que ce dépôt a soutenu pendant un mois, et qui est faux
+
+Le post-mortem du 8 novembre concluait que la PSH ne se calibre pas : que notre
+mesure et celle du validateur sont deux tirages de la même loi, que l'écart-type
+d'une mesure vaut 4,01 pour un seuil à 89, et qu'il faut donc une courbe
+empirique avec une rupture à 96 plutôt que le seuil lui-même. L'argument
+reposait sur un fait apparemment solide : **44 à 62 % des soumissions que les
+validateurs avaient *acceptées* dépassaient 89 sur notre échelle.** Un seuil que
+la moitié des séquences acceptables franchissent n'est pas un seuil utilisable.
+
+Ce fait était un artefact d'installation.
+
+### Le mécanisme
+
+TNP demande à Biopython une annotation DSSP du modèle NanoBodyBuilder2. Quand
+elle échoue, TNP **n'arrête pas** : il imprime une ligne et continue avec une
+PSH calculée autrement.
+
+    ERROR: Failed to process output PDB. DSSP failed to produce an output
+
+Le validateur construit DSSP depuis `cmbi/dssp`, qui est l'arbre autotools
+**3.1.4**, et applique à TNP le correctif `process_pdb.py` de
+NOVA-nanobody-filter. `mkdssp` 4.x — celui d'apt — refuse les modèles de
+NanoBodyBuilder2, qui n'ont pas de ligne HEADER : il suppose du mmCIF et
+échoue. La 3.1.4 les accepte dès que le correctif complète les lignes à
+80 caractères, ce que son propre docstring dit en toutes lettres.
+
+Sur un même candidat, la même structure lit **89,50 sans DSSP et 91,21 avec**,
+et son drapeau de charge positive passe d'AMBER à GREEN. L'écart n'est pas un
+décalage constant — c'est pourquoi aucune calibration ne reliait les deux
+échelles, et c'est précisément ce que l'addendum du 8 novembre avait constaté
+sans en trouver la cause.
+
+### L'installation du validateur, reproduite depuis son propre code
+
+Les épingles ne viennent pas de nos souvenirs mais de
+`NOVA-nanobody-filter/install/requirements-minimal.txt` et de son `install.sh` :
+TNP au commit `29dcac7`, ImmuneBuilder `0df4e2a`, pdbfixer v1.12,
+biopython 1.86, le correctif `process_pdb`, DSSP depuis `cmbi/dssp`,
+aggrescan3d-rs et sa FreeSASA 2.0.1. Plus le correctif du typo set/dict
+d'ImmuneBuilder (`refine.py:346`), que `docs/DEPLOY.md` mentionnait déjà et qui
+faisait revenir **3 séquences sur 37 sans aucun modèle**, donc sans PSH.
+
+Détail qui a coûté une heure : TNP range ses modules dans un paquet de premier
+niveau nommé `scripts`, comme nous. Un `PYTHONPATH` pointant sur ce dépôt masque
+le sien, et TNP meurt sur `No module named 'scripts.region_definitions'` après
+avoir profilé 0 séquence sur 100. `toolchain.tnp_env` retire l'entrée.
+
+### Ce que ça mesure (results/psh_calibration_epoch26174.csv)
+
+Les 36 soumissions acceptées à l'époque 26174, trois plis chacune :
+
+| | |
+|---|---|
+| minimum | 70,3 |
+| **médiane** | **83,5** |
+| maximum | 88,9 |
+| **au-dessus de 89** | **aucune, 0 sur 36** |
+
+36 sur 36 sous le seuil que le validateur applique. Notre mesure est la leur.
+Celle qu'il a refusée cette époque-là lit **88,0** ici contre **89,57** dans son
+journal : 1,5 point plus bas, soit une raison de garder de la marge, pas de
+douter de l'échelle.
+
+**Le bruit, re-mesuré** sur 37 séquences × 3 plis : l'écart-type d'**une** mesure
+est **1,74**, pas 4,01. Le 4,01 venait du chemin cassé et était deux fois trop
+grand. La moyenne de k plis vaut 1,74/√k et le validateur tire une fois de son
+côté, d'où
+
+    P(le validateur lit au-dessus de 89) = Phi((m - 89) / (1,74 * racine(1 + 1/k)))
+
+soit 1 % à m = 84,4, 18 % à 87,2 et 42 % à 88,6 pour k = 3.
+
+### Validation externe : 296 soumissions dont on connaît le verdict
+
+Les époques 26299-26306, un pli chacune
+(`results/psh_field_26299_26306.csv`) :
+
+| | n | médiane | > 89 |
+|---|---|---|---|
+| acceptées | 230 | 84,0 | 8 % |
+| refusées | 66 | 87,1 | **36 %** |
+
+AUC 0,671 (p = 1,1×10⁻⁵). Et le rapport des deux taux est maximal **au seuil
+que le validateur utilise** : 1,7× à 85, 2,3× à 87, **4,6× à 89**. Les 8 %
+d'acceptées au-dessus de 89 à un seul pli sont ce que le modèle de bruit prédit
+(13 %, donc il est légèrement conservateur) : c'est exactement pourquoi on
+moyenne des plis avant de décider.
+
+Note : 36 % des refus seulement sont expliqués par la PSH. Le reste tombe sur
+les autres portes, et nous ne savons pas lesquelles.
+
+### Ce que ça change pour le mineur
+
+Le plafond à 96 disparaît. La PSH n'est plus une porte mais un **coût** : on
+mesure, on price, et on multiplie par la qualité prédite. Un plafond jette un
+bon candidat qui est à un tirage de la ligne ; ignorer la PSH est ce qui a mis
+onze soumissions à la poubelle.
+
+Taille du vivier re-calibrée sur 300 candidats frais mesurés
+(`results/psh_fresh_candidates_by_length.csv`) :
+
+| CDR3 | PSH médiane | ≤ 87 | ≤ 89 | ≤ 96 |
+|---|---|---|---|---|
+| 8 | 85,0 | 62 % | 75 % | 95 % |
+| 11 | 89,0 | 40 % | 50 % | 81 % |
+| **18** | **100,6** | 10 % | **15 %** | 31 % |
+
+L'ancienne table donnait 51 / 28 / 8,9 % pour la colonne ≤ 89. La forme survit —
+le CDR3 long est là où le générateur souffre — mais tous les taux étaient
+sous-estimés.
+
+### Ce que ça change pour nos cinq finalistes du §42
+
+Re-mesurés à 3 plis (`results/psh_candidates_v8v9.csv`), avec P(refus) calculée
+pour un tirage du validateur :
+
+| variante | PSH | P(refus) | design_iiptm | n | iiptm × P(passage) |
+|---|---|---|---|---|---|
+| **FR211Q→E** | **84,4** | **1 %** | 0,776 | 2 | **0,767** |
+| FR12Q→V | 86,3 | 9 % | 0,774 | 2 | 0,707 |
+| FR320S→T+FR213D→E | 85,0 | 2 % | 0,691 | 1 | 0,675 |
+| FR210Q→K | 87,2 | 18 % | 0,780 | 2 | 0,638 |
+| FR213D→E *(recommandé au §42)* | 88,6 | **42 %** | 0,784 | 2 | 0,453 |
+| FR210Q→K+FR213D→E *(finaliste §42)* | 90,9 | **82 %** | 0,781 | 1 | 0,138 |
+| FR217R→D | 93,7 | 99 % | 0,619 | 2 | 0,006 |
+
+**La recommandation du §42 avait 42 % de chances d'être refusée avant d'être
+notée, et l'un des cinq finalistes 82 %.** `FR211Q→E`, que le classement du §39
+écartait — classement mesuré sur l'échelle cassée —, lit 84,4 pour 1 % de risque
+et une liaison équivalente à 0,004 près, soit un quart d'un écart-type de mesure.
+
+Le §39 concluait qu'« aucun mouvement de charpente n'est gratuit pour la PSH ».
+C'est à refaire entièrement : les valeurs sur lesquelles il classait ne sont pas
+celles du validateur.
+
+### Une hypothèse testée et réfutée : biaiser la génération vers le polaire
+
+Le docstring de `nova_lab/cdr3_generators.py` accuse depuis le début l'alphabet
+uniforme des mutations — « 40 % des acides aminés sont hydrophobes alors que les
+CDR3 naturels sont enrichis en résidus polaires ». `HydrophilicGenerator`
+applique le biais des deux côtés : les positions à muter sont tirées vers les
+résidus les plus hydrophobes du donneur, et le remplacement est tiré loin d'eux.
+
+Sur la séquence il fait exactement ça : l'hydropathie médiane du CDR3 baisse de
+plus de 2 unités. Sur la quantité qui décide l'époque, il ne fait presque rien.
+100 candidats par bras à CDR3 18, mêmes donneurs, même graine
+(`results/psh_generator_ab_cdr3_18.csv`) :
+
+| bras | PSH médiane | ≤ 89 |
+|---|---|---|
+| chimeric | 100,2 | 14/100 |
+| hydrophilic | 97,4 | 13/100 |
+
+2,8 points de médiane (Mann-Whitney p = 0,064) et **aucun changement du taux qui
+compte** (Fisher p = 1,00). La PSH est un score de *patch* sur une structure
+prédite : ce qui compte est quels résidus se retrouvent exposés et voisins, pas
+la somme d'hydropathie du CDR3.
+
+La même conclusion sort d'une tentative de prédire la PSH depuis la séquence :
+sur 596 séquences mesurées, un LightGBM sur les 147 descripteurs par région
+atteint Spearman 0,62 toutes longueurs confondues — mais **0,25 à 0,31 à
+longueur fixée**, et l'hydropathie brute des CDR 0,10 à 0,22. Le 0,62 ne dit que
+« un CDR3 long est plus hydrophobe ». En croisant les distributions c'est pire :
+entraîné sur le champ et appliqué à nos candidats, Spearman 0,25 — le même mode
+d'échec que le modèle de substitution sur design_iiptm.
+
+Le générateur est gardé, documenté comme réfuté, et n'est pas le défaut : sans
+ça l'idée se retentera.
+
+**Donc le levier à CDR3 long n'est pas un alphabet plus fin, c'est de mesurer
+plus de candidats et de prendre la queue** : le meilleur de ces 100 lit 74,7. Le
+vivier du mineur est dimensionné pour ça (67 candidats à CDR3 18 pour en trouver
+une dizaine sous 89, soit 4 min de CPU sur un budget de 66). Si l'on y revient,
+ce qu'il faut biaiser est l'exposition, qui demande la structure, c'est-à-dire
+les 3,5 s qu'on cherchait à éviter.
+
+### Six pannes silencieuses trouvées en chemin
+
+Toutes de la même forme : un outil qui répond au lieu de refuser.
+
+1. **Pas de `hmmscan`** → ANARCI rend `None` pour chaque séquence *sans lever*,
+   et le jeu d'entraînement s'est construit sur **0 ligne sur 9 466** en
+   affichant « saved ».
+2. **DSSP absent ou 4.x** → une ligne d'erreur, puis une PSH qui n'est pas celle
+   du validateur. Onze soumissions refusées sur une porte qu'on croyait cribler.
+3. **Le typo set/dict d'ImmuneBuilder** → 3 séquences sur 37 sans modèle, donc
+   sans PSH, ce qui ressemble à « rien à refuser ».
+4. **`data/scores/` manquant** → `scripts.analyze_nanobodies` meurt, et c'est
+   l'étape 2 de la mise en service.
+5. **Le prébâti sans son `_X.npy`** → `bootstrap --build` jugeait le jeu de
+   données complet, sautait sa reconstruction, et l'entraînement mourait. Le
+   modèle de substitution était infabricable par le chemin documenté.
+6. **`parse` sur un run vide** → KeyError trois cadres plus loin.
+
+D'où `nova_lab/toolchain.py` (où sont les outils, et si ce sont les bons) et
+`scripts/doctor.py`, qui les fait tourner sur un nanobody clinique et sort en
+code 1 si un nombre manque. **Un outil présent et faux est pire qu'un outil
+absent**, et c'est la leçon qui vaut pour tout ce dépôt : les six pannes
+ci-dessus ont duré entre une semaine et un mois chacune, et aucune n'a jamais
+produit de message d'erreur.

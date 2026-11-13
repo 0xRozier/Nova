@@ -26,13 +26,32 @@ SAMPLE = 100
 
 
 def epoch_params(epoch: int) -> dict:
-    """The epoch's allowed V gene and CDR3 length, from its first block hash."""
+    """The epoch's allowed V gene and CDR3 length, from its first block hash.
+
+    One connection per epoch, with backoff: the public archive node answers
+    HTTP 429 under load, which is what killed the production miner for five
+    hours and what makes this suite fail at random when run whole rather than
+    file by file. A test that fails on someone else's rate limit teaches
+    nothing.
+    """
+    import time
+
     from scripts.epoch_info import challenge_params
     import bittensor as bt
     from nova_lab.config import EPOCH_LENGTH
     from nova_lab.reactions import reaction_ids
-    st = bt.Subtensor("wss://archive.chain.opentensor.ai:443")
-    return challenge_params(st.determine_block_hash(epoch * EPOCH_LENGTH), len(reaction_ids()))
+
+    last = None
+    for attempt in range(5):
+        try:
+            st = bt.Subtensor("wss://archive.chain.opentensor.ai:443")
+            block_hash = st.determine_block_hash(epoch * EPOCH_LENGTH)
+            return challenge_params(block_hash, len(reaction_ids()))
+        except Exception as error:  # noqa: BLE001 - any transport failure retries
+            last = error
+            time.sleep(5 * 2 ** attempt)
+    pytest.skip(f"the archive node would not answer for epoch {epoch}: "
+                f"{type(last).__name__}: {last}")
 
 
 @pytest.fixture(scope="module")
