@@ -60,6 +60,58 @@ V_NEIGHBORHOOD_CATEGORIES = {
 }
 CDR3_LENGTH_RANGE = range(5, 23 + 1)
 
+# ---------------------------------------------------------------------------
+# What changes at epoch 26331 (upstream PR 102, branch rxn-group-filtering)
+# ---------------------------------------------------------------------------
+# Announced on the subnet's Discord on 2026-11-13: PR 102 merges at epoch 26331
+# and the branch's config values take effect with it. The announcement warns
+# nanobody miners that "this change will also affect how valid germlines and
+# CDR3 lengths are chosen each epoch due to RNG state consumption".
+#
+# READ THE CODE AND IT DOES NOT. Both the old and the new reaction selection are
+# pure arithmetic on `seed` and never touch the `rng` object:
+#
+#   old:  allowed_option = seed % total_reactions
+#   new:  for group in rxn_groups: allowed_rxn_index = seed % len(group)
+#
+# `rng` is only consumed afterwards, by the allowed_v and allowed_cdr3_length
+# draws, in the same order as before. Checked on 200 000 block hashes: the
+# (V gene, CDR3 length) pair comes out identical under both functions, 0
+# disagreements (tests/test_challenge_params.py).
+#
+# So either the announcement is cautious rather than exact, or what gets merged
+# differs from the branch head we read. We do not have to choose: a nanobody
+# submission is only accepted if its V gene and CDR3 length match the epoch's,
+# so the field itself tells us whether our derivation is right, every epoch,
+# without trusting either source. That is `scripts.verify_challenge`, and the
+# miner should not submit when it disagrees.
+RXN_GROUP_FILTERING_FROM_EPOCH = 26331
+# config.yaml on the branch; together these cover reactions 1-44.
+RXN_GROUPS = (
+    (2, 3, 4, 5, 6, 11, 13, 15, 20, 23, 27, 29, 33, 44),
+    (1, 7, 8, 9, 12, 14, 19, 21, 22, 28, 41, 42),
+    (10, 16, 17, 18, 24, 25, 26, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 43),
+)
+# The molecule filters tighten sharply at the same time. We do not mine
+# molecules, so FILTERS above is left on the values in force until 26331 and
+# these are kept beside it rather than swapped in: tests/test_parity.py checks
+# that archived molecules pass today's filters, and the archive was built under
+# the looser ones, so switching would fail that test for the right reason.
+FILTERS_FROM_26331 = {
+    **FILTERS,
+    "max_logp": 5.5,
+    "max_ring_size": 7,
+    "max_stereocenters": 5,
+    "max_iodine": 0,
+    "max_bromine": 0,
+    "max_fluorine": 3,
+    "max_phosphorus": 0,
+    "max_sulfur": 1,
+    "max_aromatic_nitrogen": 5,
+    "max_aromatic_carbon": 24,
+    "max_nitrile": 1,
+}
+
 # nanobody_requirements + germline_filtering in upstream config/config.yaml
 ALLOWED_AAS = set("ACDEFGHIKLMNPQRSTVWY")
 NUM_SEQUENCES = 1
@@ -72,12 +124,12 @@ SP_HYDRO_MIN_IN_WINDOW = 8
 SP_SCAN_PREFIX = 30
 # config.yaml: a rejection far stricter than TNP's own red threshold of 155.47,
 # added upstream on 2026-10-20 and missing from this lab until production hit it.
-# Our reproduction of the input value is NOT calibrated: 62% of real submissions
-# the validators accepted exceed 89 on the PSH we compute, so treat a breach as
-# a warning rather than a verdict.
+# It IS reproducible: on the install the validator runs, the 36 submissions it
+# accepted in epoch 26174 all read at or under 89 (median 83.5). See
+# nova_lab.psh_calibration for the probability model and nova_lab.toolchain for
+# what "the install it runs" means.
 PSH_STRICT_REJECTION_THRESHOLD = 89
 MIN_HUMAN_V_IDENTITY = 82
 MIN_HUMAN_J_IDENTITY = 86
-PSH_STRICT_REJECTION_THRESHOLD = 89
 # NOVA-nanobody-filter metanano/config.py developability red flags
 TOTAL_CDR_LENGTH_RANGE = (20, 39)

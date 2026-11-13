@@ -76,6 +76,39 @@ def compare(live: dict) -> list[str]:
     return problems
 
 
+def announced_changes() -> None:
+    """Changes we know are coming but that `main` does not show yet.
+
+    This script compares our pin to a ref, so it is blind to anything still on
+    a branch -- and PR 102's values were announced for epoch 26331 while living
+    on `rxn-group-filtering`. A comparison against main would have said
+    "nothing we depend on has moved" until the moment it was already live.
+    """
+    from nova_lab.config import (FILTERS, FILTERS_FROM_26331,
+                                 RXN_GROUPS, RXN_GROUP_FILTERING_FROM_EPOCH)
+    try:
+        from nova_lab.chain import current_block
+        import bittensor as bt
+        epoch = current_block(bt.Subtensor("finney")) // EPOCH_LENGTH
+    except Exception:  # noqa: BLE001 - this is advisory, not a gate
+        epoch = None
+
+    switchover = RXN_GROUP_FILTERING_FROM_EPOCH
+    when = ("" if epoch is None else
+            f", i.e. in {switchover - epoch} epochs (~{(switchover - epoch) * 72 / 60:.0f} h)"
+            if epoch < switchover else ", WHICH IS NOW IN FORCE")
+    print(f"\nannounced for epoch {switchover} (PR 102, branch rxn-group-filtering){when}:")
+    print(f"  - one reaction per group instead of one per epoch; "
+          f"{len(RXN_GROUPS)} groups covering reactions 1-44")
+    changed = {k: (FILTERS[k], v) for k, v in FILTERS_FROM_26331.items()
+               if FILTERS.get(k) != v}
+    print(f"  - {len(changed)} molecule filters tighten, e.g. "
+          + ", ".join(f"{k} {a}->{b}" for k, (a, b) in list(changed.items())[:3]))
+    print("  - the Discord note says germlines and CDR3 lengths change too; the "
+          "branch's code says they do not (nova_lab.config). Settle it with "
+          "scripts.verify_challenge, which asks the accepted submissions.")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--ref", default="main", help="upstream ref to compare against")
@@ -90,6 +123,7 @@ def main():
     problems = compare(fetch(args.ref))
 
     print(f"\nepoch length {EPOCH_LENGTH} blocks")
+    announced_changes()
     if problems:
         print("\nThe rules moved. Validators auto-update hourly, so this is already live:")
         for p in problems:
