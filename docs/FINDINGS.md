@@ -2922,3 +2922,63 @@ Conséquence directe pour les v9, à 9 substitutions : si un mouvement coûte
 laisse peu de place avant 96. **Le criblage des v9 décidera donc s'il existe
 seulement un candidat à 0,022 de marge**, et il est le premier travail de la
 nuit.
+
+## 39. Le tableau de décision : cinq candidats franchissent toutes les portes
+
+### Le criblage des v9
+
+| combinaison | `design_iiptm` | PSH | A3D moy / pic | soumissible |
+|---|---|---|---|---|
+| FR210Q→K + FR320S→T | **0,78604** | 98,1 | −0,813 / 1,236 | **non, PSH** |
+| FR210Q→K + FR11Q→E | 0,78200 | 93,1 | −0,784 / 1,229 | **oui** |
+| FR210Q→K + FR213D→E | 0,78071 | 93,4 | −0,825 / 1,272 | **oui** |
+| FR213D→E + FR12Q→V | 0,77869 | 103,5 | −0,775 / 1,311 | non, PSH |
+| FR210Q→K + FR12Q→V | 0,77814 | 96,1 | −0,851 / 1,242 | non, PSH |
+
+**2 sur 5**, et la meilleure sur la liaison tombe sur la PSH. La prédiction
+écrite avant le criblage — « deux mouvements devraient mener à 95–108, j'en
+attends la majorité perdue » — tient dans sa direction : trois des cinq sont
+perdues, et les trois recalées sont bien entre 96,1 et 103,5.
+
+**Et la PSH n'est pas additive**, ce qui n'était pas prévisible : `FR11Q→E`
+**seul** donne 98,5 et serait refusé, mais `FR210Q→K + FR11Q→E` donne **93,1**
+et passe. La PSH est une mesure structurelle du repliement, pas une somme de
+contributions par résidu — donc on ne peut pas prédire la PSH d'une combinaison
+à partir de celle de ses parties, dans un sens comme dans l'autre.
+
+### L'unicité, re-vérifiée sur l'archive à 15 803 séquences
+
+Les cinq candidats passent, aux marges attendues par construction : 0,006 à
+7 substitutions, 0,014 à 8, 0,022 à 9.
+
+### Le tableau de décision
+
+| candidat | subs | mesures | moyenne | PSH | A3D moy / pic | marge | époques (esp.) |
+|---|---|---|---|---|---|---|---|
+| 7 subs, candidat initial | 7 | **4** | 0,78296 | **88,9** | −0,840 / 1,235 | 0,006 | 4,8/6 |
+| **8 subs FR213D→E** | 8 | 2 | **0,78392** | 92,8 | −0,793 / 1,298 | 0,014 | **4,9/6** |
+| 8 subs FR210Q→K | 8 | 2 | 0,77971 | 92,3 | −0,784 / 1,231 | 0,014 | 4,5/6 |
+| **9 subs FR210Q→K+FR11Q→E** | 9 | 1 | 0,78200 | 93,1 | −0,784 / 1,229 | **0,022** | 4,7/6 |
+| 9 subs FR210Q→K+FR213D→E | 9 | 1 | 0,78071 | 93,4 | −0,825 / 1,272 | 0,022 | 4,6/6 |
+
+### Ce qui départage, en trois phrases
+
+Les cinq valent le même score : 0,780 à 0,784, soit un écart total de 0,004 pour
+un σ de 0,014 par mesure — **l'espérance d'époques gagnées va de 4,5 à 4,9 sur
+6, ce qui n'est pas une différence sur laquelle décider.** Le choix se joue donc
+sur deux axes seulement : la **marge d'unicité**, où 0,006 ne pardonne aucun
+écart entre notre reproduction des fonctions de similarité et celle du
+validateur — une reproduction écrite d'après le code mais **jamais confrontée à
+un verdict réel** —, et le **nombre de mesures**, où le candidat initial en a
+quatre contre une seule pour les v9.
+
+Le compromis se lit directement : plus de substitutions donne plus de marge
+d'unicité **et** une PSH plus élevée (88,9 → 92,8 → 93,1), donc moins de marge
+sur la développabilité. Les deux risques sont opposés, et aucun n'est nul.
+
+### Ce que ce tableau ne dit pas
+
+Le taux de production reste de l'ordre de **1 sur 180** (§36). Les cinq
+candidats sont des descendants d'un **seul** tirage réussi — ce ne sont pas cinq
+succès indépendants, mais une famille issue du même parent, par cinq chemins de
+charpente différents. **Nous avons un candidat, pas une méthode.**
