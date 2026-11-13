@@ -3076,3 +3076,65 @@ Les 46 autres couples (gène V, longueur) hors IGHV3-74/18, la campagne de
 pré-calcul elle-même, et toute soumission réelle — nous n'avons donc **aucune
 confrontation de notre reproduction des portes avec un verdict du validateur**,
 ce qui est précisément le risque que porte la marge de 0,006.
+
+## 42. Bilan de la nuit du 12 au 13 novembre
+
+Quatre commits, aucune dépense, aucun GPU loué, aucune soumission, aucun
+lancement Kaggle.
+
+### Le tableau de décision
+
+Cinq candidats franchissent **toutes** les portes — portes déterministes, PSH
+sous la rupture mesurée de 96, Aggrescan3D sous les deux plafonds, et unicité
+re-vérifiée sur l'archive à 15 803 séquences :
+
+| candidat | subs | mesures | moyenne | PSH | A3D moy / pic | marge | époques (esp.) |
+|---|---|---|---|---|---|---|---|
+| candidat initial | 7 | **4** | 0,78296 | **88,9** | −0,840 / 1,235 | 0,006 | 4,8/6 |
+| **FR213D→E** | 8 | 2 | **0,78392** | 92,8 | −0,793 / 1,298 | 0,014 | **4,9/6** |
+| FR210Q→K | 8 | 2 | 0,77971 | 92,3 | −0,784 / 1,231 | 0,014 | 4,5/6 |
+| FR210Q→K + FR11Q→E | 9 | **1** | 0,78200 | 93,1 | −0,784 / 1,229 | **0,022** | 4,7/6 |
+| FR210Q→K + FR213D→E | 9 | **1** | 0,78071 | 93,4 | −0,825 / 1,272 | **0,022** | 4,6/6 |
+
+Le candidat à 9 substitutions le mieux noté du §38 (0,78604) **est tombé** au
+criblage, sur une PSH de 98,1.
+
+### Ce qui départage
+
+Les cinq valent le même score : 0,780 à 0,784, soit un écart total de 0,004 pour
+un σ de 0,014 par mesure. **L'espérance d'époques gagnées va de 4,5 à 4,9 sur
+6 : ce n'est pas une différence sur laquelle décider.**
+
+Le choix se joue donc sur deux axes, et ils sont opposés. **La marge
+d'unicité** : 0,006 pour le candidat initial ne pardonne aucun écart entre notre
+reproduction des fonctions de similarité et celle du validateur — une
+reproduction écrite d'après le code, **jamais confrontée à un verdict réel**, et
+un doublon est un rejet certain. **La marge de développabilité** : plus on
+ajoute de substitutions pour élargir la première, plus la PSH monte (88,9 → 92,8
+→ 93,1) et plus on s'approche de la rupture de 96.
+
+Mon avis, qui n'engage que mon jugement : **`FR213D→E`**. Il a deux mesures, la
+meilleure moyenne, 0,014 de marge d'unicité et 3,2 points de marge sous la
+rupture PSH — c'est le seul qui ne soit extrême sur aucun des deux axes. Les
+deux candidats à 9 substitutions n'ont qu'une mesure, et le §36 comme le §38 ont
+montré, deux fois, ce que vaut un classement à une mesure.
+
+### Ce que ce tableau ne dit pas, et qu'il ne faut pas oublier
+
+**Le taux de production est de 1 sur 182** (§40), IC95 de 0,01 % à 3,02 %. Les
+cinq candidats ne sont pas cinq succès : ce sont cinq descendants d'un **seul**
+tirage réussi, par cinq chemins de charpente différents. **Nous avons un
+candidat, pas une méthode.**
+
+Et l'intervalle sur ce taux est large d'un facteur 300, ce qui rend la campagne
+de pré-calcul du §29 **non dimensionnable** en l'état : elle supposait
+implicitement la borne haute. Il faudrait environ 400 tirages de plus pour
+distinguer 0,5 % de 2 %.
+
+### La décision
+
+Soumettre engage du TAO, et l'instruction debout depuis le premier jour est
+qu'on n'en engage pas en phase de recherche. **Rien n'a été soumis, et je ne
+pousse pas à le faire.** Le tableau est là pour que l'arbitrage se fasse sur des
+chiffres mesurés plutôt que sur une impression — c'est tout ce qu'il prétend
+être.
