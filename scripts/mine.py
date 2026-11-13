@@ -301,6 +301,35 @@ def surrogate_rank(sequences: list[str], target: str) -> dict[str, float] | None
 REFOLD_IF_UNDER = PSH_THRESHOLD + 3 * PSH_SIGMA
 
 
+def select_by_expected_value(sequences: list[str], quality: dict[str, float] | None,
+                             psh_pool: int, work: Path, replicates: int = 3
+                             ) -> tuple[list[str], dict[str, float], int]:
+    """The miner's choice of what to submit: quality times P(not refused).
+
+    Predicting design_iiptm costs milliseconds against 3.5 s to fold one
+    candidate, so quality decides who gets measured; PSH then decides the order
+    among those. Neither half is a gate -- a ceiling discards a strong candidate
+    that is one draw over the line, and ignoring PSH is what put eleven
+    submissions in the bin.
+
+    This lives in one function because `scripts.observe` has to replay the same
+    choice. When the replay selects differently from the miner, the win rate it
+    reports is some other miner's, and that is precisely how the 14-29 % figure
+    came to be measured on candidates chosen by a gate that was wrong.
+    """
+    if quality:
+        pool = list(quality)[:psh_pool]
+    else:
+        # No model: every candidate is equally promising as far as we know, so
+        # the ordering below is the risk of refusal alone.
+        pool = sequences[:psh_pool]
+        quality = {s: 1.0 for s in pool}
+    psh, folds = psh_screen(pool, work, replicates)
+    ordered = psh_calibration.rank({s: quality.get(s, 1.0) for s in pool},
+                                   psh, folds)
+    return ordered, psh, folds
+
+
 def psh_screen(sequences: list[str], work: Path,
                replicates: int = 3) -> tuple[dict[str, float], int]:
     """Our PSH mean per candidate, and how many folds it averages.
@@ -536,27 +565,12 @@ def mine_epoch(st, args, params: dict) -> dict:
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
 
-    # Predict design_iiptm for the WHOLE valid pool: milliseconds a candidate,
-    # against 3.5 s to fold one, so quality decides who gets measured.
     with timed("surrogate", timings):
         quality = surrogate_rank(sequences, args.target)
     entry["surrogate_ranked"] = bool(quality)
-    if quality:
-        sequences = list(quality)[:psh_pool]
-    else:
-        # No model: every candidate is equally promising as far as we know, so
-        # the ordering below is the risk of refusal alone.
-        sequences = sequences[:psh_pool]
-        quality = {s: 1.0 for s in sequences}
-
-    # Measure PSH, then order by expected value -- predicted quality times the
-    # chance the validator does not refuse it on PSH. Neither half is a gate:
-    # a ceiling discards a strong candidate that is one draw over the line, and
-    # ignoring PSH is what put eleven submissions in the bin.
     with timed("psh_screen", timings):
-        psh, folds = psh_screen(sequences, work / "psh", args.psh_replicates)
-    ordered = psh_calibration.rank({s: quality.get(s, 1.0) for s in sequences},
-                                   psh, folds)
+        ordered, psh, folds = select_by_expected_value(
+            sequences, quality, psh_pool, work / "psh", args.psh_replicates)
     sequences = ordered[:args.shortlist]
     if psh:
         best_sequence = ordered[0]

@@ -214,10 +214,31 @@ def observe_epoch(params: dict, target: str, args) -> dict:
     # have seen. Restricting the archive is what makes a replayed win mean
     # anything; --no-cutoff reproduces the biased measurement on purpose.
     cutoff = None if args.no_cutoff else epoch
+    cdr3_len = params["allowed_cdr3_length"]
+
+    # The replay has to choose what the miner would choose, or the win rate it
+    # reports belongs to some other miner. That is not hypothetical: the 14-29 %
+    # this project quoted was measured on candidates picked by a PSH gate that
+    # was wrong, so it describes a selector that no longer exists. The pool
+    # therefore comes out wide and `scripts.mine.select_by_expected_value` cuts
+    # it, exactly as in production.
+    from scripts.mine import psh_pool_for, select_by_expected_value, surrogate_rank
+    psh_pool, _ = psh_pool_for(cdr3_len, args.psh_pool, args.candidates)
     result = propose(params, target, candidates=args.candidates, n_donors=args.donors,
-                     n_cdr3=args.cdr3_pool, shortlist=args.shortlist,
+                     n_cdr3=args.cdr3_pool,
+                     shortlist=max(psh_pool, args.shortlist) if args.psh else args.shortlist,
                      seed=args.seed + epoch, archive_cutoff=cutoff)
     shortlist = result["shortlist"]
+    psh_folds = 0
+    if args.psh and not shortlist.empty:
+        sequences = list(shortlist["sequence"])
+        quality = surrogate_rank(sequences, target)
+        ordered, psh, psh_folds = select_by_expected_value(
+            sequences, quality, psh_pool, OBS_DIR / f"psh{epoch}", args.psh_replicates)
+        chosen = ordered[:args.shortlist]
+        shortlist = (shortlist.set_index("sequence").loc[chosen].reset_index()
+                     if chosen else shortlist.iloc[:0])
+        shortlist["psh"] = [psh.get(s) for s in shortlist["sequence"]]
     rivals = real_submissions(epoch, target)
 
     entry = {
@@ -237,6 +258,8 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         "predicted_rank_sum": result["best_rank_sum"],
         "real_submissions_known": int(len(rivals)),
         "archive_cutoff": cutoff,
+        "psh_screened": bool(args.psh),
+        "psh_folds": psh_folds,
         "submitted": SUBMIT,  # always false: this miner only observes
     }
     if not shortlist.empty:
@@ -267,6 +290,16 @@ def main():
     parser.add_argument("--donors", type=int, default=40)
     parser.add_argument("--cdr3-pool", type=int, default=60)
     parser.add_argument("--shortlist", type=int, default=10)
+    parser.add_argument("--psh", action=argparse.BooleanOptionalAction, default=True,
+                        help="select candidates the way scripts.mine does -- surrogate "
+                             "quality times P(the validator does not refuse on PSH). "
+                             "ON by default: a replay that skips it measures a selector "
+                             "the miner no longer uses, which is how the 14-29%% win "
+                             "rate came to describe candidates chosen by a broken gate. "
+                             "Costs 3.5 s a candidate on 4 cores and needs TNP")
+    parser.add_argument("--psh-pool", type=int,
+                        help="override the measured pool sizing (see scripts.mine)")
+    parser.add_argument("--psh-replicates", type=int, default=3)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--no-cutoff", action="store_true",
                         help="let the generator see the whole archive (look-ahead; for comparison only)")
