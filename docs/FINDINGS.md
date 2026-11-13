@@ -3342,3 +3342,83 @@ code 1 si un nombre manque. **Un outil présent et faux est pire qu'un outil
 absent**, et c'est la leçon qui vaut pour tout ce dépôt : les six pannes
 ci-dessus ont duré entre une semaine et un mois chacune, et aucune n'a jamais
 produit de message d'erreur.
+
+## 44. Qui refuse le champ, et ce que le PR 102 change vraiment
+
+### Les portes, confrontées à 296 verdicts connus
+
+`scripts.why_refused` passe les 296 soumissions des époques 26299-26306 — 230
+acceptées, 66 refusées — dans toutes les portes que nous reproduisons, en
+réutilisant les structures que TNP avait déjà construites
+(`results/why_refused_26299_26306.csv`, un pli).
+
+| porte | sur les refusées | sur les acceptées | lecture |
+|---|---|---|---|
+| déterministes (vérificateur hors ligne) | 1/66 | 4/230 | aucune séparation |
+| **PSH > 89** | **24/66** | 18/230 | vraie cause de rejet |
+| drapeau rouge TNP | 2/66 | 5/230 | aucune séparation |
+| **Aggrescan3D au-delà d'un plafond** | **8/66** | 4/230 | vraie cause de rejet |
+
+- **Nos portes expliquent 53 % des refus** (35 sur 66). La PSH en explique 36 %,
+  l'A3D 12 %.
+- **12 % des acceptées seraient refusées à tort** (28 sur 230) — sur un seul
+  pli. C'est le chiffre qui justifie le moyennage : 18 des 28 sont des PSH, donc
+  du bruit de tirage, et c'est exactement ce que `psh_screen` fait disparaître
+  en repliant trois fois.
+- Les portes déterministes et les drapeaux TNP **ne séparent rien** : ils tirent
+  aussi souvent sur les acceptées. Ce ne sont pas les portes où le champ tombe.
+
+### Les 47 % que rien n'explique, et une hypothèse
+
+31 refus résistent à toutes nos portes. Leur PSH médiane est **83,4** — plus
+basse que celle des acceptées (84,0). Ce ne sont donc pas des séquences
+hydrophobes ni des séquences mauvaises sur ce que nous mesurons.
+
+Et ils se groupent par époque : 9 à l'époque 26303, 8 à 26301, 6 à 26300, puis
+4, 3, 1. Un refus qui dépend de l'époque et pas de la séquence ressemble à une
+défaillance de la mesure, pas à un verdict. Le code amont le permet :
+
+    rejected_sequences = [... if result.get("red_flags") or result.get("error")]
+
+**Une séquence dont TNP *échoue* chez le validateur est refusée comme si elle
+était mauvaise.** Et TNP échoue : le typo set/dict d'ImmuneBuilder nous a fait
+perdre 3 séquences sur 37 ici (§43), et le filtre tourne avec
+`max_concurrent_tnp = 16`, donc sous charge. Le groupement par époque est ce
+qu'on attendrait d'un échec dépendant de la charge.
+
+**Hypothèse, pas conclusion** : une part des refus du champ n'est pas un verdict
+sur la séquence mais une panne chez le validateur. Si c'est vrai, notre taux
+d'acceptation ne sera jamais de 100 % même avec une séquence parfaite, et il
+n'y a rien à corriger de notre côté. Ce qui la testerait : les journaux W&B des
+validateurs, où le refus PSH de l'époque 26209 avait déjà été lu en clair.
+
+### Le PR 102 : la réaction change, les paramètres nanobody non
+
+Annonce Discord du 13 novembre : fusion à l'époque 26331, et « pour les mineurs
+qui ne font que du nanobody : ce changement affectera aussi la façon dont les
+germlines et les longueurs de CDR3 valides sont choisies, du fait de la
+consommation d'état du RNG ».
+
+Lu dans `utils/challenge.py` sur la branche, c'est faux. Les deux sélections de
+réaction sont de l'arithmétique sur `seed` et ne touchent jamais l'objet `rng` :
+
+    ancienne : allowed_option = seed % total_reactions
+    nouvelle : for group in rxn_groups: seed % len(group)
+
+`rng` n'est consommé qu'ensuite, par le tirage du gène V puis celui de la
+longueur. Vérifié sur 200 000 hashes : **zéro désaccord** sur le couple
+(gène V, longueur CDR3).
+
+**Nous n'avons pas à trancher qui a raison.** Une soumission nanobody n'est
+acceptée que si son gène V et sa longueur correspondent à ceux de l'époque,
+donc chaque soumission acceptée est un témoin des vrais paramètres.
+`scripts.verify_challenge` les interroge : **8 époques sur 8, 230 soumissions
+acceptées, accord parfait.** C'est un contrôle à retardement — l'époque doit
+avoir été notée — donc il détecte une dérive en une époque, sans faire
+confiance ni au Discord ni au dépôt amont. À lancer juste après 26331.
+
+Les 11 filtres de molécules se resserrent en même temps (max_logp 7 → 5,5,
+max_iodine 1 → 0, max_bromine 2 → 0, max_fluorine 9 → 3...). Nous ne minons pas
+les molécules ; ils sont rangés dans `FILTERS_FROM_26331` à côté de `FILTERS`,
+car `tests/test_parity.py` vérifie que les molécules archivées passent les
+filtres d'aujourd'hui et l'archive a été construite sous les anciens.
