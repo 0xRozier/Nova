@@ -445,10 +445,20 @@ def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
 
 def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
                   work: Path) -> pd.DataFrame | None:
-    """Rank with the validators' own BoltzGen. None when it cannot run."""
+    """Rank with the validators' own BoltzGen. None when it cannot run.
+
+    The scores are read back from a path derived from `run_name`, and BoltzGen
+    reuses an existing output directory instead of recomputing -- which is why
+    the README insists on a fresh RUN per batch. So a leftover scores.csv from
+    an earlier attempt satisfies `exists()` and would be ranked as if it were
+    this epoch's, submitting a sequence chosen from someone else's numbers. Two
+    cheap checks make that impossible: the file has to be newer than the batch
+    we just wrote, and it has to cover the sequences we asked about.
+    """
     work.mkdir(parents=True, exist_ok=True)
     batch = work / f"{run_name}.csv"
     pd.DataFrame({"sequence": sequences}).to_csv(batch, index=False)
+    written = batch.stat().st_mtime
     cmd = [sys.executable, "-m", "scripts.boltzgen_score", "--file", str(batch),
            "--run", run_name, "--nova-dir", str(nova_dir)]
     log(f"BoltzGen on {len(sequences)} candidates...")
@@ -459,8 +469,29 @@ def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
         for line in (proc.stdout + proc.stderr).strip().splitlines()[-5:]:
             log(f"  {line}")
         return None
+    if scores.stat().st_mtime < written:
+        log(f"{scores} predates this batch: BoltzGen reused an old output "
+            f"directory instead of recomputing. Use a fresh --run. Not ranking "
+            f"on another batch's numbers.")
+        return None
+
     from scripts.boltzgen_score import rank_sum
     df = pd.read_csv(scores)
+    if "sequence" not in df.columns:
+        log(f"{scores} has no sequence column; cannot tell what it scored")
+        return None
+    scored = set(df["sequence"])
+    missing = [s for s in sequences if s not in scored]
+    if missing:
+        log(f"BoltzGen scored {len(scored & set(sequences))} of {len(sequences)} "
+            f"candidates; {len(missing)} came back with no metrics. Ranking the "
+            f"rest, which is honest, but a sequence with no score is not a "
+            f"sequence that scored badly.")
+        df = df[df["sequence"].isin(sequences)]
+    if df.empty:
+        log("none of this batch's candidates were scored; abandoning the epoch")
+        return None
+    df = df.copy()
     df["rank_sum"] = rank_sum(df)
     return df.sort_values("rank_sum")
 
