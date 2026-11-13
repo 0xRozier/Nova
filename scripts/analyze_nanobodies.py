@@ -95,6 +95,10 @@ def main():
 
     cache = load_cache()
     todo = sorted({(h, e) for h, e in zip(df["hash"], df["epoch"])} - set(cache))
+    # On a fresh machine data/scores/ does not exist yet, and opening the cache
+    # for append then raises FileNotFoundError -- which broke step 2 of the
+    # deployment order in docs/DEPLOY.md.
+    CACHE.parent.mkdir(parents=True, exist_ok=True)
     with ThreadPoolExecutor(8) as pool, CACHE.open("a") as f:
         for key, averages, final in pool.map(fetch, todo):
             if final:  # do not cache transient errors

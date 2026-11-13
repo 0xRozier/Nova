@@ -61,11 +61,24 @@ def main():
                 print(f"installed {name} -> {dest / name}")
 
     rows = state(args.target)
-    missing = [(name, path, note) for name, path, note in rows if not path.exists()]
+    # The dataset is two files written together, and --install-prebuilt only
+    # ships the parquet: without this, the parquet alone looked complete, the
+    # rebuild was skipped and train_nanobody_surrogate died on the missing
+    # feature matrix.
+    def present(name: str, path: Path) -> bool:
+        if not path.exists():
+            return False
+        if "dataset" in name:
+            return (DATA_DIR / "dataset" / f"{args.target}_nanobodies_X.npy").exists()
+        return True
+
+    missing = [(name, path, note) for name, path, note in rows
+               if not present(name, path)]
     for name, path, note in rows:
-        size = f"{path.stat().st_size / 1e6:.1f} MB" if path.exists() else "MISSING"
-        mark = "ok " if path.exists() else "-- "
-        if path.exists() and "dataset" in name:
+        here = present(name, path)
+        size = f"{path.stat().st_size / 1e6:.1f} MB" if here else "MISSING"
+        mark = "ok " if here else "-- "
+        if here and "dataset" in name:
             import pandas as pd
             dated = pd.read_parquet(path, columns=["epoch"])["epoch"].dropna()
             if not dated.empty:
