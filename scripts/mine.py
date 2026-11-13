@@ -384,18 +384,20 @@ def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
     df = parse(run(fasta, min(4, len(sequences)), work))
     tnp = {names[n]: bool(ok) for n, ok in zip(df["name"], ~df["rejected"]) if n in names}
 
-    # The validator refuses PSH > 89 outright (config.yaml
-    # psh_strict_rejection_threshold), far below TNP's own red 155.47. Our PSH is
-    # not calibrated to theirs, so this ranks candidates rather than rejecting
-    # them: prefer the least hydrophobic, which is the one scale-free signal we
-    # have. Our candidates sit at median 98 against 90 for accepted submissions.
+    # A3D needs the structure TNP just built, so this pass yields one more PSH
+    # fold for free on exactly the candidates that still matter. It is reported,
+    # not enforced: psh_screen already priced the risk over three folds, and
+    # refusing here on a single draw is how a candidate one draw over the line
+    # gets thrown away. What it is good for is the journal -- this is the last
+    # thing measured before the submission leaves.
     psh = dict(zip([names[n] for n in df["name"] if n in names],
                    [v for n, v in zip(df["name"], df["PSH"]) if n in names]))
     over = [s for s, v in psh.items() if v > PSH_STRICT]
     if over:
-        log(f"{len(over)} of {len(psh)} candidates exceed the validator's strict "
-            f"PSH limit of {PSH_STRICT} (ours median "
-            f"{sorted(psh.values())[len(psh) // 2]:.0f}); keeping the least hydrophobic")
+        log(f"{len(over)} of {len(psh)} candidates read above the validator's "
+            f"threshold of {PSH_STRICT} on this fold (median "
+            f"{sorted(psh.values())[len(psh) // 2]:.0f}); the accepted field "
+            f"reads {psh_calibration.ACCEPTED_MEDIAN}")
 
     a3d = a3d_screen(names, work / "TNP_output" / "Final_Models", work / "a3d")
     if not a3d:
@@ -689,14 +691,15 @@ def main():
                              "~1.6 min each on 2x T4")
     parser.add_argument("--psh-pool", type=int,
                         help="override the measured pool sizing (candidates to "
-                             "profile with TNP before selecting, 3.6 s each on 4 "
+                             "profile with TNP before selecting, 3.5 s each on 4 "
                              "cores). Left out, the pool is sized from the "
-                             "length's measured rate under the break: ~12 at "
-                             "CDR3 8, ~32 at 18. It used to default to 500 AS A "
-                             "FLOOR, which silently overrode that sizing")
+                             "length's measured rate under the validator's "
+                             "threshold: ~13 at CDR3 8, ~67 at 18. It used to "
+                             "default to 500 AS A FLOOR, which silently "
+                             "overrode that sizing")
     parser.add_argument("--psh-replicates", type=int, default=3,
-                        help="folds averaged for the PSH of the best candidates; "
-                             "one measurement deviates by 4.0, k folds by 4.0/sqrt(k)")
+                        help="folds averaged for the PSH of the best candidates; one "
+                             "measurement deviates by 1.74, k folds by 1.74/sqrt(k)")
     # --psh-margin is gone: it required 4.6 points of headroom under the
     # validator's 89, so 84.4, on the assumption that our reading and theirs
     # are the same measurement. They are not. Sequences the validators accepted

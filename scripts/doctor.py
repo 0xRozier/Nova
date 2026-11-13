@@ -66,14 +66,27 @@ def check_python_side() -> list[bool]:
     print("\nthe donor pool")
     from scripts.bootstrap import state
     from nova_lab.config import NANOBODY_TARGET
-    for name, path, _ in state(NANOBODY_TARGET[0]):
+    target = NANOBODY_TARGET[0]
+    for name, path, _ in state(target):
         here = path.exists()
         if here and "dataset" in name:
-            matrix = DATA_DIR / "dataset" / f"{NANOBODY_TARGET[0]}_nanobodies_X.npy"
+            matrix = DATA_DIR / "dataset" / f"{target}_nanobodies_X.npy"
             here = matrix.exists()
         line(here, name, f"{path.stat().st_size / 1e6:.1f} MB" if path.exists()
              else "missing; python -m scripts.bootstrap --build")
         results.append(here)
+
+    # The model scripts.mine actually loads to rank candidates, which is NOT
+    # the one bootstrap builds: that one predicts the ten metrics, this one
+    # predicts design_iiptm, and surrogate_rank wants this one. Without it the
+    # miner ranks on nothing and says so in one line among forty -- another
+    # silent degradation, found by dry-running the miner on 2026-11-13.
+    iiptm = DATA_DIR / "dataset" / f"{target}_iiptm_surrogate.joblib"
+    line(iiptm.exists(), "design_iiptm surrogate",
+         f"{iiptm.stat().st_size / 1e6:.1f} MB" if iiptm.exists() else
+         "missing; python -m scripts.train_iiptm_surrogate — without it the "
+         "miner has no quality ranking at all")
+    results.append(iiptm.exists())
     return results
 
 
