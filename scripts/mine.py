@@ -54,40 +54,38 @@ from nova_lab.config import (EPOCH_LENGTH, NANOBODY_TARGET, NO_SUBMISSION_BLOCKS
                              PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT)
 from nova_lab import timelock
 from nova_lab.chain import current_block, missing_api, require_api
-from nova_lab.psh_calibration import (LONG_BREAK as PSH_LONG_BREAK,
-                                      MIN_ACCEPTANCE as PSH_MIN_ACCEPTANCE,
-                                      acceptance_probability, band_label,
-                                      discriminates as psh_discriminates)
+from nova_lab import psh_calibration
+from nova_lab.psh_calibration import (SIGMA as PSH_SIGMA, THRESHOLD as PSH_THRESHOLD,
+                                      refusal_probability)
 
 JOURNAL = DATA_DIR / "mining" / "journal.jsonl"
 BLOCK_SECONDS = 12
 # Leave room for encryption, the GitHub PUT and the extrinsic. Measured: BoltzGen
 # runs at ~1.6 min/sequence on 2x T4, so the candidate budget follows from this.
 SAFETY_BLOCKS = 12
-# Share of candidates clearing PSH 89, measured per CDR3 length on 540
-# candidates (results/psh_by_generator.csv). These are per-CANDIDATE rates, not
-# per-epoch: 0% of the depth-4 epochs at length >= 17 had a passing candidate,
-# but with only four candidates each and a 9% rate, finding none is the expected
-# outcome (0.91^4 = 69%). Long CDR3 is hard, not hopeless — and it is where we
-# rank best, 6 wins of 9 epochs — so the pool is widened instead of skipping.
-PSH_PASS_RATE = {8: 0.51, 11: 0.28, 18: 0.09}
-# Share of our candidates reading at or under the measured break of 96, where
-# acceptance at a long CDR3 falls from ~68% to ~28% (nova_lab.psh_calibration).
-# Same 540 candidates, so the three tables are directly comparable:
+# Share of FRESH generator candidates reading at or under each PSH, measured on
+# the install the validator runs: 100 candidates per length, one fold each,
+# results/psh_fresh_candidates_by_length.csv.
 #
-#   CDR3    <= 84.4 (old margin)   <= 89   <= 96
-#      8            20 %            51 %    89 %
-#     11            11 %            28 %    68 %
-#     18           1.7 %           8.9 %    32 %
+#   CDR3   median PSH   <= 87   <= 89   <= 96
+#      8        85.0     62 %    75 %    95 %
+#     11        89.0     40 %    50 %    81 %
+#     18       100.6     10 %    15 %    31 %
 #
-# The pool used to be sized against the 84.4 column, which is why it needed
-# hundreds of candidates: finding five under 84.4 at length 18 takes ~300. The
-# break column needs 10 to 32. Confirmed on epoch 26238 (CDR3 7): of the 300
-# candidates actually measured, 57% came in under 84.4 and 97% under 96.
-PSH_BREAK_RATE = {8: 0.89, 11: 0.68, 18: 0.32}
-# Candidates wanted under the break before BoltzGen: the shortlist of 8, plus
-# slack for the developability screen, which rejected 1 of 8 on epoch 26238.
-WANT_UNDER_BREAK = 10
+# The table this replaces was measured before mkdssp 3.1.4 and the filter's
+# process_pdb patch were in place, and read 51 / 28 / 8.9 % for the <= 89
+# column. The shape survives -- long CDR3 is where the generator struggles --
+# but every rate was understated, and the 96 column it sized the pool against
+# does not correspond to anything the validator does.
+#
+# What has not changed: at CDR3 18 the median candidate reads 100.6 while the
+# accepted field reads 83.5. That is a generator problem and no pool size
+# fixes it; it only buys the tail.
+PSH_PASS_RATE = {8: 0.75, 11: 0.50, 18: 0.15}
+# Candidates wanted under the validator's threshold before BoltzGen: the
+# shortlist of 8, plus slack for the developability screen, which rejected
+# 1 of 8 on epoch 26238.
+WANT_UNDER_THRESHOLD = 10
 
 
 def psh_pass_rate(cdr3_length: int, table: dict) -> float:
@@ -104,21 +102,26 @@ def psh_pass_rate(cdr3_length: int, table: dict) -> float:
     return table[lengths[-1]]
 
 
+PSH_SECONDS_PER_CANDIDATE = 3.5  # 34 sequences in 2 min on 4 cores, measured
+
+
 def psh_pool_for(cdr3_length: int, override: int | None,
                  ceiling: int) -> tuple[int, float]:
-    """Pool size that should yield WANT_UNDER_BREAK candidates under the break.
+    """Pool size that should yield WANT_UNDER_THRESHOLD candidates under 89.
 
-    There is no reason to go wider. The three measured bands below 96 are
-    statistically indistinguishable in acceptance (66 %, 74 %, 62 %, intervals
-    overlapping), so measuring hundreds of candidates to pick the very lowest
-    buys nothing the data can see -- while costing 3.5 s each, which is how the
-    PSH stage came to take 17.6 of the epoch's 67 minutes.
+    Sized against the threshold the validator applies, not against a ceiling of
+    our own: at CDR3 18 only 15 % of fresh candidates clear 89, so ten of them
+    want ~67 measured, which is 4 minutes of the epoch's 66. At CDR3 8 the rate
+    is 75 % and thirteen candidates suffice. Going wider than that buys the
+    lower tail, which is worth something here -- unlike under the old banded
+    curve, where everything below 96 was indistinguishable -- but it buys it
+    slowly, and the epoch's budget is the GPU's, not TNP's.
     """
-    rate = psh_pass_rate(cdr3_length, PSH_BREAK_RATE)
+    rate = psh_pass_rate(cdr3_length, PSH_PASS_RATE)
     if override:
         return min(override, ceiling), rate
-    need = int(WANT_UNDER_BREAK / max(rate, 0.02))
-    return max(WANT_UNDER_BREAK, min(need, ceiling)), rate
+    need = int(WANT_UNDER_THRESHOLD / max(rate, 0.05))
+    return max(WANT_UNDER_THRESHOLD, min(need, ceiling)), rate
 
 
 def log(msg: str) -> None:
@@ -209,37 +212,46 @@ def config_unchanged() -> bool:
     return proc.returncode == 0
 
 
-PSH_SIGMA = 4.01  # deviation of ONE PSH measurement, from 10 sequences measured twice
-
-
 def measure_psh(sequences: list[str], work: Path) -> dict[str, float]:
-    """One PSH measurement per sequence. A fresh work dir forces a new fold."""
+    """One PSH measurement per sequence. A fresh work dir forces a new fold.
+
+    Sequences whose model TNP could not annotate with DSSP are dropped rather
+    than returned: their PSH is not the validator's quantity, and a reading
+    that is not comparable is worse than no reading, because it looks like one.
+    """
     from scripts.tnp_developability import parse, run
     work.mkdir(parents=True, exist_ok=True)
     names = {f"cand{i}": s for i, s in enumerate(sequences)}
     (work / "candidates.fasta").write_text(
         "".join(f">{n}\n{s}\n" for n, s in names.items()))
-    df = parse(run(work / "candidates.fasta", 4, work))
+    df = parse(run(work / "candidates.fasta", 4, work), work)
+    if "dssp" in df.columns:
+        blind = int((~df["dssp"]).sum())
+        if blind:
+            log(f"  {blind} sequences have a PSH measured without DSSP; "
+                f"discarding those readings (run scripts.doctor)")
+            df = df[df["dssp"]]
     return {names[n]: v for n, v in zip(df["name"], df["PSH"]) if n in names}
 
 
 # psh_select was removed here. It returned the `keep` LOWEST PSH, which made
-# PSH the selection criterion -- the defect this pipeline now exists to undo
-# (surrogate_rank, psh_admissible). Leaving it in place as dead code would
-# invite it back; the two-stage fold-averaging it did lives on in
-# psh_admissible.
+# PSH the selection criterion; psh_admissible replaced it with a ceiling, which
+# threw away strong candidates one draw over the line. Neither is here now:
+# psh_screen measures and psh_calibration prices, and the two multiply. Leaving
+# either in place as dead code would invite it back.
 
 
-def surrogate_rank(sequences: list[str], target: str) -> list[str] | None:
-    """Candidates ordered by predicted design_iiptm, best first.
+def surrogate_rank(sequences: list[str], target: str) -> dict[str, float] | None:
+    """Predicted design_iiptm per candidate, best first (an ordered dict).
 
-    This is the selection that decides the epoch, and it used to be PSH. Over
-    84 grafted candidates scored by BoltzGen the best read design_iiptm 0.692,
-    above the field's median of 0.664, while the eight chosen on PSH for epoch
-    26238 topped out at 0.375: the good candidates were discarded before
-    anything looked at them. PSH does not predict the verdict below 96
-    (FINDINGS 3ter), so it was never a selection criterion -- only the one we
-    could compute offline.
+    This is the quality half of the selection, and it used to be the whole of
+    it in one direction or PSH in the other. Over 84 grafted candidates scored
+    by BoltzGen the best read design_iiptm 0.692, above the field's median of
+    0.664, while the eight chosen on PSH for epoch 26238 topped out at 0.375:
+    the good candidates were discarded before anything looked at them. So
+    quality is predicted here and the risk of refusal is priced separately,
+    and the two are multiplied (nova_lab.psh_calibration.rank) rather than one
+    being used as a gate on the other.
 
     Predicting design_iiptm costs milliseconds, so the whole valid pool is
     ranked rather than a sample of it. Trained on the field and validated by
@@ -280,42 +292,54 @@ def surrogate_rank(sequences: list[str], target: str) -> list[str] | None:
         f"{bundle['metric']}: best {predicted[order[0]]:.3f}, "
         f"median {float(np.median(predicted)):.3f} "
         f"(trained on {bundle['n_train']} scored sequences)")
-    return [usable[i] for i in order]
+    return {usable[i]: float(predicted[i]) for i in order}
 
 
-def psh_admissible(sequences: list[str], ceiling: float, work: Path,
-                   replicates: int = 3) -> tuple[list[str], dict]:
-    """Which candidates clear the PSH ceiling, in the order they came in.
+# A first pass is a single draw, so a candidate is only dropped before
+# refolding when even a favourable draw leaves it hopeless: one measurement
+# deviates by PSH_SIGMA, and this is three of them above the threshold.
+REFOLD_IF_UNDER = PSH_THRESHOLD + 3 * PSH_SIGMA
 
-    PSH is an admissibility gate here, not a ranking: the order is the
-    surrogate's. One cheap pass over the pool drops what breaches the ceiling,
-    then the survivors are refolded k times for a value whose deviation is
-    PSH_SIGMA/sqrt(k) rather than 4.0.
+
+def psh_screen(sequences: list[str], work: Path,
+               replicates: int = 3) -> tuple[dict[str, float], int]:
+    """Our PSH mean per candidate, and how many folds it averages.
+
+    Two stages, because folding costs 3.5 s a candidate and most of the pool
+    does not deserve three: one pass over everything, then k-1 more on what is
+    still in reach of the threshold. Nothing is refused here. The reading is a
+    cost, priced by nova_lab.psh_calibration, and the caller ranks on it --
+    a ceiling was what this used to be, and the ceiling it inherited (96) came
+    from the install whose DSSP step was failing.
     """
     from scripts.tnp_developability import TNP
     if not TNP.exists():
         log(f"TNP not installed at {TNP}; cannot screen PSH at all. The "
             f"validator refuses above {PSH_STRICT} and that rejected every "
-            f"production submission, so this is not a screen to skip.")
-        return sequences, {}
+            f"production submission, so this is not a screen to skip. "
+            f"Run scripts.doctor.")
+        return {}, 0
     first = measure_psh(sequences, work / "pass1")
     if not first:
-        return sequences, {}
-    kept = [s for s in sequences if first.get(s, 0.0) <= ceiling]
-    log(f"PSH pass 1 on {len(first)}: {len(kept)} at or under {ceiling:.0f}, "
-        f"best {min(first.values()):.1f}")
-    if not kept:
-        return [], first
-    samples = {s: [first[s]] for s in kept}
+        log("PSH pass 1 returned nothing; the toolchain is not measuring "
+            "(scripts.doctor)")
+        return {}, 0
+    worth_refolding = [s for s in sequences if first.get(s, 999.0) < REFOLD_IF_UNDER]
+    log(f"PSH pass 1 on {len(first)}: best {min(first.values()):.1f}, median "
+        f"{sorted(first.values())[len(first) // 2]:.1f}, "
+        f"{sum(v <= PSH_THRESHOLD for v in first.values())} at or under "
+        f"{PSH_THRESHOLD:.0f}; refolding {len(worth_refolding)}")
+    samples = {s: [v] for s, v in first.items()}
     for i in range(2, replicates + 1):
-        for s, v in measure_psh(kept, work / f"pass{i}").items():
+        for s, v in measure_psh(worth_refolding, work / f"pass{i}").items():
             samples.setdefault(s, []).append(v)
     mean = {s: sum(v) / len(v) for s, v in samples.items()}
-    folds = min(len(v) for v in samples.values()) or 1
-    kept = [s for s in kept if mean.get(s, 0.0) <= ceiling]
-    log(f"PSH over {replicates} folds: {len(kept)} still at or under "
-        f"{ceiling:.0f}, deviation of the mean {PSH_SIGMA / folds ** 0.5:.1f}")
-    return kept, mean
+    folds = min(len(samples[s]) for s in worth_refolding) if worth_refolding else 1
+    best = min(mean.values())
+    log(f"PSH over {folds} fold(s): best {best:.1f} -> "
+        f"{refusal_probability(best, folds):.0%} chance the validator refuses it "
+        f"(the accepted field reads a median of {psh_calibration.ACCEPTED_MEDIAN})")
+    return mean, folds
 
 
 def archive_screen(sequences: list[str], target: str, allowed_v: str,
@@ -478,19 +502,20 @@ def mine_epoch(st, args, params: dict) -> dict:
         log(f"donor pool is {stale} epochs behind ({stale * 72 / 60 / 24:.1f} days)")
 
     cdr3_len = params["allowed_cdr3_length"]
-    # Size the PSH pool to the length's measured rate under the break rather
-    # than to a fixed number. Long CDR3 is the hard case -- 32% under 96 at
-    # length 18 against 89% at length 8 -- and it is also where we rank best,
-    # six wins in nine epochs replayed, so it gets the wider pool.
+    # Size the PSH pool to the length's measured pass rate rather than to a
+    # fixed number. Long CDR3 is the hard case -- 15% under 89 at length 18
+    # against 75% at length 8 -- and it is also where we rank best, six wins in
+    # nine epochs replayed, so it gets the wider pool.
     psh_pool, rate = psh_pool_for(cdr3_len, args.psh_pool, args.candidates)
-    entry["psh_break_rate"] = round(rate, 3)
+    entry["psh_pass_rate"] = round(rate, 3)
     entry["psh_pool"] = psh_pool
     log(f"CDR3 length {cdr3_len}: {rate:.0%} of candidates expected at or under "
-        f"{PSH_LONG_BREAK}, so PSH pool {psh_pool} to find about "
-        f"{WANT_UNDER_BREAK}")
-    if psh_pool * 3.6 / 60 > 30:
-        log(f"  that pool costs {psh_pool * 3.6 / 60:.0f} min of CPU; the epoch "
-            f"budget is about 66 min, so the run may not finish")
+        f"{PSH_THRESHOLD:.0f}, so PSH pool {psh_pool} to find about "
+        f"{WANT_UNDER_THRESHOLD}")
+    cost = psh_pool * PSH_SECONDS_PER_CANDIDATE / 60
+    if cost > 30:
+        log(f"  that pool costs {cost:.0f} min of CPU; the epoch budget is "
+            f"about 66 min, so the run may not finish")
 
     with timed("propose", timings):
         result = propose(params, args.target, candidates=args.candidates,
@@ -509,61 +534,51 @@ def mine_epoch(st, args, params: dict) -> dict:
     work = DATA_DIR / "mining" / f"epoch{epoch}"
     sequences = list(shortlist["sequence"])
 
-    # Rank the WHOLE valid pool on predicted design_iiptm. This is the choice
-    # that decides the epoch and it used to be PSH, which does not predict the
-    # verdict below 96: on epoch 26238 the eight chosen on PSH read at best
-    # 0.375 while their pool reached 0.692. Milliseconds a candidate, so the
-    # pool is ranked entire rather than sampled.
+    # Predict design_iiptm for the WHOLE valid pool: milliseconds a candidate,
+    # against 3.5 s to fold one, so quality decides who gets measured.
     with timed("surrogate", timings):
-        ordered = surrogate_rank(sequences, args.target)
-    entry["surrogate_ranked"] = bool(ordered)
-    if ordered:
-        sequences = ordered[:psh_pool]
+        quality = surrogate_rank(sequences, args.target)
+    entry["surrogate_ranked"] = bool(quality)
+    if quality:
+        sequences = list(quality)[:psh_pool]
     else:
+        # No model: every candidate is equally promising as far as we know, so
+        # the ordering below is the risk of refusal alone.
         sequences = sequences[:psh_pool]
+        quality = {s: 1.0 for s in sequences}
 
-    # PSH is now the admissibility gate, applied in the surrogate's order
-    # rather than replacing it.
-    with timed("psh_admissible", timings):
-        admissible, psh = psh_admissible(sequences, PSH_LONG_BREAK,
-                                         work / "psh", args.psh_replicates)
-    if admissible:
-        # Keep the surrogate's order among those that clear the gate.
-        sequences = [s for s in sequences if s in set(admissible)][:args.shortlist]
-    else:
-        log(f"no candidate clears PSH {PSH_LONG_BREAK}; keeping the best "
-            f"{args.shortlist} by surrogate anyway, since submitting nothing is 0%")
-        sequences = sequences[:args.shortlist]
+    # Measure PSH, then order by expected value -- predicted quality times the
+    # chance the validator does not refuse it on PSH. Neither half is a gate:
+    # a ceiling discards a strong candidate that is one draw over the line, and
+    # ignoring PSH is what put eleven submissions in the bin.
+    with timed("psh_screen", timings):
+        psh, folds = psh_screen(sequences, work / "psh", args.psh_replicates)
+    ordered = psh_calibration.rank({s: quality.get(s, 1.0) for s in sequences},
+                                   psh, folds)
+    sequences = ordered[:args.shortlist]
     if psh:
-        best = min(psh[s] for s in sequences if s in psh) if any(
-            s in psh for s in sequences) else min(psh.values())
-        entry["psh_best"] = round(best, 2)
+        best_sequence = ordered[0]
+        best = psh.get(best_sequence, float("nan"))
+        risk = refusal_probability(best, folds)
+        entry["psh_folds"] = folds
+        entry["psh_best"] = None if best != best else round(best, 2)
+        entry["psh_refusal_estimate"] = None if risk != risk else round(risk, 3)
         measured = [psh[s] for s in sequences if s in psh]
         entry["psh_selected_max"] = round(max(measured), 2) if measured else None
-        # What that reading means for the verdict, measured on 300 submissions
-        # the validators ruled on rather than assumed from the 89 in their
-        # config -- that is their threshold on their measurement, not ours. See
-        # nova_lab.psh_calibration and FINDINGS 3ter.
-        chance = acceptance_probability(best, cdr3_len)
-        entry["psh_acceptance_estimate"] = round(chance, 2)
-        entry["psh_band"] = band_label(best, cdr3_len)
-        log(f"best PSH {best:.1f} at CDR3 {cdr3_len}: {entry['psh_band']}")
-        if not psh_discriminates(cdr3_len):
-            log("  at this length our PSH does not predict the verdict, so it "
-                "selects candidates here but does not veto the epoch")
-        elif best > PSH_LONG_BREAK:
-            log(f"  above the measured break of {PSH_LONG_BREAK}, where "
-                f"acceptance falls to about {chance:.0%}; submitting anyway, "
-                f"since not submitting is 0%")
-        if chance < PSH_MIN_ACCEPTANCE:
-            # Deliberately almost unreachable: the measured floor is ~25%. The
-            # old rule refused above 89 minus a 4.6 margin, i.e. 84.4, which at
-            # CDR3 17+ rejected every candidate in all nine epochs replayed
-            # offline -- the nine we ranked first in six of.
-            log(f"estimated acceptance {chance:.0%} is below "
-                f"{PSH_MIN_ACCEPTANCE:.0%}, outside anything measured; skipping")
-            entry["status"] = "psh_no_margin"
-            return _stamp(entry)
+        entry["psh_unmeasured_selected"] = sum(1 for s in sequences if s not in psh)
+        log(f"chosen on expected value: {psh_calibration.verdict(best, folds)}")
+        if risk == risk and risk > 0.5:
+            # Still submitted: a refused submission and no submission both score
+            # zero, so any chance of passing beats abstaining. It is logged as
+            # the generator's problem, which is what it is -- the accepted field
+            # reads a median of 83.5 and our candidates 88.7.
+            log(f"  no candidate is safe: the best still has a {risk:.0%} chance "
+                f"of refusal. Submitting anyway, since not submitting is 0%, but "
+                f"this epoch is a coin toss and the fix is a less hydrophobic "
+                f"generator, not a wider pool.")
+        if entry["psh_unmeasured_selected"]:
+            log(f"  {entry['psh_unmeasured_selected']} of the {len(sequences)} "
+                f"selected were never measured; they rank last by construction")
 
     # The archive rule, now that the pool is a handful rather than hundreds.
     # propose skipped it: at 5.6 s per candidate it costs 28 min on a pool of

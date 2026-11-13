@@ -1,130 +1,129 @@
-"""What our PSH reading actually says about the validator's verdict.
+"""What our PSH reading says about the validator's verdict, measured twice.
 
-`config.PSH_STRICT_REJECTION_THRESHOLD` is 89 and that is the validator's own
-number, applied to *its* measurement. Ours is a different measurement of the
-same quantity, and treating 89 as our threshold was wrong in a way that cost us
-a third of the calendar.
+The validator's rule is one line of its own code
+(`neurons/validator/nanobody_validity.py`, upstream db9bf19):
 
-The evidence, from 300 submissions the validators ruled on, profiled by our own
-TNP (`results/psh_by_length.csv`, `results/psh_accepted_vs_refused.csv`):
+    psh_strict_rejection = [... if result["surface_hydrophobic_patches"]
+                            > config["psh_strict_rejection_threshold"]]
 
-  - Sequences the validators ACCEPTED read above 89 in our pipeline 28 % of the
-    time at CDR3 5-8, 33 % at 9-12, 60 % at 13-16 and **76 % at 17+**, median
-    92.0 there. Reading 92 at a long CDR3 is what an accepted sequence reads.
-  - Splitting accepted against refused at the same lengths: at 17+ a reading of
-    96 or less is accepted 68 % of the time [57-77] and above 96, 28 %
-    [18-42] (Fisher p = 2e-05). At 5-8 the two groups are indistinguishable --
-    accepted median 84.1, refused 83.7, AUC 0.46 -- so at short lengths our
-    number carries no information about the verdict at all.
+with the threshold at 89. A sequence above it is dropped before anything is
+scored, and the epoch is lost. There is no band, no curve and no partial
+credit: the only question is whether the validator's own reading exceeds 89.
 
-Two consequences for the miner:
+## Why this file was rewritten
 
-  1. Refusing an epoch because our reading exceeds 89 discards candidates that
-     would have been accepted two times in three. The old rule was stricter
-     still (89 minus a 4.6 margin, so 84.4), which at CDR3 17+ refused every
-     candidate in all nine epochs replayed offline -- the same nine we ranked
-     first in six of.
-  2. A refused submission costs the epoch, which is lost anyway when we submit
-     nothing. So the bar for submitting is not "certain to pass", it is "better
-     than not submitting": any positive acceptance probability clears it. The
-     guard that remains is there for the pathological case, not the ordinary
-     one.
+The version it replaces fitted an empirical acceptance curve -- bands at 88,
+92, 96, a "break" at 96, and the advice that a reading of 92 at a long CDR3 is
+"what an accepted sequence reads". Every number in it came from a local TNP
+whose DSSP step was failing. TNP prints one line when that happens and carries
+on with a PSH computed another way, so the readings looked plausible and were
+measurements of something else. On that install, 44-62 % of the submissions the
+validators had ACCEPTED read above 89, which is what made the threshold look
+unusable and the curve look necessary.
 
-The curve is empirical on purpose. A four-parameter fit of the measurement
-model (our bias, the validator's noise) was tried and withdrawn: a quarter of
-the refusals at 17+ read BELOW the accepted median, so they were refused for
-something our PSH does not see, the model had no term for it, and its
-parameters ran to whatever bound the search allowed. See FINDINGS 3ter.
+With the install the validator actually runs -- TNP at 29dcac7, the filter's
+process_pdb patch, mkdssp 3.1.4, FreeSASA 2.0.1, ImmuneBuilder's refine.py typo
+fixed; `nova_lab.toolchain` checks all of it -- the same 36 accepted
+submissions of epoch 26174, folded three times each, read:
+
+    minimum 70.3, median 83.5, maximum 88.9, and NONE above 89.
+
+36 of 36 below the threshold the validator applies. Our reading is the
+validator's reading. The one submission it refused in that epoch reads 88.0
+here against the 89.57 in its log, so if anything we read about 1.5 low on that
+single point of comparison -- a reason to keep margin, not to distrust the
+scale.
+
+## The noise, re-measured
+
+NanoBodyBuilder2's refinement is not deterministic, so one measurement is a
+draw. Over the 37 calibration sequences folded three times each, the pooled
+deviation of ONE measurement is **1.74** (median per-sequence 0.95, worst
+3.88). The 4.01 this project carried came from the broken path and was more
+than twice too large.
+
+Folding k times gives a mean with deviation 1.74/sqrt(k); the validator still
+takes a single draw of its own. So from our k-fold mean m:
+
+    P(the validator reads above 89) = Phi((m - 89) / (1.74 * sqrt(1 + 1/k)))
+
+which is 1 % at m = 84.4, 18 % at 87.2 and 42 % at 88.6 for k = 3.
+
+## What it is for
+
+Not a verdict -- a cost. A refused submission loses the epoch, and so does
+submitting nothing, so the candidate to send is the one with the best expected
+score, `predicted quality * P(not refused)`, not the one under some ceiling.
+That ordering is what `expected_value` gives, and on our own 20 measured
+candidates it changes the answer: the variant this project had settled on reads
+88.6 (42 % chance of refusal) while FR211Q->E reads 84.4 (1 %) for the same
+binding score within noise.
 """
 from __future__ import annotations
 
-import bisect
+from math import erf, sqrt
 
-# P(accepted | our PSH in this band), reweighted to the field's real base rate.
-# Each entry is (upper bound of the band, probability, n). None as a bound means
-# "everything above". Bands are as measured; do not interpolate inside one.
-LONG_CURVE = [(88, 0.66, 25), (92, 0.74, 26), (96, 0.62, 23),
-              (100, 0.25, 25), (None, 0.31, 27)]
+# The validator's own threshold, applied to its own measurement.
+THRESHOLD = 89.0
 
-# At CDR3 5-8 the accepted and refused distributions overlap (AUC 0.46), so
-# there is no curve to give: the reading does not predict the verdict. What was
-# measured is kept here as a record -- 77 % of 38 at or below 88, then 64 % of
-# 8, 69 % of 7, and one single sequence above 96 that happened to be accepted.
-# Those last three bands are too thin to read anything into, and the last would
-# otherwise hand the miner a 100 % from n = 1, so the short band answers with
-# its base rate instead (see acceptance_probability).
-SHORT_CURVE = [(88, 0.77, 38), (92, 0.64, 8), (96, 0.69, 7), (None, 1.00, 1)]
+# Deviation of ONE PSH measurement on the faithful install: pooled over 37
+# sequences folded three times each (data/preflight/calibration.csv).
+SIGMA = 1.74
 
-# Share of submissions the validators accepted, per band, over the whole paired
-# field: 651 of 869 at CDR3 5-8, 741 of 1433 at 17+.
-BASE_RATE_SHORT = 0.75
-BASE_RATE_LONG = 0.52
-
-# Below this many sequences a band's own rate is not reported as a probability.
-MIN_BAND_N = 10
-
-LONG_CDR3 = 17  # where the long-band measurement applies
-
-# Above this reading, acceptance at a long CDR3 drops from ~68% to ~28%
-# (Fisher p = 2e-05). Used for reporting and for ordering candidates, not as a
-# refusal: 28% beats the 0% of submitting nothing.
-LONG_BREAK = 96
-
-# Refuse the epoch only below this estimated acceptance probability. The
-# measured floor is ~25%, so this does not fire on ordinary epochs by design;
-# it exists for a candidate far outside anything we have measured.
-MIN_ACCEPTANCE = 0.10
+# What the accepted field reads, for context in logs and reports: the 36
+# submissions the validators accepted in epoch 26174, three folds each.
+ACCEPTED_MEDIAN = 83.5
+ACCEPTED_MAX = 88.9
 
 
-def curve_for(cdr3_length: int) -> list[tuple[int | None, float, int]]:
-    return LONG_CURVE if cdr3_length >= LONG_CDR3 else SHORT_CURVE
+def refusal_probability(psh_mean: float, folds: int = 1) -> float:
+    """P(the validator's own reading exceeds 89), given our k-fold mean.
 
-
-def acceptance_probability(psh: float, cdr3_length: int) -> float:
-    """P(the validators accept it | our PSH reads `psh`), as measured.
-
-    A step function over the measured bands, because that is what the data
-    supports: at CDR3 17+ the three bands below 96 (66 %, 74 %, 62 %) have
-    overlapping intervals, so there is no gradient to read inside them, and
-    smoothing one in would invent precision we do not have.
+    Both readings are draws around the sequence's true PSH, so the spread that
+    matters combines our mean's deviation with the validator's single draw.
     """
-    if not discriminates(cdr3_length):
-        # The reading says nothing at this length, so the honest answer is the
-        # band's base rate, not a per-bin figure drawn from a handful of
-        # sequences -- one of those bins holds a single sequence.
-        return BASE_RATE_SHORT
-    _, probability, n = _band(psh, cdr3_length)
-    return probability if n >= MIN_BAND_N else BASE_RATE_LONG
+    if psh_mean != psh_mean:  # NaN: never measured, so nothing is known
+        return float("nan")
+    spread = SIGMA * sqrt(1.0 + 1.0 / max(folds, 1))
+    return 0.5 * (1.0 + erf((psh_mean - THRESHOLD) / (spread * sqrt(2.0))))
 
 
-def _band(psh: float, cdr3_length: int) -> tuple[int | None, float, int]:
-    curve = curve_for(cdr3_length)
-    bounds = [b for b, _, _ in curve[:-1]]
-    return curve[bisect.bisect_left(bounds, psh)]
+def expected_value(quality: float, psh_mean: float, folds: int = 1) -> float:
+    """`quality` discounted by the chance the submission is refused on PSH.
 
-
-def band_label(psh: float, cdr3_length: int) -> str:
-    """The measured band a reading falls in, for logs and the journal."""
-    curve = curve_for(cdr3_length)
-    low = None
-    for upper, probability, n in curve:
-        if upper is None or psh <= upper:
-            span = (f"> {low}" if upper is None
-                    else f"<= {upper}" if low is None else f"{low}-{upper}")
-            if not discriminates(cdr3_length):
-                return (f"{span}: at this length our PSH does not predict the "
-                        f"verdict (AUC 0.46), base rate {BASE_RATE_SHORT:.0%}")
-            if n < MIN_BAND_N:
-                return f"{span}: only {n} measured, falling back to the base rate"
-            return f"{span} (accepted {probability:.0%} of {n} measured)"
-        low = upper
-    return "unmeasured"
-
-
-def discriminates(cdr3_length: int) -> bool:
-    """Whether our PSH predicts the verdict at this length at all.
-
-    At CDR3 5-8 it does not (AUC 0.46 on 54 sequences), so a PSH-based refusal
-    there rests on nothing. Selecting the lowest reading is still harmless.
+    `quality` is whatever we believe about the candidate on the merits -- the
+    surrogate's predicted design_iiptm in the miner, a measured one when we
+    have it. A candidate that cannot be measured keeps its quality untouched
+    and is ranked below any measured candidate by `rank`, since an unscreened
+    sequence is exactly what the production run submitted eleven times.
     """
-    return cdr3_length >= LONG_CDR3
+    p = refusal_probability(psh_mean, folds)
+    return quality if p != p else quality * (1.0 - p)
+
+
+def rank(candidates: dict[str, float], psh: dict[str, float],
+         folds: int = 1) -> list[str]:
+    """Sequences best first, by expected value; measured ones ahead of not.
+
+    `candidates` maps sequence -> quality, `psh` maps sequence -> our k-fold
+    mean for those that were measured.
+    """
+    def key(sequence: str):
+        measured = sequence in psh
+        value = expected_value(candidates[sequence],
+                               psh.get(sequence, float("nan")), folds)
+        return (0 if measured else 1, -value)
+
+    return sorted(candidates, key=key)
+
+
+def verdict(psh_mean: float, folds: int = 1) -> str:
+    """One line for a log: the reading, the risk, and what the field reads."""
+    if psh_mean != psh_mean:
+        return "PSH not measured — the gate that refused every production submission"
+    p = refusal_probability(psh_mean, folds)
+    where = ("below" if psh_mean <= ACCEPTED_MEDIAN else
+             "above" if psh_mean > ACCEPTED_MAX else "within")
+    return (f"PSH {psh_mean:.1f} over {folds} fold(s) -> {p:.0%} chance the "
+            f"validator refuses it ({where} the accepted field, median "
+            f"{ACCEPTED_MEDIAN}, max {ACCEPTED_MAX})")

@@ -20,7 +20,6 @@ Usage:
     python -m scripts.tnp_developability --parse data/tnp/tnp_stdout.log   # re-read a finished run
 """
 import argparse
-import os
 import re
 import subprocess
 import sys
@@ -28,10 +27,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from nova_lab import DATA_DIR
+from nova_lab import DATA_DIR, toolchain
 from nova_lab.config import PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT
 
-TNP = Path("/home/user/venv-tnp/bin/TNP")
+TNP = toolchain.TNP
 METRICS = ["L", "L3", "C", "PSH", "PPC", "PNC"]
 LABELS = {
     "Total IMGT CDR Length": "L",
@@ -45,8 +44,15 @@ HEAD = re.compile(r"Summary Statistics for (\S+?):")
 LINE = re.compile(r"^\s{4}(.+?): ([-\d.eE+]+) \((\w+) flag\)$")
 
 
-def parse(text: str) -> pd.DataFrame:
-    """One row per sequence, with each metric's value and flag."""
+def parse(text: str, out_dir: Path | None = None) -> pd.DataFrame:
+    """One row per sequence, with each metric's value and flag.
+
+    With `out_dir` (the directory given to --output), each row also carries
+    `dssp`: whether TNP got the DSSP annotation for that sequence. A row with
+    dssp False holds a PSH computed on a different code path from the
+    validator's -- 89.50 against 91.21 on the one candidate measured both ways
+    -- so it is a reading of something else, not a noisy reading of theirs.
+    """
     rows, current = [], None
     for line in text.splitlines():
         if m := HEAD.search(line):
@@ -61,6 +67,14 @@ def parse(text: str) -> pd.DataFrame:
             if key:
                 current[key] = float(value)
                 current[f"{key}_flag"] = flag
+    if not rows:
+        # A run can profile nothing at all -- TNP exiting on an import error
+        # profiles 0 of 100 -- and callers then got a KeyError on 'name' three
+        # frames away from the cause. An empty run is a legitimate answer
+        # ("nothing was screened"), so it comes back shaped like a result.
+        empty = pd.DataFrame(columns=["name", *METRICS, *(f"{m}_flag" for m in METRICS),
+                                      "reds", "greys", "rejected", "red_on"])
+        return empty.assign(dssp=pd.Series(dtype=bool)) if out_dir is not None else empty
     df = pd.DataFrame(rows).drop_duplicates("name", keep="last")
     flags = [f"{m}_flag" for m in METRICS if f"{m}_flag" in df.columns]
     df["reds"] = df[flags].eq("red").sum(axis=1)
@@ -68,6 +82,9 @@ def parse(text: str) -> pd.DataFrame:
     df["rejected"] = df["reds"] > 0
     df["red_on"] = [", ".join(m for m in METRICS
                               if r.get(f"{m}_flag") == "red") for _, r in df.iterrows()]
+    if out_dir is not None:
+        root = out_dir / "TNP_output" if (out_dir / "TNP_output").is_dir() else out_dir
+        df["dssp"] = [toolchain.annotated(root, n) for n in df["name"]]
     return df
 
 
@@ -81,14 +98,41 @@ def run(fasta: Path, ncores: int, out_dir: Path) -> str:
     fasta = fasta.resolve()
     cmd = [str(TNP), "--file", str(fasta), "--ncores", str(ncores),
            "--output", str(out_dir / "TNP_output")]
-    # TNP shells out to a bare `NanoBodyBuilder2`, so the venv's bin must be on PATH.
-    env = {**os.environ, "PATH": f"{TNP.parent}:{os.environ.get('PATH', '')}"}
+    # TNP shells out to a bare `NanoBodyBuilder2` and Biopython to a bare
+    # `mkdssp`, so both have to be on PATH; toolchain.tnp_env puts them there.
     print(" ".join(cmd), flush=True)
-    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=out_dir, env=env)
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=out_dir,
+                          env=toolchain.tnp_env())
     text = proc.stdout + "\n" + proc.stderr
     (out_dir / "tnp_stdout.log").write_text(text)
     print(f"TNP exit {proc.returncode}; log -> {out_dir / 'tnp_stdout.log'}")
+    audit(text, out_dir / "TNP_output", wanted=fasta.read_text().count(">"))
     return text
+
+
+def audit(text: str, output: Path, wanted: int) -> None:
+    """Say out loud what TNP swallowed, because it carries on either way.
+
+    TNP reports a PSH whether or not DSSP annotated the model, and reports
+    nothing at all when NanoBodyBuilder2 fails -- a sequence then simply has no
+    row, which reads as "not screened" and must never read as "passed". Both
+    happened here: DSSP 4.x refuses NanoBodyBuilder2 models outright, and
+    ImmuneBuilder 1.2's set/dict typo lost 3 of 37 sequences. Eleven production
+    submissions were refused on PSH while the screen looked like it was working.
+    """
+    profiled = text.count("Summary Statistics for ")
+    if profiled < wanted:
+        print(f"  WARNING: {wanted - profiled} of {wanted} sequences came back with "
+              f"no model, so they have no PSH at all. Run scripts.doctor: "
+              f"ImmuneBuilder's refine.py typo loses sequences this way.")
+    if "DSSP failed to produce an output" in text:
+        names = [p.name for p in (output / "Raw_Model_Outputs").glob("*")
+                 if p.is_dir()] if (output / "Raw_Model_Outputs").is_dir() else []
+        blind = [n for n in names if not toolchain.annotated(output, n)]
+        print(f"  WARNING: DSSP failed on {len(blind) or 'some'} of {wanted} "
+              f"sequences. Their PSH is NOT the validator's measurement "
+              f"(89.50 against 91.21 on the one candidate measured both ways). "
+              f"Run scripts.doctor.")
 
 
 def report(df: pd.DataFrame, meta: pd.DataFrame) -> None:

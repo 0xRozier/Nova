@@ -28,11 +28,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from nova_lab import DATA_DIR
+from nova_lab import DATA_DIR, toolchain
 
 MAX_AVERAGE = -0.68002724866200
 MAX_PEAK = 1.58023066762925
-TOOLS = Path("/home/user/nanofilter/.tools/bin")
+TOOLS = toolchain.A3D_BIN_DIR  # moved with NOVA_NANOFILTER
 
 
 def screen(sequences: dict[str, str], models: Path, work: Path,

@@ -114,41 +114,68 @@ def test_never_rejects_a_sequence_the_validator_accepted(labelled, params, archi
     assert not wrong, f"{len(wrong)} false rejections, e.g. {wrong[:3]}"
 
 
-def test_catches_the_rejections_it_can_see(labelled, params, archive, exclude_by_epoch):
-    """What we catch is germline identity, and that is most of what we can.
+def test_the_germline_floor_is_still_enforced(archive):
+    """The one rejection kind this checker reproduces, probed directly.
 
-    Measured over 147 of the validator's rejections: we catch 18, and all 18 are
-    human V identity below the floor. The rest are refused for reasons we do not
-    model as hard gates — above all PSH, where our own measurement deviates by
-    4.01 against a threshold of 89, so treating it as a verdict would refuse
-    sequences the validator accepts (39% of the accepted set reads above 89
-    here).
+    This replaces an assertion that at least 8 % of the validator's rejections
+    in a sample of 100 were caught here. That number was a proxy for "the
+    germline check still works", and it was measured on epochs 25956-26025,
+    where germline failures were common. It is not a property of our code: on
+    epochs 26299-26306 the field has cleaned up — 66 rejections in 296
+    submissions, and we catch 1 — so the proxy failed while the check it stood
+    for was fine. Today's rejections are PSH and developability, which
+    check_sequence deliberately does not model because they need a structure;
+    scripts.preflight is where those are screened.
 
-    The floor was 15% when this test was written, but that number was inflated
-    by the anachronistic duplicates fixed in exclude_by_epoch: the checker was
-    "catching" sequences that were novel at their epoch and only look archived
-    today. 12% is the honest rate, so the floor sits at 8% — low enough not to
-    be brittle, high enough that a broken germline check (which would drop it to
-    roughly zero) still fails the test.
+    So the mechanism is tested on a sequence built to fail it, which cannot
+    drift with the field.
+    """
+    from nova_lab.nanobodies import germline_identity
+    parent = next(s for s in archive.sequences if germline_identity(s))
+    mutated = list(parent)
+    for i in range(30, min(len(mutated), 80), 3):
+        mutated[i] = "W"  # wreck the framework, leave the ends alone
+    mutated = "".join(mutated)
+
+    allowed_v = germline_identity(parent)["V"]["genes"][0]
+    problems = check_sequence(mutated, allowed_v, None, archive, set(), warnings=[])
+    assert any("identity" in p for p in problems), (
+        f"a sequence mutated far off the human germline was not refused: "
+        f"{problems or 'no problem reported at all'}. The germline check is the "
+        f"one hard gate this checker reproduces; if it is silent, ANARCI is "
+        f"returning None (run python -m scripts.doctor: without hmmscan it does "
+        f"that without raising).")
+
+
+def test_it_flags_nothing_the_validator_was_happy_with(labelled, params, archive,
+                                                       exclude_by_epoch):
+    """Precision, which is the direction that costs us epochs.
+
+    A false accept wastes one submission; a false refusal makes the miner skip
+    a candidate, or an epoch, for nothing. The recall figure is printed for
+    information: what we catch now is whatever the field happens to be getting
+    wrong that week, and it is no longer a property of this code.
     """
     rejected = [(s, e) for s, e, accepted in labelled if not accepted]
-    reasons = []
+    caught = []
     for seq, epoch in rejected:
         problems = check_sequence(seq, params[epoch]["allowed_v"],
                                   params[epoch]["allowed_cdr3_length"],
                                   archive, exclude_by_epoch(epoch), warnings=[])
         if problems:
-            reasons.append(problems[0])
-    caught = len(reasons)
-    kinds = Counter(r.split("(")[0].strip()[:40] for r in reasons)
-    print(f"\ncaught {caught}/{len(rejected)} of the validator's rejections:")
-    for kind, n in kinds.most_common():
+            caught.append(problems[0])
+    print(f"\ncaught {len(caught)}/{len(rejected)} of the validator's rejections:")
+    for kind, n in Counter(r.split("(")[0].strip()[:40] for r in caught).most_common():
         print(f"  {n:4d}  {kind}")
-    print("  (the rest are refused on grounds we deliberately do not gate on, "
-          "chiefly PSH)")
+    print("  (the rest are refused on grounds that need a structure — chiefly "
+          "PSH > 89, which scripts.preflight screens)")
 
-    assert caught >= 0.08 * len(rejected), (
-        f"only {caught}/{len(rejected)} caught; the germline check may be broken")
-    assert any("identity" in r for r in reasons), (
-        "no germline-identity rejection caught at all — that check is the one "
-        "kind we reproduce, so its absence means the reproduction is broken")
+    accepted = [(s, e) for s, e, ok in labelled if ok]
+    wrong = []
+    for seq, epoch in accepted:
+        problems = check_sequence(seq, params[epoch]["allowed_v"],
+                                  params[epoch]["allowed_cdr3_length"],
+                                  archive, exclude_by_epoch(epoch), warnings=[])
+        if problems:
+            wrong.append((epoch, problems[0]))
+    assert not wrong, f"{len(wrong)}/{len(accepted)} false refusals, e.g. {wrong[:3]}"

@@ -83,11 +83,25 @@ def main():
     truth = df.iloc[perm[cut:]].reset_index(drop=True)
     print(f"  {'rank_sum':28s} {spearmanr(rank_sum(pred), rank_sum(truth)).statistic:5.2f}")
 
+    # ---- the model the miner loads: trained on everything there is.
+    # This used to be the backtest's model, trained only on what preceded the
+    # held-out epochs, and it was saved after the backtest -- so a machine with
+    # fewer than --test-epochs epochs took the early return and ended up with
+    # NO model at all, which is what a fresh install looks like. The deployed
+    # model also has no reason to discard the fifteen most recent epochs, which
+    # are the donors the competition is actually at.
+    Surrogate(main=train_all(X, df, np.arange(len(df)), names)).save(
+        f"{args.target}_nanobody")
+    print(f"\nsaved per-metric models trained on all {len(df)} sequences to {ds}")
+
     # ---- 2. temporal split: would picking by prediction have won epochs?
     known = df[df["epoch"].notna()].copy()
     epochs = np.sort(known["epoch"].unique())
     if len(epochs) <= args.test_epochs:
-        print("\nnot enough epochs for a temporal split")
+        print("\nnot enough epochs for a temporal split (needs more than "
+              f"{args.test_epochs}; {len(epochs)} known). Run "
+              "scripts.fetch_submissions --last 60 then scripts.analyze_nanobodies "
+              "to label more, then rebuild. The model above is already saved.")
         return
     split = epochs[-args.test_epochs]
     train_mask = (df["epoch"] < split) | df["epoch"].isna()
@@ -119,9 +133,8 @@ def main():
           f"of {bt['n'].median():.0f} sequences; "
           f"won {(bt['our_pick_true_place'] == 1).sum()}/{len(bt)} epochs")
     print(f"a random pick would average place {(bt['n'] + 1).mean() / 2:.1f}")
-
-    Surrogate(main=models).save(f"{args.target}_nanobody")
-    print(f"\nsaved per-metric models to {ds}")
+    print("  (the backtest's model is not the one on disk: that one is trained "
+          "on every sequence, including these test epochs)")
 
 
 if __name__ == "__main__":

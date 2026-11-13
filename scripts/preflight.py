@@ -16,12 +16,19 @@ The gates split in two:
     failure here is a refusal.
 
   PSH — the validator refuses PSH > 89, and that is what rejected all 11 of our
-    production submissions. It cannot be reproduced exactly: PSH is computed on
-    a predicted structure, NanoBodyBuilder2 is not deterministic, and one
-    measurement deviates by 4.01 (ten sequences measured twice). On our scale
-    16 of those 36 accepted submissions read above 89, so a hard threshold here
-    would refuse sequences the validator takes. This script therefore reports a
-    REJECTION PROBABILITY rather than a verdict.
+    production submissions. On the install it runs (nova_lab.toolchain checks
+    it: TNP at 29dcac7, the filter's process_pdb patch, mkdssp 3.1.4) our
+    reading IS theirs: of those 36 accepted submissions, folded three times
+    each, none reads above 89 and the median is 83.5. What remains is the
+    stochastic refinement, so one measurement deviates by 1.74 and the
+    validator takes a single draw of its own; this script therefore reports a
+    REJECTION PROBABILITY rather than a verdict. That probability is a cost to
+    weigh against a candidate's quality, not a line to refuse at: see
+    nova_lab.psh_calibration.
+
+    Earlier versions of this file said the reproduction was impossible and put
+    the deviation at 4.01. Both came from an install whose DSSP step was
+    failing silently, where 44-62 % of accepted submissions read above 89.
 
 Usage:
     python -m scripts.preflight --calibrate
@@ -38,9 +45,10 @@ import pandas as pd
 from nova_lab import DATA_DIR
 from nova_lab.config import NANOBODY_TARGET
 from nova_lab.config import PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT
+from nova_lab import psh_calibration
 from nova_lab.nanobodies import NanobodyArchive, check_sequence
 
-PSH_SIGMA = 4.01  # one measurement, from 10 sequences measured twice
+PSH_SIGMA = psh_calibration.SIGMA  # one measurement, pooled over 37 x 3 folds
 A3D_MAX_AVERAGE = -0.68002724866200
 A3D_MAX_PEAK = 1.58023066762925
 # Aggrescan3D rests on the same predicted structure as PSH, so it carries the
@@ -62,11 +70,11 @@ A3D_SIGMA_PEAK = 0.0211
 def rejection_probability(mean: float, folds: int) -> float:
     """P(the validator's single PSH draw exceeds 89), given our k-fold mean.
 
-    The validator takes one draw with deviation PSH_SIGMA; our estimate of the
-    true value carries PSH_SIGMA/sqrt(k). The two combine in quadrature.
+    One line, kept for the callers already written against it; the model and
+    the deviation it uses live in nova_lab.psh_calibration, which is where the
+    calibration evidence is documented.
     """
-    spread = PSH_SIGMA * math.sqrt(1 + 1 / max(folds, 1))
-    return 0.5 * (1 - math.erf((PSH_STRICT - mean) / (spread * math.sqrt(2))))
+    return psh_calibration.refusal_probability(mean, folds)
 
 
 def structural(sequences: list[str], work: Path, folds: int) -> pd.DataFrame:
@@ -220,13 +228,24 @@ def calibrate(folds: int, target: str) -> int:
 
     if "psh_mean" in out:
         a = out[out["truth"] == "accepted"]["psh_mean"].dropna()
-        print(f"\nPSH on the accepted set (all of them cleared the validator's 89): "
-              f"median {a.median():.1f}, {(a > PSH_STRICT).mean():.0%} read above 89 here")
-        print("  that share is why PSH is reported as a probability, not a verdict")
+        over = int((a > PSH_STRICT).sum())
+        print(f"\nPSH on the accepted set (the validators took all of them, so "
+              f"every one of them read at or under {PSH_STRICT} on THEIR "
+              f"install): {len(a)} measured, median {a.median():.1f}, "
+              f"max {a.max():.1f}, {over} above {PSH_STRICT} here")
+        if over:
+            print(f"  {over} IS THE NUMBER THAT MATTERS, and it should be 0. "
+                  f"Our scale has drifted off theirs, so the gate is screening "
+                  f"something else: run python -m scripts.doctor.")
+        else:
+            print("  0 is what a faithful install reads. The scale is theirs; "
+                  "what remains is the refinement's own noise, so the gate is "
+                  "still reported as a probability.")
         for r in out[out["truth"] == "refused"].itertuples():
             if getattr(r, "psh_mean", float("nan")) == getattr(r, "psh_mean", float("nan")):
                 print(f"\nthe sequence they refused: PSH {r.psh_mean:.1f} "
-                      f"-> {r.psh_reject_p:.0%} chance of refusal")
+                      f"-> {r.psh_reject_p:.0%} chance of refusal "
+                      f"(their log for it says 89.57)")
 
     path = DATA_DIR / "preflight" / "calibration.csv"
     path.parent.mkdir(parents=True, exist_ok=True)  # absent on a fresh machine
