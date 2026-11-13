@@ -2982,3 +2982,97 @@ Le taux de production reste de l'ordre de **1 sur 180** (§36). Les cinq
 candidats sont des descendants d'un **seul** tirage réussi — ce ne sont pas cinq
 succès indépendants, mais une famille issue du même parent, par cinq chemins de
 charpente différents. **Nous avons un candidat, pas une méthode.**
+
+## 40. Le taux, consolidé — et son intervalle interdit de dimensionner la campagne
+
+### Ce qui compte comme tirage
+
+287 lignes de mesure sur huit sessions. Il faut en retirer trois choses :
+les 25 **réplicats** (une re-mesure n'est pas un tirage), les 24 **parents**, et
+les 20 variantes des bras **v8 et v9** — celles-là sont des dérivées du *même*
+tirage réussi par cinq chemins de charpente, et les compter comme indépendantes
+gonflerait le taux de 11 %.
+
+**182 tirages indépendants** à CDR3 = 18, 4 substitutions.
+
+| seuil | atteint | taux | IC95 |
+|---|---|---|---|
+| ≥ 0,750 | 3/182 | 1,65 % | 0,34 – 4,74 % |
+| ≥ 0,772 (médiane des gagnants) | **1/182** | **0,55 %** | **0,01 – 3,02 %** |
+| ≥ 0,780 | 1/182 | 0,55 % | 0,01 – 3,02 % |
+
+Médiane 0,601, 90ᵉ percentile 0,701, maximum 0,783. Le chiffre du §36 est donc
+confirmé après avoir proprement exclu les réplicats et les dérivées.
+
+### L'intervalle est ce qui compte, et il est large
+
+Pour 80 % de chance d'obtenir un candidat ≥ 0,772 :
+
+| hypothèse de taux | candidats par couple | GPU |
+|---|---|---|
+| borne haute de l'IC (3,02 %) | **52** | 1,4 h |
+| estimation ponctuelle (0,55 %) | **292** | 7,8 h |
+| borne basse (0,01 %) | 16 000 | 429 h |
+
+Un facteur **300** entre les bornes. **La campagne du §29 — 54 h pour huit
+couples, soit ~250 candidats chacun — suppose implicitement la borne haute**, et
+rien dans nos données ne la justifie plus que l'estimation ponctuelle, qui
+demanderait 7,8 h par couple, soit 62 h pour huit.
+
+Le seuil de 0,75 est mieux contraint (1,65 %, IC 0,34–4,74 %) mais il ne gagne
+aucune des six époques récentes à CDR3 = 18 (§28) : il n'aide pas à décider.
+
+**Conclusion sur la campagne : elle n'est pas dimensionnable avec ce que nous
+savons.** Le seul moyen de resserrer l'intervalle est d'accumuler des tirages,
+et il faudrait environ 400 tirages de plus pour distinguer 0,5 % de 2 %.
+
+## 41. État de l'enquête : ce qui est établi, ce qui reste supposé
+
+### Les sept hypothèses
+
+| # | hypothèse | verdict | répliqué ? |
+|---|---|---|---|
+| 1 | le GPU comme puissance de calcul | réfutée (§12bis) | oui |
+| 2 | les donneurs | réfutée (§10) | oui |
+| 3 | la distance à l'archive | réfutée (ρ = −0,07) | oui |
+| 4 | la surface de conception (3 CDR) | réfutée (§12) | une seule session |
+| 5 | la recombinaison | réfutée (§19) | oui |
+| 6 | la distance de perturbation | réfutée (§21) | oui |
+| 7 | le volume de sélection | soutenue (§26), ampleur démentie (§28) | oui |
+
+### Mesuré et reproduit
+
+- Les portes du validateur, dont la rupture PSH à **96** et non 89 (§3ter).
+- Le J-gene chimérique, 58 % de la production récupérée (§7ter).
+- L'effondrement est une propriété de la séquence, pas du tirage (§26, réplicats
+  3/3), mais son **taux** varie de 0 à 31 % selon la session (§33, χ² p = 0,0006).
+- Le repliement se dégrade continûment, l'interface s'effondre d'un coup (§23).
+- Neuf mouvements de charpente sur dix sont gratuits **pour la liaison** (§38)
+  et aucun ne l'est pour la PSH (§39).
+- Le taux de production : 1 sur 182, IC 0,01–3,02 % (§40).
+
+### Ce qui ne repose encore que sur une mesure ou un lot
+
+À traiter comme des hypothèses, le §36 et le §38 ayant montré **deux fois** qu'un
+classement à une mesure est du bruit :
+
+1. **Les deux candidats à 9 substitutions n'ont qu'une mesure de liaison.** Leur
+   place dans le tableau du §39 n'est pas acquise.
+2. **La non-additivité de la PSH** (§39) repose sur un seul couple :
+   `FR11Q→E` seul à 98,5 contre 93,1 en combinaison. Un seul contre-exemple
+   suffit à établir la non-additivité, mais pas à en dire l'ampleur.
+3. **`FR217R→D` coûte 0,155** sur deux mesures — c'est le seul mouvement de
+   charpente coûteux, et donc le seul point d'appui de l'idée qu'une position de
+   charpente peut compter. Deux mesures d'une seule séquence.
+4. **La conception *de novo* a été écartée sur une seule session** (§11, 20
+   designs). Le verdict était net (0,21 contre 0,66 pour le champ) mais il n'a
+   jamais été répété.
+5. **Le gain d'époque est calculé contre six époques récentes** à CDR3 = 18.
+   Six, c'est peu, et le champ progresse.
+
+### Ce qui n'a jamais été testé
+
+Les 46 autres couples (gène V, longueur) hors IGHV3-74/18, la campagne de
+pré-calcul elle-même, et toute soumission réelle — nous n'avons donc **aucune
+confrontation de notre reproduction des portes avec un verdict du validateur**,
+ce qui est précisément le risque que porte la marge de 0,006.
