@@ -410,8 +410,29 @@ def developability_screen(sequences: list[str], work: Path) -> dict[str, bool]:
     fasta = work / "candidates.fasta"
     names = {f"cand{i}": s for i, s in enumerate(sequences)}
     fasta.write_text("".join(f">{n}\n{s}\n" for n, s in names.items()))
-    df = parse(run(fasta, min(4, len(sequences)), work))
-    tnp = {names[n]: bool(ok) for n, ok in zip(df["name"], ~df["rejected"]) if n in names}
+    df = parse(run(fasta, min(4, len(sequences)), work), work)
+    if "dssp" in df.columns:
+        df = df[df["dssp"]]
+    # The validator does not use TNP's own "(RED flag)" labels: it takes the
+    # values and compares them against its own config, whose numbers are TNP's
+    # rounded to two decimals in both directions. And this is a single fold, so
+    # a reading next to a bound is noise -- on the calibration set that refused
+    # an accepted submission whose PPC folds read 1.2858, 1.1078, 1.1125.
+    # nova_lab.developability holds the bounds and the bands.
+    from nova_lab import developability
+    from scripts.tnp_developability import METRICS as TNP_METRICS
+    tnp, flagged = {}, {}
+    for row in df.to_dict("records"):
+        sequence = names.get(row["name"])
+        if sequence is None:
+            continue
+        values = {m: row[m] for m in TNP_METRICS if m in row}
+        breaches = developability.breaches(values, folds=1)
+        tnp[sequence] = not breaches
+        if breaches:
+            flagged[sequence] = "; ".join(breaches)
+    for sequence, why in flagged.items():
+        log(f"  TNP refuses {sequence[:28]}...: {why}")
 
     # A3D needs the structure TNP just built, so this pass yields one more PSH
     # fold for free on exactly the candidates that still matter. It is reported,

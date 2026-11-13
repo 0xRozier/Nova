@@ -45,7 +45,7 @@ import pandas as pd
 from nova_lab import DATA_DIR
 from nova_lab.config import NANOBODY_TARGET
 from nova_lab.config import PSH_STRICT_REJECTION_THRESHOLD as PSH_STRICT
-from nova_lab import psh_calibration
+from nova_lab import developability, psh_calibration
 from nova_lab.nanobodies import NanobodyArchive, check_sequence
 
 PSH_SIGMA = psh_calibration.SIGMA  # one measurement, pooled over 37 x 3 folds
@@ -80,6 +80,7 @@ def rejection_probability(mean: float, folds: int) -> float:
 def structural(sequences: list[str], work: Path, folds: int) -> pd.DataFrame:
     """TNP flags, PSH over k folds, and the Aggrescan3D caps."""
     from scripts.aggrescan_gate import screen as a3d_screen
+    from scripts.tnp_developability import METRICS as TNP_METRICS
     from scripts.tnp_developability import TNP, parse, run
 
     if not TNP.exists():
@@ -88,23 +89,37 @@ def structural(sequences: list[str], work: Path, folds: int) -> pd.DataFrame:
 
     names = {f"s{i}": s for i, s in enumerate(sequences)}
     rows = {s: {"sequence": s, "psh_folds": []} for s in sequences}
-    first = None
+    # Every TNP metric is averaged over the folds, not just PSH. Taking the
+    # others from fold 1 refused an accepted submission on a PPC of 1.2858
+    # whose three folds mean 1.1687 and pass -- PPC deviates by 0.037 and up to
+    # 0.23, so one reading next to a bound says nothing (FINDINGS 45).
+    per_metric: dict[str, dict[str, list[float]]] = {s: {} for s in sequences}
     for fold in range(1, folds + 1):
         sub = work / f"fold{fold}"
         sub.mkdir(parents=True, exist_ok=True)
         (sub / "seqs.fasta").write_text("".join(f">{n}\n{s}\n" for n, s in names.items()))
-        df = parse(run(sub / "seqs.fasta", 4, sub))
-        if first is None:
-            first = df
-        for n, psh in zip(df["name"], df["PSH"]):
-            if n in names:
-                rows[names[n]]["psh_folds"].append(float(psh))
+        df = parse(run(sub / "seqs.fasta", 4, sub), sub)
+        if "dssp" in df.columns:
+            df = df[df["dssp"]]
+        for row in df.to_dict("records"):
+            sequence = names.get(row["name"])
+            if sequence is None:
+                continue
+            rows[sequence]["psh_folds"].append(float(row["PSH"]))
+            for metric in TNP_METRICS:
+                if metric in row and row[metric] == row[metric]:
+                    per_metric[sequence].setdefault(metric, []).append(float(row[metric]))
 
-    for n, red, greys in zip(first["name"], first["reds"], first["greys"]):
-        if n in names:
-            rows[names[n]]["tnp_reds"] = int(red)
-            rows[names[n]]["tnp_greys"] = int(greys)
-            rows[names[n]]["tnp_red_on"] = first.loc[first["name"] == n, "red_on"].iat[0]
+    for sequence, samples in per_metric.items():
+        means = {m: sum(v) / len(v) for m, v in samples.items() if v}
+        n_folds = min((len(v) for v in samples.values()), default=0) or 1
+        flags = developability.breaches(means, n_folds)
+        rows[sequence]["tnp_reds"] = len(flags)
+        rows[sequence]["tnp_red_on"] = "; ".join(flags)
+        rows[sequence]["tnp_borderline"] = "; ".join(
+            developability.borderline(means, n_folds))
+        for metric, value in means.items():
+            rows[sequence][f"tnp_{metric}"] = value
 
     # Score every fold's structures and average, so the peak's noise shrinks.
     per_fold: dict[str, list[tuple[float, float]]] = {s: [] for s in sequences}
@@ -233,14 +248,27 @@ def calibrate(folds: int, target: str) -> int:
               f"every one of them read at or under {PSH_STRICT} on THEIR "
               f"install): {len(a)} measured, median {a.median():.1f}, "
               f"max {a.max():.1f}, {over} above {PSH_STRICT} here")
-        if over:
-            print(f"  {over} IS THE NUMBER THAT MATTERS, and it should be 0. "
-                  f"Our scale has drifted off theirs, so the gate is screening "
-                  f"something else: run python -m scripts.doctor.")
+        # What a faithful install reads is "a median near 83.5 and a handful at
+        # the top", not "none above 89". The deviation of a 3-fold mean is 1.0,
+        # so a submission truly sitting at 88.9 -- which is where the top of
+        # this set sits -- reads above 89 half the time. An earlier version of
+        # this message demanded 0 and called anything else a drift; that was
+        # calibrated on one lucky run, and the next run of the same 36
+        # sequences duly produced a 1 and an alarm that meant nothing.
+        share = over / max(len(a), 1)
+        if share > 0.14:
+            print(f"  {over} of {len(a)} is too many: on this scale the "
+                  f"accepted field reads a median of "
+                  f"{psh_calibration.ACCEPTED_MEDIAN}, so our scale has drifted "
+                  f"off theirs and the gate is screening something else. Run "
+                  f"python -m scripts.doctor.")
         else:
-            print("  0 is what a faithful install reads. The scale is theirs; "
-                  "what remains is the refinement's own noise, so the gate is "
-                  "still reported as a probability.")
+            print(f"  {over} of {len(a)} is what the fold noise predicts "
+                  f"(deviation of a 3-fold mean is "
+                  f"{psh_calibration.SIGMA / 3 ** 0.5:.1f}, and the top of this "
+                  f"set sits at 88.9). The median is the statistic to read: "
+                  f"{a.median():.1f} against "
+                  f"{psh_calibration.ACCEPTED_MEDIAN} measured.")
         for r in out[out["truth"] == "refused"].itertuples():
             if getattr(r, "psh_mean", float("nan")) == getattr(r, "psh_mean", float("nan")):
                 print(f"\nthe sequence they refused: PSH {r.psh_mean:.1f} "

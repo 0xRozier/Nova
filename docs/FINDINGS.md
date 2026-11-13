@@ -3422,3 +3422,111 @@ max_iodine 1 → 0, max_bromine 2 → 0, max_fluorine 9 → 3...). Nous ne minon
 les molécules ; ils sont rangés dans `FILTERS_FROM_26331` à côté de `FILTERS`,
 car `tests/test_parity.py` vérifie que les molécules archivées passent les
 filtres d'aujourd'hui et l'archive a été construite sous les anciens.
+
+## 45. Les deux faux refus de la calibration, et ce qu'ils ont révélé
+
+Au §43 la calibration laissait **2 refus à tort sur 36** soumissions que les
+validateurs avaient acceptées. Deux cas, deux causes différentes, et la seconde
+a obligé à revoir la porte entière.
+
+### Cas 1 : notre bug. Un seul pli décidait
+
+La séquence refusée sur PPC lit, pli par pli : **1,2858 / 1,1078 / 1,1125**.
+Le premier pli franchit la borne de 1,18, la moyenne des trois vaut **1,1687**
+et passe.
+
+Nous moyennions la PSH et l'Aggrescan3D sur les plis, et prenions **tous les
+autres drapeaux du pli 1**. Sur une métrique dont l'écart-type est 0,037 — et
+0,23 dans le pire cas — une lecture isolée à côté d'une borne ne dit rien.
+Corrigé : toutes les métriques TNP sont moyennées, et une violation ne compte
+qu'au-delà de deux écarts-types de la moyenne, la règle que l'A3D appliquait
+déjà.
+
+### Et au passage : ce ne sont pas les seuils de TNP qui décident
+
+TNP imprime son propre verdict par métrique. **Le validateur ne l'utilise
+pas** : son filtre prend les *valeurs* et les compare à sa propre
+configuration, qui sont les seuils de TNP arrondis à deux décimales — dans les
+deux sens.
+
+| métrique | rouge de TNP | config du filtre | plus strict |
+|---|---|---|---|
+| C | 0,5634 – 1,6132 | 0,56 – 1,61 | le filtre, en haut |
+| PSH | 73,4039 – 155,4699 | 73,4 – 155,47 | TNP, en haut |
+| PPC | > 1,1853 | > 1,18 | le filtre |
+| PNC | > 1,8838 | > 1,88 | le filtre |
+
+Des centièmes, mais la porte est une falaise. `nova_lab/developability.py`
+porte les seuils du filtre.
+
+### Cas 2 : pas du bruit. Notre échelle lit bas
+
+La séquence refusée sur la borne basse de PSH lit **69,50 / 71,59 / 69,72**,
+soit 70,27 de moyenne, sous les 73,4 — aux trois plis. Le moyennage n'y change
+rien. Le validateur l'a acceptée, donc il a lu au moins 73,4.
+
+Trois estimations indépendantes disent la même chose :
+
+| source | écart |
+|---|---|
+| la séquence refusée dont nous avons leur journal : nous 88,0, eux 89,57 | −1,6 |
+| cette acceptée : nous 70,3, eux ≥ 73,4 | ≤ −3,1 |
+| le seuil qui sépare au mieux leurs 296 verdicts sur notre échelle (Youden, époques 26299-26306) : 86,5 contre 89 | −2,5 |
+
+**Notre PSH lit 2 à 3 points sous la leur.** Trois estimations faibles qui
+s'accordent en signe et en ordre de grandeur, sur un axe où se tromper ne coûte
+que dans un sens : sous-lire fait croire qu'un candidat est sûr alors que le
+validateur le refuse.
+
+Un biais de +2,0 est donc ajouté à notre lecture **partout où elle rencontre un
+de leurs nombres** — la borne haute comme la rupture à 89. Et il faut l'ajouter
+aux deux bornes : une échelle qui lit bas est fausse en haut (trop permissive)
+*et* en bas (trop stricte). Ça explique aussi le cas 2 : 70,3 + 2,0 = 72,3, soit
+*sur* la borne et non dessous.
+
+**Résultat : 36 sur 36 des portes déterministes passent.** Zéro faux refus.
+
+### Le bruit était sous-estimé, et de beaucoup
+
+En relançant, `FR11Q→E` est passé de 88,1 à 83,2 — 4,8 points sur une moyenne
+de trois plis, là où σ/√3 = 1,2 en prédisait trois fois moins. Cinq estimations
+de l'écart-type d'UNE mesure :
+
+| population | σ |
+|---|---|
+| les 36 acceptées, run 1 | 1,74 |
+| les mêmes, run 2 | 2,49 |
+| nos 20 candidats v8/v9, run 1 | 3,29 |
+| les mêmes, run 2 | 2,70 |
+| **entre ces deux runs de candidats** (apparié) | **2,85** |
+
+La dernière ligne est celle qui tranche : une comparaison appariée entre runs,
+donc indépendante des plis intra-run, **retrouve la même valeur**. Les plis sont
+bien indépendants, et le 1,74 initial était le bas d'une estimation bruitée. Nos
+candidats sont plus bruités que le champ accepté, ce qui se comprend — ils sont
+plus haut sur la PSH, sur des structures moins stables.
+
+σ est fixé à **2,7**. Et la conséquence mérite d'être dite franchement : **à
+trois plis la moyenne a un écart-type de 1,6, donc cette porte sépare « sûr » de
+« condamné » et ne sépare pas 84 de 86.** Deux runs indépendants des mêmes
+20 candidats s'accordent à Spearman **0,64**. Il ne faut lire aucun classement
+dans un écart d'un ou deux points.
+
+### Le tableau de décision, sur 6 plis et deux runs
+
+| variante | run 1 | run 2 | moyenne | P(refus) | design_iiptm | espérance |
+|---|---|---|---|---|---|---|
+| **FR211Q→E** | 84,4 | 83,4 | **83,9** | **14 %** | 0,776 | **0,664** |
+| FR320S→T+FR213D→E | 85,0 | 84,7 | 84,9 | 23 % | 0,691 | 0,530 |
+| FR11Q→E | 88,1 | 83,2 | 85,7 | 32 % | 0,779 | 0,528 |
+| FR210Q→K | 87,2 | 86,8 | 87,0 | 50 % | 0,780 | 0,390 |
+| FR213D→E *(recommandé au §42)* | 88,6 | 88,7 | 88,7 | 66 % | 0,784 | 0,267 |
+| FR217R→D | 93,7 | 93,5 | 93,6 | 99 % | 0,619 | 0,008 |
+
+`FR211Q→E` reste premier, et c'est le seul qui lise bas **aux deux runs**.
+`FR11Q→E` a la meilleure liaison mais ses deux runs divergent de 4,8 points :
+sa place n'est pas acquise.
+
+Les chiffres de risque du §43 (1 % pour `FR211Q→E`, 42 % pour `FR213D→E`)
+étaient optimistes de deux façons qui allaient dans le même sens : pas de
+biais, et σ pris au plus bas. C'est 14 % et 66 %.

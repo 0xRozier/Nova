@@ -976,21 +976,29 @@ d'abord, multiplier les hotkeys ensuite — pas l'inverse.
   une porte : on mesure, on price P(refus), et on multiplie par la qualité
   prédite.
 
-**Et le candidat recommandé change.** Re-mesurés à 3 plis
-(`results/psh_candidates_v8v9.csv`) :
+**Et le candidat recommandé change.** Re-mesurés sur 6 plis et deux runs
+indépendants (`results/psh_candidates_v8v9.csv`, §45) :
 
-| variante | PSH | P(refus) | design_iiptm | n | iiptm × P(passage) |
-|---|---|---|---|---|---|
-| **FR211Q→E** | **84,4** | **1 %** | 0,776 | 2 | **0,767** |
-| FR12Q→V | 86,3 | 9 % | 0,774 | 2 | 0,707 |
-| FR210Q→K | 87,2 | 18 % | 0,780 | 2 | 0,638 |
-| FR213D→E *(recommandé au §42)* | 88,6 | **42 %** | 0,784 | 2 | 0,453 |
-| FR210Q→K+FR213D→E *(finaliste §42)* | 90,9 | **82 %** | 0,781 | 1 | 0,138 |
+| variante | run 1 | run 2 | moyenne | P(refus) | design_iiptm | espérance |
+|---|---|---|---|---|---|---|
+| **FR211Q→E** | 84,4 | 83,4 | **83,9** | **14 %** | 0,776 | **0,664** |
+| FR320S→T+FR213D→E | 85,0 | 84,7 | 84,9 | 23 % | 0,691 | 0,530 |
+| FR11Q→E | 88,1 | 83,2 | 85,7 | 32 % | 0,779 | 0,528 |
+| FR210Q→K | 87,2 | 86,8 | 87,0 | 50 % | 0,780 | 0,390 |
+| FR213D→E *(recommandé au §42)* | 88,6 | 88,7 | 88,7 | **66 %** | 0,784 | 0,267 |
 
-Le candidat sur lequel ce dépôt s'était arrêté avait **42 % de chances d'être
-refusé avant d'être noté**, et l'un des cinq finalistes 82 %. `FR211Q→E` offre
-la même liaison à 0,004 près — un quart d'un écart-type de mesure — pour 1 % de
-risque.
+Le candidat sur lequel ce dépôt s'était arrêté a **deux chances sur trois d'être
+refusé avant d'être noté**. `FR211Q→E` offre la même liaison à 0,008 près — moins
+d'un écart-type de mesure — pour 14 %, et c'est le seul qui lise bas aux deux
+runs.
+
+**Deux mises en garde sur ces chiffres.** Notre PSH lit **2 à 3 points sous**
+celle du validateur (trois estimations concordantes, §45), donc un biais de +2
+est appliqué partout où notre lecture rencontre un de leurs seuils. Et
+l'écart-type d'une mesure est **2,7**, pas 1,74 : à trois plis la moyenne a un
+écart-type de 1,6, donc **cette porte sépare « sûr » de « condamné » et ne
+sépare pas 84 de 86**. Deux runs des mêmes 20 candidats s'accordent à
+Spearman 0,64.
 
 **Ce qui reste cassé, et que rien de tout ça ne répare :** à CDR3 18 le candidat
 médian du générateur lit **100,6** là où le champ accepté lit 83,5, donc 15 %

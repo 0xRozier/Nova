@@ -22,8 +22,10 @@ from pathlib import Path
 import pytest
 
 from nova_lab.config import PSH_STRICT_REJECTION_THRESHOLD
-from nova_lab.psh_calibration import (SIGMA, THRESHOLD, expected_value, rank,
-                                      refusal_probability, verdict)
+from nova_lab.developability import PSH_BIAS
+from nova_lab.psh_calibration import (ACCEPTED_MEDIAN, SIGMA, THRESHOLD,
+                                      expected_value, rank, refusal_probability,
+                                      verdict)
 
 CALIBRATION = Path(__file__).resolve().parent.parent / "results" / "psh_calibration_epoch26174.csv"
 
@@ -34,13 +36,24 @@ def test_threshold_is_the_validators_own_number():
 
 
 def test_refusal_probability_is_a_half_at_the_threshold():
-    assert refusal_probability(89.0, folds=3) == pytest.approx(0.5)
+    """On the raw scale. With the bias on, 89 is already past the line."""
+    assert refusal_probability(89.0, folds=3, bias=0.0) == pytest.approx(0.5)
+    assert refusal_probability(89.0 - PSH_BIAS, folds=3) == pytest.approx(0.5)
 
 
 def test_refusal_probability_rises_with_the_reading():
-    probabilities = [refusal_probability(p, folds=3) for p in (80, 85, 88, 89, 92, 99)]
+    probabilities = [refusal_probability(p, folds=3) for p in (70, 80, 85, 89, 92, 99)]
     assert probabilities == sorted(probabilities)
     assert probabilities[0] < 0.001 and probabilities[-1] > 0.999
+
+
+def test_the_bias_only_ever_raises_the_risk():
+    """It exists because under-reading makes a candidate look safe. If it ever
+    lowered the estimate, it would be hiding the very error it was added for."""
+    assert PSH_BIAS >= 0
+    for value in (80.0, 84.4, 87.0, 88.6, 93.0):
+        assert (refusal_probability(value, folds=3)
+                >= refusal_probability(value, folds=3, bias=0.0))
 
 
 def test_more_folds_sharpen_the_verdict():
@@ -50,9 +63,11 @@ def test_more_folds_sharpen_the_verdict():
     validator's own spread -- a point 2 below the threshold cannot be made
     certain by folding.
     """
-    assert refusal_probability(87.0, folds=1) > refusal_probability(87.0, folds=3)
-    assert refusal_probability(91.0, folds=1) < refusal_probability(91.0, folds=3)
-    assert refusal_probability(87.0, folds=99) > 0.1  # 2 / 1.74 is only 1.15 sigma
+    low, high = 85.0, 93.0
+    assert refusal_probability(low, 1, bias=0.0) > refusal_probability(low, 3, bias=0.0)
+    assert refusal_probability(high, 1, bias=0.0) < refusal_probability(high, 3, bias=0.0)
+    # 2 points under the line is barely one sigma, so folding cannot settle it.
+    assert refusal_probability(87.0, folds=99, bias=0.0) > 0.1
 
 
 def test_an_unmeasured_candidate_has_no_probability():
@@ -89,21 +104,31 @@ def calibration():
     return pd.read_csv(CALIBRATION)
 
 
-def test_every_accepted_submission_reads_below_the_threshold(calibration):
+def test_the_accepted_field_reads_where_it_should(calibration):
     """The scale is the validator's, or the gate is meaningless.
 
-    On the install whose DSSP step was failing, 44-62% of these same accepted
+    On the install whose DSSP step was failing, 44-62 % of these same accepted
     submissions read above 89 and the project concluded the threshold could not
-    be used. With mkdssp 3.1.4 and the filter's patch in place, 36 of 36 read
-    below it.
+    be used. With mkdssp 3.1.4 and the filter's patch in place they come in at a
+    median of 83.5.
+
+    The median is what this asserts, not "none above 89". The top of this set
+    sits at 88.9 and a 3-fold mean deviates by about 1.2, so a couple of them
+    land above 89 on any given run -- the first version of this test demanded
+    zero, which was the luck of one run, and the next run of the same sequences
+    produced a 1.
     """
     accepted = calibration[calibration["truth"] == "accepted"]["psh_mean"].dropna()
     assert len(accepted) >= 36, "the calibration set lost sequences — check for failed folds"
+    assert accepted.median() == pytest.approx(ACCEPTED_MEDIAN, abs=2.0), (
+        f"the accepted field reads a median of {accepted.median():.1f} here "
+        f"against {ACCEPTED_MEDIAN} measured. The toolchain has drifted off "
+        f"theirs: run python -m scripts.doctor.")
     over = accepted[accepted > THRESHOLD]
-    assert over.empty, (
+    assert len(over) <= 0.14 * len(accepted), (
         f"{len(over)} of {len(accepted)} submissions the validators ACCEPTED read "
-        f"above {THRESHOLD} here (max {accepted.max():.1f}). The toolchain has "
-        f"drifted off theirs: run python -m scripts.doctor.")
+        f"above {THRESHOLD} here (max {accepted.max():.1f}), which is more than "
+        f"the fold noise explains: run python -m scripts.doctor.")
 
 
 def test_the_refused_submission_reads_near_the_threshold(calibration):
@@ -121,6 +146,11 @@ def test_the_fold_noise_matches_the_sigma_the_gate_uses(calibration):
     triples = [[float(x) for x in f] for f in folds if len(f) >= 3]
     assert len(triples) >= 30, "too few three-fold sequences to pool a deviation"
     pooled = math.sqrt(np.mean([np.var(t, ddof=1) for t in triples]))
-    assert pooled == pytest.approx(SIGMA, abs=0.5), (
+    # SIGMA is the conservative reading of five estimates spanning 1.74 to
+    # 3.29, measured on two populations over two runs each. The tolerance has to
+    # admit that spread, because the gate must not depend on which run it was
+    # calibrated against -- and this file's calibration set is the quieter of
+    # the two populations, so it reads at the low end.
+    assert pooled == pytest.approx(SIGMA, abs=1.1), (
         f"one measurement now deviates by {pooled:.2f}, not {SIGMA}; "
         f"refusal_probability is calibrated on the old figure")

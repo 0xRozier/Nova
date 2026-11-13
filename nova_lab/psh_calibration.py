@@ -45,9 +45,15 @@ than twice too large.
 Folding k times gives a mean with deviation 1.74/sqrt(k); the validator still
 takes a single draw of its own. So from our k-fold mean m:
 
-    P(the validator reads above 89) = Phi((m - 89) / (1.74 * sqrt(1 + 1/k)))
+    P(the validator reads above 89)
+        = Phi((m + bias - 89) / (2.7 * sqrt(1 + 1/k)))
 
-which is 1 % at m = 84.4, 18 % at 87.2 and 42 % at 88.6 for k = 3.
+where `bias` is how far below theirs our scale appears to read, estimated at
+2 to 3 points by three independent routes (nova_lab.developability). For k = 3
+and the default bias of 2.0 that gives 12 % at m = 83.4, 35 % at 86.3 and 63 %
+at 88.6 -- against 1 %, 9 % and 42 % under the first repaired model, which
+ignored the bias and took sigma at its low end. Both errors ran the same way:
+they made a candidate look safer than the validator treats it.
 
 ## What it is for
 
@@ -66,9 +72,27 @@ from math import erf, sqrt
 # The validator's own threshold, applied to its own measurement.
 THRESHOLD = 89.0
 
-# Deviation of ONE PSH measurement on the faithful install: pooled over 37
-# sequences folded three times each (data/preflight/calibration.csv).
-SIGMA = 1.74
+# Deviation of ONE PSH measurement on the faithful install. Five estimates:
+#
+#   the 36 accepted submissions, run 1        1.74
+#   the same 36, run 2                        2.49
+#   our 20 v8/v9 candidates, run 1            3.29
+#   the same 20, run 2                        2.70
+#   between those two candidate runs          2.85   (paired, so independent
+#                                                     of the within-run folds)
+#
+# The between-run figure matching the within-run ones is what settles it: the
+# folds are genuinely independent, and 2.15 was the low end of a noisy
+# estimate. Our own candidates are noisier than the accepted field, which fits
+# -- they sit higher on PSH, on less stable structures. 2.7 is the conservative
+# reading of the five.
+#
+# The consequence is worth stating plainly: with three folds the mean deviates
+# by 1.6, so this gate separates "safe" from "doomed" and cannot separate 84
+# from 86. Two independent three-fold runs of the same 20 candidates agree at
+# Spearman 0.64, with one sequence moving 4.8 points. Do not read an ordering
+# into gaps of a point or two.
+SIGMA = 2.7
 
 # What the accepted field reads, for context in logs and reports: the 36
 # submissions the validators accepted in epoch 26174, three folds each.
@@ -76,16 +100,27 @@ ACCEPTED_MEDIAN = 83.5
 ACCEPTED_MAX = 88.9
 
 
-def refusal_probability(psh_mean: float, folds: int = 1) -> float:
+def refusal_probability(psh_mean: float, folds: int = 1,
+                        bias: float | None = None) -> float:
     """P(the validator's own reading exceeds 89), given our k-fold mean.
 
     Both readings are draws around the sequence's true PSH, so the spread that
     matters combines our mean's deviation with the validator's single draw.
+
+    `bias` is how far below theirs our scale appears to read, and it is added
+    to our mean before the comparison. Three weak estimates put it at 2 to 3
+    points and agree in sign; the default is the conservative end of that, and
+    nova_lab.developability documents the evidence. Pass 0.0 for the raw
+    comparison -- which is what this function did until the evidence turned up,
+    and which makes a candidate look safer than it is.
     """
     if psh_mean != psh_mean:  # NaN: never measured, so nothing is known
         return float("nan")
+    if bias is None:
+        from nova_lab.developability import PSH_BIAS
+        bias = PSH_BIAS
     spread = SIGMA * sqrt(1.0 + 1.0 / max(folds, 1))
-    return 0.5 * (1.0 + erf((psh_mean - THRESHOLD) / (spread * sqrt(2.0))))
+    return 0.5 * (1.0 + erf((psh_mean + bias - THRESHOLD) / (spread * sqrt(2.0))))
 
 
 def expected_value(quality: float, psh_mean: float, folds: int = 1) -> float:
