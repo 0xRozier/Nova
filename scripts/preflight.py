@@ -147,8 +147,19 @@ def run_preflight(sequences: list[str], allowed_v: str | None, cdr3_len: int | N
     if "psh_mean" in out:
         out["psh_reject_p"] = [rejection_probability(m, int(n or 1)) if m == m else float("nan")
                                for m, n in zip(out["psh_mean"], out.get("psh_n", 1))]
-    out["refused"] = out["deterministic"].ne("") | out.get("tnp_reds", 0).fillna(0).gt(0) \
-        | out.get("a3d_refused", False).fillna(False)
+    # Without TNP, structural() returns the sequence column alone and said so,
+    # so these columns are absent rather than NaN -- and out.get(name, default)
+    # then hands back the scalar default, which has no .fillna. The script used
+    # to die here instead of reporting the deterministic gates it can still
+    # check on a machine with no TNP installed.
+    def flags(name: str, default):
+        if name in out:
+            return out[name].fillna(default)
+        return pd.Series(default, index=out.index)
+
+    out["refused"] = (out["deterministic"].ne("")
+                      | flags("tnp_reds", 0).gt(0)
+                      | flags("a3d_refused", False).astype(bool))
     return out
 
 
@@ -217,8 +228,10 @@ def calibrate(folds: int, target: str) -> int:
                 print(f"\nthe sequence they refused: PSH {r.psh_mean:.1f} "
                       f"-> {r.psh_reject_p:.0%} chance of refusal")
 
-    out.to_csv(DATA_DIR / "preflight" / "calibration.csv", index=False)
-    print(f"\nsaved to {DATA_DIR / 'preflight' / 'calibration.csv'}")
+    path = DATA_DIR / "preflight" / "calibration.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)  # absent on a fresh machine
+    out.to_csv(path, index=False)
+    print(f"\nsaved to {path}")
     return 1 if bad else 0
 
 
