@@ -229,7 +229,7 @@ def observe_epoch(params: dict, target: str, args) -> dict:
                      shortlist=max(psh_pool, args.shortlist) if args.psh else args.shortlist,
                      seed=args.seed + epoch, archive_cutoff=cutoff)
     shortlist = result["shortlist"]
-    psh_folds = 0
+    psh_folds, psh_best, psh_risk = 0, None, None
     if args.psh and not shortlist.empty:
         sequences = list(shortlist["sequence"])
         quality = surrogate_rank(sequences, target)
@@ -239,6 +239,11 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         shortlist = (shortlist.set_index("sequence").loc[chosen].reset_index()
                      if chosen else shortlist.iloc[:0])
         shortlist["psh"] = [psh.get(s) for s in shortlist["sequence"]]
+        if chosen and psh.get(chosen[0]) is not None:
+            from nova_lab.psh_calibration import refusal_probability
+            psh_best = round(float(psh[chosen[0]]), 2)
+            risk = refusal_probability(psh_best, psh_folds)
+            psh_risk = None if risk != risk else round(risk, 3)
     rivals = real_submissions(epoch, target)
 
     entry = {
@@ -260,6 +265,10 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         "archive_cutoff": cutoff,
         "psh_screened": bool(args.psh),
         "psh_folds": psh_folds,
+        # What was chosen and at what risk. Without these the selection cannot
+        # be audited after the fact, which is the whole point of a replay.
+        "psh_best": psh_best,
+        "psh_refusal_estimate": psh_risk,
         "submitted": SUBMIT,  # always false: this miner only observes
     }
     if not shortlist.empty:
