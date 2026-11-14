@@ -3736,7 +3736,28 @@ toute la charpente, et la perte d'affinité est son mode d'échec classique. Le
 mesurable — c'est une raison d'essayer, pas un résultat. Le `design_iiptm` de
 l'archive appartient à la séquence d'origine ; l'humanisée doit être notée.
 
-### Piste 3 : la conception BoltzGen, dont le §11 n'a testé qu'une version bridée
+### Piste 3 : RÉFUTÉE, et je l'avais présentée comme ouverte — correction
+
+**Ce qui suit est faux et reste écrit pour la trace.** La conception à trois CDR
+a été testée : §14 de ce même fichier, 60 designs, `design_iiptm` **médiane
+0,169 et max 0,367** contre 0,214 pour la version à un CDR — donc *pire*, et
+**0 %** au-dessus de notre propre greffage sélectionné (0,616). Le §14 réfute du
+même coup l'explication causale du §11 : avec trois CDR la pose s'améliore
+vraiment (5/60 passent `filter_rmsd` contre 0/20) et **les 5 designs à pose
+correcte scorent 0,200 à 0,356** — corriger la pose ne remonte pas la liaison
+d'un point.
+
+J'ai lu la conclusion du §11 — « deux pistes, la 1 à tester d'abord » — sans
+vérifier qu'une section ultérieure les avait déjà tranchées. Le tableau de
+synthèse en tête de ce fichier le disait en une ligne : « trop peu de surface de
+conception — **non**, trois CDR conçus font pire qu'un ». `inputs/design3/` et
+`results/boltzgen_design_3cdr.csv` étaient là.
+
+La leçon, pour ce dépôt comme pour moi : un §qui se termine par « piste à
+tester » n'est pas une piste ouverte tant qu'on n'a pas cherché le § qui la
+ferme.
+
+### Ce que le §11 disait, et pourquoi je l'ai cru ouvert
 
 Le §11 a écarté la conception de novo sur 20 designs à 0,21 de médiane. Mais sa
 propre analyse d'échec désigne la contrainte : `filter_rmsd` 0/20 contre
@@ -3780,11 +3801,20 @@ Nous tirons au hasard autour de donneurs médiocres.
 
 ### Par ordre de coût
 
-1. **Rejouer les 8 époques sur le vivier frais** (une session Kaggle). Le §46 a
-   peut-être condamné le générateur sur un vivier périmé.
-2. **Noter 40 humanisés** (`scripts.humanise`, une session). Tranche la piste 2,
+1. **Rejouer les 8 époques sur le vivier frais.** Et une partie de la réponse
+   est gratuite : le substitut sur-promet de +0,137 (§13), et nos candidats du
+   §46 étaient prédits à 0,57 de moyenne, ce qui donne 0,43 — soit exactement
+   les 0,416 mesurés. Donc **il suffit de regarder si le vivier frais remonte
+   la prédiction** pour savoir si une session GPU vaut la peine.
+2. **Noter 32 humanisés** (`scripts.humanise`, une session). Tranche la piste 2,
    et le vivier passe de 20 donneurs conformes à des milliers si elle tient.
-3. **La conception à trois CDR libres** (une session). Tranche la piste 3.
+3. ~~La conception à trois CDR~~ — réfutée par le §14, voir ci-dessus.
 
-Aucune des trois ne demande de louer quoi que ce soit, et chacune répond par
-oui ou par non.
+### Et une vérification qui disculpe la règle en espérance
+
+La porte PSH pourrait nous éloigner des meilleurs candidats prédits, puisqu'elle
+escompte la qualité par le risque de refus. Mesuré sur les 8 époques du §46 :
+les quatre candidats retenus occupent les rangs de qualité **1 à 9** dans la
+plupart des époques, et le meilleur retenu est à **0,00 à 0,03** du meilleur
+disponible dans le vivier mesuré. La règle ne coûte donc rien de mesurable en
+qualité. Le plafond est bien celui du générateur, comme le §13 l'avait conclu.

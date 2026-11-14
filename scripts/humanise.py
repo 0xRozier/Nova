@@ -132,6 +132,11 @@ def main() -> int:
     parser.add_argument("--allowed-v", help="the epoch's V gene, e.g. IGHV3-74")
     parser.add_argument("--cdr3", type=int, help="the epoch's CDR3 length")
     parser.add_argument("--epoch", type=int, help="look both up on chain instead")
+    parser.add_argument("--cutoff", type=int,
+                        help="restrict donors to epochs before this one, for an "
+                             "honest replay, without the chain lookup --epoch does. "
+                             "A donor submitted at or after the epoch being "
+                             "replayed did not exist then.")
     parser.add_argument("--j-gene", default=DEFAULT_J)
     parser.add_argument("--floor", type=float, default=0.72,
                         help="donor design_iiptm floor; 0.72 is the field's median")
@@ -148,7 +153,8 @@ def main() -> int:
     if not allowed_v:
         raise SystemExit("--allowed-v or --epoch is required")
 
-    pool = donors(args.target, cdr3_length, args.floor, args.epoch)
+    cutoff = args.cutoff if args.cutoff is not None else args.epoch
+    pool = donors(args.target, cdr3_length, args.floor, cutoff)
     print(f"{len(pool)} archived sequences bind at {args.floor} or better"
           + (f" with a CDR3 of {cdr3_length}" if cdr3_length else ""))
     if pool.empty:
