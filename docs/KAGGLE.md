@@ -30,6 +30,41 @@ BoltzGen étant stochastique (écart de ~14,5 places entre deux tirages des mêm
 séquences), nos candidats et leurs rivaux sont notés **dans le même run** : des
 métriques venant de deux runs différents ne sont pas comparables.
 
+## Le lot à lancer maintenant : trois bras (14 novembre)
+
+Le lot `repaired_26299_26306` est **périmé** : il a été noté, il a donné
+0 victoire sur 8 (§46), et son vivier de donneurs était anormalement vieux.
+Le lot courant est `Q9NZQ7_arms.csv`, **95 séquences, ~2,2 h**, et il répond à
+deux questions dans le même run plutôt qu'une :
+
+| bras | n | question |
+|---|---|---|
+| `grafted` | 32 | le vivier frais suffit-il ? (prédiction +0,115, §48) |
+| `humanised` | 31 | l'humanisation conserve-t-elle la liaison du donneur ? (§47) |
+| `real` | 32 | les 4 meilleures soumissions réelles, rang officiel connu |
+
+```sh
+python -m scripts.build_arms_batch \
+  --humanised-dir <dossier des sorties de scripts.humanise> --depth 4 \
+  --out data/observation/batches/Q9NZQ7_arms.csv
+```
+
+```sh
+python -m scripts.build_boltzgen_notebook \
+  --batch data/observation/batches/Q9NZQ7_arms.csv --run arms_26299_26306
+```
+
+**Le carnet dans `notebooks/` est déjà celui-là** (`RUN="arms_26299_26306"`,
+95 séquences, vérifié). Les deux commandes ci-dessus ne servent qu'à le
+reconstruire si le vivier change d'ici là — et il faut le reconstruire si plus
+d'une journée passe, puisque c'est précisément la fraîcheur du vivier qui a
+valu +0,115.
+
+**Comment lire ce run :** le bras `humanised` se juge contre le `design_iiptm`
+de son propre donneur, pas contre le champ. S'il le conserve à 0,05 près,
+la piste 2 tient et le vivier utilisable passe de 20 séquences à des milliers.
+S'il s'effondre, l'humanisation coûte l'affinité et la piste est morte.
+
 ## La marche à suivre
 
 ### 1. Construire le lot et le notebook

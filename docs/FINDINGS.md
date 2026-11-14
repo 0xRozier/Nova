@@ -3818,3 +3818,64 @@ les quatre candidats retenus occupent les rangs de qualité **1 à 9** dans la
 plupart des époques, et le meilleur retenu est à **0,00 à 0,03** du meilleur
 disponible dans le vivier mesuré. La règle ne coûte donc rien de mesurable en
 qualité. Le plafond est bien celui du générateur, comme le §13 l'avait conclu.
+
+## 48. Piste 1 répondue sans GPU : le vivier frais remonte la prédiction de 0,115
+
+Les 8 époques rejouées sur le vivier rafraîchi (9 960 séquences contre 9 926
+tronquées, et surtout les gagnantes des leaders archivées depuis). La mesure
+utile est gratuite : le substitut sur-promet de **+0,137** (§13), donc sa
+meilleure prédiction par époque suffit à savoir si une session GPU vaut la
+peine.
+
+| époque | L | vivier périmé (best / médiane) | vivier frais | gain |
+|---|---|---|---|---|
+| 26299 | 14 | 0,611 / 0,377 | **0,723** / 0,636 | +0,112 |
+| 26300 | 8 | 0,415 / 0,367 | **0,600** / 0,566 | +0,185 |
+| 26301 | 20 | 0,684 / 0,406 | 0,604 / 0,407 | −0,080 |
+| 26302 | 11 | 0,589 / 0,515 | **0,677** / 0,557 | +0,088 |
+| 26303 | 18 | 0,624 / 0,541 | **0,743** / 0,597 | +0,119 |
+| 26304 | 14 | 0,590 / 0,504 | **0,732** / 0,640 | +0,142 |
+| 26305 | 10 | 0,606 / 0,479 | **0,747** / 0,617 | +0,141 |
+| 26306 | 17 | 0,623 / 0,463 | 0,644 / 0,446 | +0,021 |
+
+**7 époques sur 8 en hausse, gain médian +0,115.** La meilleure prédiction du
+lot passe de 0,684 à **0,747**, soit **0,610 attendu** après le biais — contre
+0,718 pour la médiane du champ et 0,615 pour son quatrième rival.
+
+### Ce que ça dit, et ce que ça ne dit pas
+
+Le §46 a donc bien condamné le générateur sur un vivier périmé : à vivier égal,
+la prédiction monte de 0,115 et l'écart au champ se réduit d'autant. Le
+rafraîchissement du vivier est **gratuit** et c'est le levier le mieux rentable
+qu'on ait trouvé — il suffit de lancer `fetch_submissions`,
+`analyze_nanobodies` et `build_nanobody_dataset` avant chaque session.
+
+Mais 0,610 attendu reste **sous** le 0,615 du quatrième rival, et très loin du
+0,718 médian. **Le vivier frais ne suffit pas à gagner une époque.** Il fait
+passer de « dernier de huit sur huit » à « au contact du dernier rival », ce qui
+n'est pas la même chose que gagner.
+
+Et une hausse de prédiction n'est pas une hausse de liaison : le biais de
++0,137 a été mesuré une fois, sur 24 candidats d'une seule tranche. C'est
+l'hypothèse qu'il faut maintenant vérifier, et c'est à ça que sert le lot.
+
+### Le lot à trois bras
+
+`scripts.build_arms_batch` assemble en **un seul run** — puisque deux tirages de
+BoltzGen diffèrent de 14,5 places et ne sont pas comparables :
+
+| bras | n | ce qu'il teste |
+|---|---|---|
+| `grafted` | 32 | le générateur du mineur, vivier frais : la piste 1 |
+| `humanised` | 31 | les bons lieurs d'archive humanisés : la piste 2 |
+| `real` | 32 | les 4 meilleures soumissions de chaque époque, rang officiel connu |
+
+95 séquences, ~2,2 h sur 2×T4, `RUN="arms_26299_26306"`. Les lignes sont rangées
+en profondeur puis époque puis bras, donc un run interrompu couvre chaque bras
+de chaque époque.
+
+Les donneurs des humanisés vont de 0,537 à 0,785 de `design_iiptm` d'origine —
+un étalement voulu : il permet de voir si l'humanisation **conserve** la liaison
+du donneur, ce qui est la seule question de la piste 2. Si elle la conserve, le
+vivier utilisable passe de 20 séquences conformes à des milliers, avec un
+plafond à 0,827 au lieu de 0,65.
