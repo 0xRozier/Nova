@@ -3631,3 +3631,160 @@ générateur, et il est bien plus profond que ce dépôt ne le croyait.** Greffe
 CDR3 d'archive puis muter deux à quatre positions produit des séquences dont la
 médiane est à 0,42 quand le champ est à 0,72. Aucun réglage de porte, de
 sélecteur ou de vivier ne comble ça.
+
+## 47. IgLM, et trois pistes mesurées à la place
+
+La question posée après le verdict du §46 : IgLM ne serait-il pas la solution ?
+La réponse courte est non, et la raison vaut d'être énoncée parce qu'elle
+oriente tout le reste.
+
+### IgLM répond à un problème que nous n'avons pas
+
+`IgLMGenerator` est dans le dépôt depuis le début, avec ses tests de contrat
+d'infilling — et **il n'a jamais produit une mesure** : aucune mention dans ce
+fichier, aucun fichier de résultats. Ce qu'il ferait bien :
+
+- il remplit un CDR3 **dans le contexte de la charpente**, là où notre
+  générateur greffe un CDR3 issu d'une *autre* séquence sur une charpente
+  étrangère. Le README accuse déjà cette chimère : « les CDR3 greffés ne créent
+  pas assez de surface de contact — le transfert de charpente perd le contexte
+  structural », delta_sasa au 14ᵉ percentile ;
+- il produit des CDR3 **nouveaux**, donc la règle de nouveauté ne mord pas.
+
+Et ce qui le disqualifie : **il est aveugle à la cible.** IgLM est entraîné sur
+des répertoires d'anticorps naturels ; il ne sait rien de Q9NZQ7 ni de 8AOK. Il
+produit un CDR3 plausible, pas un lieur. Or notre déficit est de 0,30 de
+`design_iiptm` sur une cible précise. Aucun mécanisme ne fait qu'un modèle de
+langage agnostique de la cible atteigne 0,72 là où notre greffage atteint 0,42 :
+il changerait la loi du tirage, pas son espérance.
+
+Il reste utile pour la développabilité — la campagne de production a été plombée
+une fois par les *liabilities* (11ᵉ percentile) — mais ce n'est pas le goulot.
+
+### Piste 1 : le plafond du vivier, et c'est lui qui décidait
+
+Le fait central, mesuré sur le vivier que le rejeu a utilisé :
+
+| | |
+|---|---|
+| séquences d'archive conformes **et** appelant le gène V de l'époque | médiane `design_iiptm` **0,22**, plafond 0,57 à 0,77 |
+| le champ auquel on s'oppose | **0,72** |
+
+On n'atteint pas 0,72 en partant de là, et la cause est connue : les bons
+lieurs de l'archive précèdent la règle germinale. Sur 3 736 séquences qui lient
+à 0,72 ou mieux, **20 sont conformes**. Les 3 716 autres échouent toutes sur le
+plancher J, à une identité médiane de **64,3 pour un plancher à 86**.
+
+**Et la longueur du CDR3 est le vrai couperet.** L'époque l'impose, et un
+donneur de la mauvaise longueur ne sert à rien. Or les bons lieurs de l'archive
+sont presque tous à CDR3 = 13 (6 209 séquences, 3 721 au-dessus de 0,72, jusqu'à
+0,827), et deux longueurs seulement en avaient un au niveau du champ quand le
+rejeu a tourné.
+
+### Et une correction à mon verdict du §46
+
+Le vivier de l'archive **bouge vite**, parce que ce sont les séquences gagnantes
+des leaders qui l'alimentent :
+
+| longueurs avec un donneur à 0,72 | |
+|---|---|
+| 13 novembre (le vivier du rejeu) | **2 sur 19** — 11 % des époques |
+| 14 novembre, après rafraîchissement | **8 sur 19** — 42 % des époques |
+
+460 séquences de plus en une nuit. Et pour trois des huit époques rejouées, le
+plafond a bondi : CDR3 20 de 0,581 à 0,766 ; CDR3 11 de 0,692 à 0,785 ;
+CDR3 18 de 0,649 à 0,766.
+
+**Le 0 sur 8 reste le résultat du pipeline tel qu'il a tourné**, mais il a tourné
+sur un vivier anormalement périmé pour les longueurs concernées. Avant de
+conclure que le générateur est sans espoir, il faut le rejouer sur le vivier
+frais. C'est une session Kaggle.
+
+L'archive accusait par ailleurs un retard d'environ un jour sur l'API de partage
+des scores : 196 des 230 soumissions notées en manquaient, à 0,694 de médiane et
+0,779 de maximum, **exactement aux longueurs où nous n'avions rien**. Un jour,
+c'est vingt époques des meilleurs donneurs qui existent.
+`build_nanobody_dataset.scored_but_unarchived` fusionne désormais les deux
+sources, ce qui supprime ce retard même quand l'archive rattrape ensuite.
+
+### Piste 2 : humaniser les bons lieurs au lieu de greffer des CDR3
+
+Si les bons lieurs sont exclus par la règle germinale, la question n'est pas
+« quel CDR3 greffer » mais « comment rendre ce lieur conforme ». La moitié hors
+ligne est **démontrée** (`scripts/humanise.py`) :
+
+1. greffer les trois CDR sur la germline humaine que l'époque exige
+   (`abnumber.graft_cdrs_onto_human_germline`, l'humanisation standard) →
+   identité V de 91 à 95 pour un plancher à 82 ;
+2. imposer au CDR3 la queue germinale `FDY` — 799 des CDR3 conformes de
+   l'archive finissent ainsi → identité J de 93 à 100 pour un plancher à 86.
+   Cette étape est nécessaire : la région J couvre la **queue du CDR3** autant
+   que FR4, donc une charpente humanisée seule plafonne à 85,7, à un résidu du
+   plancher ;
+3. une ou deux substitutions de plus dans le CDR3, car le garder intact laisse
+   l'identité CDR3 à 0,846 pour un seuil de rejet à 0,85.
+
+Les apex des CDR, qui sont ce qui lie, ne sont jamais touchés ; la charpente
+l'est entièrement. Vérifié : 8 donneurs sur 8 deviennent conformes, le gène V
+visé est bien celui appelé (IGHV3-74, IGHV3-23, IGHV3-11 confirmés ; IGHV3-66
+est revenu appelé IGHV3-23, et c'est vérifié par candidat), et la nouveauté
+passe.
+
+**Ce qui n'est pas démontré : que la liaison survive.** L'humanisation déplace
+toute la charpente, et la perte d'affinité est son mode d'échec classique. Le
+§38 a mesuré qu'une ou deux substitutions de charpente ne coûtent rien de
+mesurable — c'est une raison d'essayer, pas un résultat. Le `design_iiptm` de
+l'archive appartient à la séquence d'origine ; l'humanisée doit être notée.
+
+### Piste 3 : la conception BoltzGen, dont le §11 n'a testé qu'une version bridée
+
+Le §11 a écarté la conception de novo sur 20 designs à 0,21 de médiane. Mais sa
+propre analyse d'échec désigne la contrainte : `filter_rmsd` 0/20 contre
+`filter_rmsd_design` 7/20 — la boucle se replie comme prévu, mais **le nanobody
+ne se repose pas où la conception l'avait placé**. Avec 11 résidus conçus et
+CDR1, CDR2 et les deux bouts du CDR3 gelés, le modèle ne peut pas construire
+d'interface.
+
+L'exemple amont `nanobody_scaffolds/7eow.yaml` — caplacizumab — conçoit **les
+trois CDR** (26..34, 52..59, 98..118) avec des insertions de longueur variable.
+Le §11 listait déjà cette piste comme « à tester d'abord, elle ne coûte pas plus
+cher ». Elle n'a jamais été testée. Son obstacle connu est le même que celui que
+la piste 2 vient de résoudre : `inverse_folding` réassigne toute la chaîne et
+faisait tomber l'identité J sous le plancher.
+
+### Ce que font les leaders, et ce que ça dit
+
+Les 69 soumissions acceptées de QTTECH2023 sur ces huit époques : **aucun de
+leurs CDR3 n'est dans l'archive** (20 sur 20 nouveaux à moins de 85 %
+d'identité), et ils lient à 0,727 de médiane. Ils ne greffent pas.
+
+Ils ont en revanche leurs propres familles de motifs, adaptées à la longueur
+imposée :
+
+| époque | L | CDR3 | iiptm |
+|---|---|---|---|
+| 26302 | 11 | `ARFQWKHHFDY` | 0,761 |
+| 26306 | 17 | `VRFQPRYPRTDPKHFDA` | 0,772 |
+| 26303 | 18 | `ARFQPYHWDWRQENNFDV` | 0,768 |
+| 26301 | 20 | `ARFQPRYPWKASRQTDNYDV` | 0,727 |
+
+Le `FQPRYP` / `FQ[WY]` revient de la longueur 11 à la longueur 20. L'archive, de
+son côté, porte un motif différent et très conservé à la longueur 13 :
+`S[KR][FWY]P[YWF]R…`, 1 259 variantes sur le seul préfixe `SKFPYR`. **Deux
+solutions de liaison distinctes pour la même cible, chacune réadaptée à la
+longueur.** Nos 32 candidats ne portent ni l'une ni l'autre.
+
+C'est le vrai enseignement : gagner ne demande pas de découvrir un lieur, mais
+de **transposer un motif connu à la longueur imposée**. Les leaders le font.
+Nous tirons au hasard autour de donneurs médiocres.
+
+### Par ordre de coût
+
+1. **Rejouer les 8 époques sur le vivier frais** (une session Kaggle). Le §46 a
+   peut-être condamné le générateur sur un vivier périmé.
+2. **Noter 40 humanisés** (`scripts.humanise`, une session). Tranche la piste 2,
+   et le vivier passe de 20 donneurs conformes à des milliers si elle tient.
+3. **La conception à trois CDR libres** (une session). Tranche la piste 3.
+
+Aucune des trois ne demande de louer quoi que ce soit, et chacune répond par
+oui ou par non.
