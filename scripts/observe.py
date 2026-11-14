@@ -227,7 +227,8 @@ def observe_epoch(params: dict, target: str, args) -> dict:
     result = propose(params, target, candidates=args.candidates, n_donors=args.donors,
                      n_cdr3=args.cdr3_pool,
                      shortlist=max(psh_pool, args.shortlist) if args.psh else args.shortlist,
-                     seed=args.seed + epoch, archive_cutoff=cutoff)
+                     seed=args.seed + epoch, archive_cutoff=cutoff,
+                     generator_name=args.generator)
     shortlist = result["shortlist"]
     psh_folds, psh_best, psh_risk = 0, None, None
     if args.psh and not shortlist.empty:
@@ -263,6 +264,7 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         "predicted_rank_sum": result["best_rank_sum"],
         "real_submissions_known": int(len(rivals)),
         "archive_cutoff": cutoff,
+        "generator": args.generator,
         "psh_screened": bool(args.psh),
         "psh_folds": psh_folds,
         # What was chosen and at what risk. Without these the selection cannot
@@ -299,6 +301,15 @@ def main():
     parser.add_argument("--donors", type=int, default=40)
     parser.add_argument("--cdr3-pool", type=int, default=60)
     parser.add_argument("--shortlist", type=int, default=10)
+    parser.add_argument("--generator", default="pssm",
+                        help="CDR3 generation strategy, and it must match "
+                             "scripts.mine's default or the replay measures a "
+                             "generator the miner does not run. It did not until "
+                             "2026-11-14: observe had no such option, so it took "
+                             "propose's default of `chimeric` while the miner ran "
+                             "`pssm`, and the 0-for-8 verdict of FINDINGS 46 is a "
+                             "chimeric measurement. Same class of mistake as the "
+                             "selection mismatch fixed the day before.")
     parser.add_argument("--psh", action=argparse.BooleanOptionalAction, default=True,
                         help="select candidates the way scripts.mine does -- surrogate "
                              "quality times P(the validator does not refuse on PSH). "
