@@ -3530,3 +3530,104 @@ sa place n'est pas acquise.
 Les chiffres de risque du §43 (1 % pour `FR211Q→E`, 42 % pour `FR213D→E`)
 étaient optimistes de deux façons qui allaient dans le même sens : pas de
 biais, et σ pris au plus bas. C'est 14 % et 66 %.
+
+## 46. Le verdict du run réparé : 0 victoire sur 8, et le goulot n'est aucun de ceux qu'on surveillait
+
+64 séquences — 4 candidats et les 4 meilleures soumissions réelles de chacune
+des époques 26299-26306 — notées dans un seul run BoltzGen, 92,2 min sur 2×T4,
+64 sur 64 abouties (`results/scores_nanobody_repaired_26299_26306.csv`).
+
+**Le résultat ne demande aucune interprétation :**
+
+| | nos candidats | le champ |
+|---|---|---|
+| design_iiptm | min 0,141 · **médiane 0,416** · max 0,621 | min 0,615 · **médiane 0,718** · max 0,786 |
+| interaction_pae | 10,9 – **15,6** – 23,9 | 8,8 – **9,2** – 10,9 |
+
+**Huit époques sur huit : dernière place, zéro rival battu.** Pas une seule
+époque où notre candidat passe devant ne serait-ce qu'une des quatre
+soumissions portées dans le lot. Notre meilleur candidat des 64, à 0,621, ne
+dépasse que le pire rival des 32, à 0,615.
+
+Ce n'est pas une subtilité de classement : `design_iiptm` est une métrique
+absolue, pas un rang, et l'écart entre les deux distributions ne se chevauche
+presque pas. Aucune erreur d'ordonnancement n'explique un écart de 0,30.
+
+### Ce que ce n'est pas
+
+Trois suspects, écartés par les données du run lui-même.
+
+**Ce n'est pas la porte PSH.** Sur nos 32 candidats, PSH contre design_iiptm
+donne Spearman **+0,19 (p = 0,30)** — aucune relation, et si tendance il y a,
+elle est inverse : la moitié la plus basse en PSH lie *mieux* (iiptm médiane
+0,451 contre 0,307). Sélectionner sur l'acceptabilité ne détruit pas la
+liaison. C'était l'hypothèse la plus inquiétante et elle est fausse.
+
+**Ce n'est pas le sélecteur.** Un oracle parfait choisissant parmi nos
+32 candidats perdrait quand même les 8 époques, puisque le meilleur de tout le
+lot est sous la médiane du champ. Le classement ne peut pas réparer un vivier
+dont le plafond est trop bas. (Le modèle de substitution fait d'ailleurs
+Spearman +0,31 contre le rang réel, mieux que le −0,20 du §43 mais sans
+importance ici.)
+
+**Ce n'est pas le budget GPU.** À 1,4 min/séquence, une époque de 66 min
+utiles permet d'en noter ~47. Nous en avons noté 4 par époque par choix de
+protocole, pas par contrainte.
+
+### Ce que c'est : le générateur ne lie pas
+
+En approximation normale sur nos 32 tirages (moyenne 0,374, écart-type 0,171) :
+
+| cible | p par candidat | candidats pour 80 % de chances |
+|---|---|---|
+| battre le pire des 4 rivaux (0,615) | 8,0 % | ~20 |
+| atteindre la médiane du champ (0,718) | 2,3 % | ~71 |
+| battre le meilleur rival (0,786) | 0,8 % | ~197 |
+
+Des ordres de grandeur, pas des prévisions : 32 tirages ne contraignent pas une
+queue. Mais ils disent la forme du problème, et **elle était déjà écrite au
+§40** : le taux de production mesuré à IGHV3-74/18 était de **1 sur 182** pour
+atteindre le niveau des gagnants. 32 tirages à ce taux donnent 0,18 gagnant
+attendu. **Zéro est exactement le résultat prévu.**
+
+### Donc les 14 à 29 % étaient faux, et voici ce qui diffère
+
+Ce dépôt annonçait 14 à 29 % de victoires contre le champ complet, 48 % au
+mieux de quatre. Cette mesure-ci les contredit directement, et c'est elle qu'il
+faut croire : pipeline complet, champ actuel, même run pour les deux camps,
+huit époques, sélection identique à celle du mineur.
+
+Ce qui a changé depuis les balayages de 25996-26025 : **le champ**. Les
+gagnants de cette époque-là lisaient 0,56 à 0,71 de `design_iiptm` ; ici le
+*quatrième* rival de chaque époque lit 0,67 à 0,79, et QTTECH2023 occupe le
+haut du tableau partout. Les anciens balayages comparaient en plus des
+candidats issus de la lignée IGHV3-74/18 qu'on optimisait depuis des mois,
+contre un champ plus faible. Rien de cela ne se généralise à huit couples
+quelconques.
+
+### Une réserve sur la mesure, qui ne sauve rien
+
+L'accord de notre run avec le classement officiel des rivaux tombe à **33 paires
+sur 47, soit 70 %**, contre 85-86 % sur les trois runs précédents. L'intervalle
+à n = 47 est large (environ 55-82 %) et les quatre rivaux d'une époque sont très
+serrés, ce qui rend l'ordonnancement plus dur — mais c'est plus faible, et il
+faut le dire. La ligne « calibration: Spearman 0.33 » du journal, elle, est
+l'artefact déjà documenté : elle compare des sommes de rangs d'époques
+différentes, donc incomparables.
+
+Cette réserve porte sur les *rangs*. Elle ne touche pas l'écart de 0,30 sur une
+métrique absolue, qui est le fait central.
+
+### Où cela laisse le projet
+
+Le travail du 13 novembre valait : la porte de développabilité est désormais
+fidèle, et les 8 candidats retenus seraient **acceptés** là où les onze
+soumissions de production étaient toutes refusées. C'est un vrai acquis, et
+c'était la condition nécessaire.
+
+Elle n'est pas suffisante. Être accepté et finir dernier rapporte exactement
+autant que d'être refusé : zéro. **Le goulot est la qualité de liaison du
+générateur, et il est bien plus profond que ce dépôt ne le croyait.** Greffer un
+CDR3 d'archive puis muter deux à quatre positions produit des séquences dont la
+médiane est à 0,42 quand le champ est à 0,72. Aucun réglage de porte, de
+sélecteur ou de vivier ne comble ça.

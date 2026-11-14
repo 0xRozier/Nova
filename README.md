@@ -957,6 +957,39 @@ candidats sur GPU au lieu de les trier avec le modèle de substitution porte une
 entrée unique de 14 % à 48 % pour 6,4 min de 2×T4 par époque. Réparer le tri
 d'abord, multiplier les hotkeys ensuite — pas l'inverse.
 
+## Le verdict du 14 novembre : acceptable, pas compétitif
+
+**64 séquences notées par BoltzGen sur les époques 26299-26306, 4 candidats
+contre les 4 meilleures soumissions réelles de chaque époque, dans un seul run.
+Résultat : 8 époques sur 8, dernière place, zéro rival battu.**
+
+| | nos candidats | le champ |
+|---|---|---|
+| design_iiptm | min 0,141 · **médiane 0,416** · max 0,621 | min 0,615 · **médiane 0,718** · max 0,786 |
+| interaction_pae | 10,9 – **15,6** – 23,9 | 8,8 – **9,2** – 10,9 |
+
+Ce n'est pas un problème de classement : `design_iiptm` est absolu, et les deux
+distributions ne se chevauchent presque pas. Trois suspects sont écartés par les
+données du run (§46 de `docs/FINDINGS.md`) : ce n'est **pas** la porte PSH
+(Spearman +0,19, p = 0,30 entre PSH et liaison), **pas** le sélecteur (un oracle
+parfait sur nos 32 candidats perdrait aussi les 8 époques), **pas** le budget
+GPU (47 candidats tiennent dans une époque, nous en avons noté 4 par choix).
+
+**C'est le générateur qui ne lie pas.** Et c'était déjà écrit au §40 : le taux de
+production mesuré était de 1 sur 182 pour atteindre le niveau des gagnants ;
+32 tirages donnent 0,18 gagnant attendu, et zéro est le résultat prévu.
+
+**Les « 14 à 29 % » annoncés plus bas dans ce fichier sont donc faux** et n'ont
+pas encore été retirés des sections qui les citent. Ils ont été mesurés sur les
+époques 25996-26025, dont les gagnants lisaient 0,56 à 0,71, contre des
+candidats issus de la lignée qu'on optimisait depuis des mois. Aujourd'hui le
+*quatrième* rival de chaque époque lit 0,67 à 0,79.
+
+Ce qui reste acquis : la porte de développabilité est fidèle, et les
+8 candidats retenus seraient **acceptés** là où les onze soumissions de
+production étaient toutes refusées. C'était la condition nécessaire. Mais être
+accepté et finir dernier rapporte autant qu'être refusé.
+
 ## La porte PSH, réparée — et ce qu'elle change au choix du candidat
 
 **La PSH n'était pas bruitée : notre DSSP ne tournait pas.** Détail complet au
