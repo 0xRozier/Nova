@@ -93,6 +93,62 @@ def derived(epoch: int) -> dict:
     raise AssertionError("unreachable")
 
 
+def agrees(epoch: int, sequences: list[str]) -> bool:
+    """Does our derivation match what these accepted sequences carry?
+
+    A sequence can match several germlines, so the test is an overlap rather
+    than an equality.
+    """
+    params = derived(epoch)
+    genes, lengths = observed(sequences)
+    if not genes or not lengths:
+        return True  # nothing numberable, so no evidence either way
+    return (params["allowed_v"] in genes
+            and params["allowed_cdr3_length"] in lengths)
+
+
+def confirmed(target: str, log=print) -> tuple[bool, str]:
+    """(may the miner submit, why) from the newest epoch we can check.
+
+    The check trails by at least one epoch -- a rival's submission can only be
+    decrypted once its reveal round has passed -- so it cannot vouch for the
+    epoch being mined. What it can do is cap the damage: if the derivation
+    broke, this says so one epoch later instead of never, and one lost epoch
+    beats a week of submissions built for the wrong challenge.
+
+    It refuses only on a disagreement at or after the switchover. Stale data
+    before it is a warning: the archive on disk is whatever the last
+    scripts.fetch_submissions brought in, and demanding a fresh decryption
+    inside an epoch's budget would cost more epochs than it saves.
+    """
+    from nova_lab.config import RXN_GROUP_FILTERING_FROM_EPOCH as SWITCH
+    try:
+        witnesses = accepted_by_epoch(target)
+    except SystemExit as error:
+        return True, f"no decrypted submissions to check against ({error})"
+    if not witnesses:
+        return True, "no scored submissions on disk to check against"
+
+    newest = max(witnesses)
+    try:
+        ok = agrees(newest, witnesses[newest])
+    except Exception as error:  # noqa: BLE001 - a chain failure is not a verdict
+        return True, f"could not reach the chain to check epoch {newest}: {error}"
+
+    if ok:
+        return True, (f"derivation confirmed on epoch {newest} against "
+                      f"{len(witnesses[newest])} accepted submissions")
+    if newest >= SWITCH:
+        return False, (f"our (V gene, CDR3 length) for epoch {newest} does NOT "
+                       f"match its {len(witnesses[newest])} accepted submissions, "
+                       f"and that epoch is at or past the {SWITCH} change. Every "
+                       f"candidate we build is for the wrong challenge: re-read "
+                       f"utils/challenge.get_challenge_params_from_blockhash "
+                       f"upstream.")
+    return True, (f"epoch {newest} disagrees, but it predates the {SWITCH} "
+                  f"change, so it is history rather than a live problem")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", default=NANOBODY_TARGET[0])

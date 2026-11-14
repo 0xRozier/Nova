@@ -566,6 +566,20 @@ def mine_epoch(st, args, params: dict) -> dict:
         entry["status"] = "config_drift"
         return _stamp(entry)
 
+    # config_unchanged reads upstream's `main`, so it is blind to anything still
+    # on a branch -- and PR 102's values were announced for epoch 26331 while
+    # living on rxn-group-filtering. This asks the field instead: an accepted
+    # nanobody submission must carry the epoch's V gene and CDR3 length, so the
+    # accepted submissions of the newest decrypted epoch are a witness to the
+    # real parameters, whatever upstream's code or its announcement say.
+    from scripts.verify_challenge import confirmed
+    ok, why = confirmed(args.target, log=log)
+    entry["challenge_confirmed"] = ok
+    log(f"challenge derivation: {why}")
+    if not ok:
+        entry["status"] = "challenge_drift"
+        return _stamp(entry)
+
     stale = donor_pool_lag(args.target, epoch)
     entry["donor_lag_epochs"] = stale
     if stale is not None and stale > args.max_donor_lag:

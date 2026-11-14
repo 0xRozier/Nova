@@ -190,9 +190,20 @@ $PY -m scripts.build_nanobody_dataset        # re-telecharger l'archive, refeatu
 $PY -m scripts.doctor                # les outils mesurent-ils ce que mesure le validateur ?
 $PY -m scripts.preflight --calibrate # et le disent-ils des 36 acceptees de 26174 ?
 $PY -m scripts.check_config          # les regles du subnet ont-elles bouge ?
+$PY -m scripts.verify_challenge      # et notre derivation est-elle toujours la leur ?
 $PY -m pytest tests -q               # parite + aller-retour du chiffrement
 $PY -m scripts.mine --once --wallet mon --hotkey default   # a blanc, avec GPU
 ```
+
+`scripts.verify_challenge` est le seul controle qui ne fasse confiance ni au
+depot amont ni aux annonces : une soumission nanobody n'est acceptee que si son
+gene V et sa longueur de CDR3 correspondent a ceux de l'epoque, donc les
+soumissions acceptees sont des temoins des vrais parametres. **Le mineur
+l'applique lui-meme** et refuse de soumettre (`status: challenge_drift`) si
+l'epoque la plus recente qu'il peut verifier le contredit **et** qu'elle est a
+l'epoque 26331 ou apres. Le controle traine d'au moins une epoque — les
+soumissions d'un rival ne se dechiffrent qu'apres son round de revelation —
+donc il plafonne la perte a une epoque au lieu d'une semaine.
 
 `scripts.doctor` et `scripts.preflight --calibrate` sont les deux qui
 manquaient en novembre. Le second doit afficher **0 acceptee au-dessus de 89** :
