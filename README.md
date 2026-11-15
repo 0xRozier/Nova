@@ -957,16 +957,34 @@ candidats sur GPU au lieu de les trier avec le modèle de substitution porte une
 entrée unique de 14 % à 48 % pour 6,4 min de 2×T4 par époque. Réparer le tri
 d'abord, multiplier les hotkeys ensuite — pas l'inverse.
 
-## Le verdict du 14 novembre : acceptable, pas compétitif
+## Le verdict du 15 novembre : le retard est de 0,21 d'iiptm, et il se mesure
 
-**64 séquences notées par BoltzGen sur les époques 26299-26306, 4 candidats
-contre les 4 meilleures soumissions réelles de chaque époque, dans un seul run.
-Résultat : 8 époques sur 8, dernière place, zéro rival battu.**
+**95 séquences notées par BoltzGen dans un seul run sur les époques
+26299-26306 : 32 candidats greffés, 31 humanisés, et les 32 meilleures
+soumissions réelles du champ.**
 
-| | nos candidats | le champ |
-|---|---|---|
-| design_iiptm | min 0,141 · **médiane 0,416** · max 0,621 | min 0,615 · **médiane 0,718** · max 0,786 |
-| interaction_pae | 10,9 – **15,6** – 23,9 | 8,8 – **9,2** – 10,9 |
+| bras | n | design_iiptm médian | interaction_pae médian |
+|---|---|---|---|
+| nos candidats (greffés, vivier frais) | 32 | **0,499** | 13,8 |
+| humanisés depuis l'archive (piste 2) | 31 | **0,185** | 22,3 |
+| le champ (4 meilleures par époque) | 32 | **0,710** | 9,2 |
+
+Le vivier frais a fait passer nos candidats de 0,416 à **0,499** de médiane et
+de 0,621 à 0,696 de maximum (§48-49 de `docs/FINDINGS.md`) : le seul levier
+gratuit qui ait jamais produit un gain mesurable. L'humanisation de l'archive,
+elle, est **réfutée** : elle ne conserve que 28 % de la liaison du donneur, et
+la corrélation donneur → résultat est de +0,027.
+
+Il reste **0,211 ± 0,007 d'iiptm** entre nous et le champ, soit 30 σ : c'est
+hors de tout doute, et c'est le chiffre à battre.
+
+**Un avertissement sur la façon de lire ces runs.** Les comptages de victoires
+par époque qu'affichaient les versions précédentes de ce fichier
+(« 8 époques sur 8, dernière place ») ne sont **pas mesurables** : en notant
+les mêmes 32 rivaux dans deux runs, le bruit d'une mesure d'iiptm ressort à
+σ = 0,028, alors que deux rivaux voisins d'une même époque ne sont séparés que
+de 0,014 — et nos deux runs ne s'ordonnent eux-mêmes que dans 60 % des paires.
+Seules les médianes de bras, sur 31-32 séquences, portent une conclusion.
 
 Ce n'est pas un problème de classement : `design_iiptm` est absolu, et les deux
 distributions ne se chevauchent presque pas. Trois suspects sont écartés par les

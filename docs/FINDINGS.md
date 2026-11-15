@@ -3531,7 +3531,12 @@ Les chiffres de risque du §43 (1 % pour `FR211Q→E`, 42 % pour `FR213D→E`)
 étaient optimistes de deux façons qui allaient dans le même sens : pas de
 biais, et σ pris au plus bas. C'est 14 % et 66 %.
 
-## 46. Le verdict du run réparé : 0 victoire sur 8, et le goulot n'est aucun de ceux qu'on surveillait
+## 46. Le verdict du run réparé : le goulot n'est aucun de ceux qu'on surveillait
+
+> **Révision du 15 novembre (§49) :** le « 0 victoire sur 8 » de cette section
+> n'est pas mesurable — le bruit de BoltzGen (σ = 0,028) dépasse l'écart entre
+> rivaux voisins (0,014). Les conclusions sur le *niveau* des candidats, qui
+> reposent sur des médianes, tiennent ; le comptage de victoires est retiré.
 
 64 séquences — 4 candidats et les 4 meilleures soumissions réelles de chacune
 des époques 26299-26306 — notées dans un seul run BoltzGen, 92,2 min sur 2×T4,
@@ -3879,3 +3884,87 @@ un étalement voulu : il permet de voir si l'humanisation **conserve** la liaiso
 du donneur, ce qui est la seule question de la piste 2. Si elle la conserve, le
 vivier utilisable passe de 20 séquences conformes à des milliers, avec un
 plafond à 0,827 au lieu de 0,65.
+
+## 49. Le run à trois bras : la piste 1 confirmée, la piste 2 morte, et la mesure recalée sur ce qu'elle peut porter
+
+Lot `arms_26299_26306`, 95 séquences notées dans le même run BoltzGen sur
+2×T4 : 32 `grafted` (le générateur du mineur sur le vivier frais de §48),
+31 `humanised` (la piste 2 de §47), 32 `real` (les 4 meilleures soumissions
+réelles de chacune des 8 époques, rang officiel connu).
+Preuves : `results/scores_nanobody_arms_26299_26306.csv`,
+`results/boltzgen_arms_26299_26306.log`.
+
+### Ce que le run dit
+
+| bras | n | iiptm min / médiane / max | pae médian |
+|---|---|---|---|
+| `grafted` | 32 | 0,134 / **0,499** / 0,696 | 13,76 |
+| `humanised` | 31 | 0,129 / **0,185** / 0,694 | 22,32 |
+| `real` | 32 | 0,635 / **0,710** / 0,778 | 9,22 |
+
+**Piste 1 (vivier frais) : confirmée.** Le bras `grafted` passe de 0,416 à
+**0,499** de médiane et de 0,621 à **0,696** de maximum par rapport au même
+générateur sur le vivier périmé du 14 novembre (§46). La prédiction de §48
+était +0,115 sur le meilleur candidat ; le mesuré est +0,075. Le meilleur
+candidat bat désormais 10 des 32 soumissions réelles sur l'iiptm, contre 1
+sur 32. Rafraîchir le vivier est le seul levier gratuit qui ait jamais produit
+un gain mesurable.
+
+**Piste 2 (humanisation) : réfutée.** La corrélation entre l'iiptm du donneur
+et celui du candidat humanisé est de **+0,027** (Spearman) : l'humanisation
+ne conserve rien. La rétention médiane est de **28 %**. Une exception reste
+inexpliquée — l'époque 26301 retient 88 % sur 4 candidats — et aucun
+prédicteur ne la distingue : l'identité au donneur donne ρ = +0,007 (p = 0,97),
+et à l'intérieur de 26301 même, quatre candidats traités identiquement
+retiennent 93 / 89 / 86 / **28** %. Le vivier utilisable reste donc les
+20 séquences conformes, pas les milliers qu'espérait §47.
+
+### Ce que le run ne dit pas, et pourquoi le contrôle de `KAGGLE.md` était mal posé
+
+L'accord avec le classement officiel des validateurs tombe à **27 paires
+sur 47, soit 57 %**, après 70 % (§46) et 85-91 % sur les runs plus anciens.
+Trois dégradations de suite : avant d'en tirer quoi que ce soit, il fallait
+savoir si c'est notre chaîne qui dérive ou la question qui est insoluble.
+
+Les 32 soumissions réelles ont été notées **deux fois**, dans le run du
+14 novembre et dans celui-ci. Nos deux mesures des mêmes séquences ne
+s'ordonnent entre elles que dans **60 % des paires** — à peine mieux que les
+57 % d'accord avec les validateurs. Le bruit d'une mesure d'iiptm est
+σ = **0,028** (écart absolu médian entre les deux runs : 0,024), alors que
+l'écart médian entre deux rivaux voisins d'une même époque est de **0,014**.
+Le rapport signal/bruit intra-époque vaut **0,51**, là où il faudrait > 2.
+
+**Donc le classement intra-époque contre les 4 meilleures soumissions est
+sous la résolution de l'instrument, et l'était déjà.** Les 85-91 % des runs
+anciens ne mesuraient pas une chaîne plus saine : ils portaient sur des pools
+contenant des rivaux faibles, donc largement étalés. Le contrôle tel que
+`KAGGLE.md` le formulait — « si notre run les ordonne comme eux, la mesure
+vaut quelque chose » — est invalide : il fait dépendre tout le protocole d'une
+quantité que le bruit de BoltzGen interdit de mesurer sur 4 rivaux serrés.
+
+Il faut donc retirer deux chiffres de ce dépôt, le mien compris :
+**« 0 victoire sur 8 » et « place 3 sur 5 à l'époque 26304, premier rival
+jamais battu » ne sont ni l'un ni l'autre mesurables.** Les deux reposent sur
+l'ordre de candidats séparés par moins d'un demi-sigma.
+
+### Ce qui reste mesurable, et ce que ça dit
+
+Les médianes de bras, elles, moyennent le bruit sur 31-32 séquences
+(erreur-type 0,005). L'écart `grafted` → `real` vaut **0,211 ± 0,007**, soit
+**30 σ** : il est hors de tout doute. C'est la seule lecture que ce run
+supporte, et elle est sévère — le champ nous devance de 0,21 d'iiptm, et le
+vivier frais a comblé 0,08 de ce retard.
+
+Conséquences pour le protocole :
+
+- **Juger par médianes de bras, jamais par victoires par époque.** Un
+  comptage de victoires sur 8 époques contre 4 rivaux serrés n'a aucune
+  puissance ; 32 séquences par bras en ont.
+- **Ne pas réclamer un meilleur accord avec les validateurs**, qui plafonne à
+  ~60 % par construction. Le contrôle utile est la reproductibilité de notre
+  propre mesure d'un run à l'autre, qui est désormais chiffrée (σ = 0,028).
+- **Un classement intra-époque demanderait des répliques** : à σ = 0,028 et
+  un écart réel de 0,014, séparer deux rivaux voisins demande ~16 répliques
+  par séquence. Ce n'est pas le bon usage du quota.
+- La porte PSH et les portes déterministes restent, elles, hors de ce débat :
+  elles sont déterministes et toujours le préalable à toute soumission.

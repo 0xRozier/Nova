@@ -32,8 +32,8 @@ métriques venant de deux runs différents ne sont pas comparables.
 
 ## Le lot à lancer maintenant : trois bras (14 novembre)
 
-Le lot `repaired_26299_26306` est **périmé** : il a été noté, il a donné
-0 victoire sur 8 (§46), et son vivier de donneurs était anormalement vieux.
+Le lot `repaired_26299_26306` est **périmé** : il a été noté (§46), et son
+vivier de donneurs était anormalement vieux.
 Le lot courant est `Q9NZQ7_arms.csv`, **95 séquences, ~2,2 h**, et il répond à
 deux questions dans le même run plutôt qu'une :
 
@@ -119,10 +119,19 @@ dit à quelle place notre candidat serait arrivé.
 
 ## Comment juger le résultat, et le piège
 
-**Le contrôle à regarder d'abord n'est pas notre place, c'est l'accord avec les
-validateurs.** Chaque époque porte ses rivaux avec leur rang officiel : si notre
-run les ordonne comme eux (85-86 % des paires sur les trois runs précédents),
-la mesure vaut quelque chose. Sinon, rien de ce qui suit ne compte.
+**Juger par médianes de bras, pas par victoires par époque, et pas par
+l'accord avec les validateurs.** §49 a mesuré le bruit de BoltzGen en notant
+les mêmes 32 rivaux dans deux runs : σ = 0,028 sur l'iiptm, alors que deux
+rivaux voisins d'une même époque ne sont séparés que de 0,014. Nos deux runs
+ne s'ordonnent eux-mêmes que dans 60 % des paires. Un classement
+intra-époque contre les 4 meilleures soumissions est donc **sous la
+résolution de l'instrument** — l'ancien contrôle « 85-86 % d'accord avec les
+validateurs » ne mesurait que des pools contenant des rivaux faibles, et
+exiger de le retrouver est exiger l'impossible.
+
+Ce qui porte : une médiane sur 31-32 séquences, dont l'erreur-type tombe à
+0,005. C'est à cette échelle qu'il faut lire un bras, et comparer les bras
+entre eux.
 
 Ensuite :
 
