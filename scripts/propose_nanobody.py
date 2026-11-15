@@ -215,6 +215,27 @@ def score(sequences: list[str], models: dict, reference: pd.DataFrame) -> tuple[
     return out.sort_values("predicted_rank_sum"), all_ranks[:len(reference)]
 
 
+def dated_archive_snapshot(target: str, cutoff: int | None = None) -> set[str]:
+    """The archive as a replay of `cutoff` is allowed to see it.
+
+    Preferably from `nova_lab.archive_ledger`, which stamps each sequence with
+    the epoch we first saw it in the archive and so grows honest over time.
+    Failing that, the prebuilt regions file, frozen when the archive held 9466
+    entries -- everything up to epoch 26025 -- which is correct but pessimistic
+    for any later epoch.
+    """
+    from nova_lab import archive_ledger
+    if cutoff is not None:
+        seen = archive_ledger.seen_before(target, cutoff)
+        if seen:
+            return seen
+    path = DATA_DIR / "prebuilt" / f"{target}_regions.csv"
+    if not path.exists():
+        return set()
+    frame = pd.read_csv(path, keep_default_na=False)
+    return set(frame["sequence"]) if "sequence" in frame.columns else set()
+
+
 def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 3000,
             n_donors: int = 40, n_cdr3: int = 60, shortlist: int = 10, seed: int = 0,
             archive_cutoff: int | None = None, generator_name: str = "chimeric",
@@ -232,6 +253,23 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     the first 21-epoch sweep, that let 23 of 40 candidates carry a CDR3 at
     0.70-0.84 identity to a sequence that did not exist yet — just under the
     0.85 duplicate threshold — and it accounted for 4 of 5 apparent wins.
+
+    A cutoff on the `epoch` column alone is not enough, and believing it was
+    cost this repo three sections of findings. The donor pool merges two
+    sources: our decrypted submissions, which carry an epoch, and the public
+    archive, which carries **no date at all**. Re-downloading the archive
+    therefore injects today's sequences as undated rows, and an undated row
+    passes any cutoff. Measured on 15 November: of the 197 undated donors that
+    bind at 0.72 or better and are germline-compliant, **none** existed at the
+    epochs 26299-26306 that FINDINGS 48, 49 and 51 replayed — all 197 arrived
+    after the only dated archive snapshot we have.
+
+    So with a cutoff, an undated sequence is admissible only if it is in that
+    snapshot (`data/prebuilt/<target>_regions.csv`, frozen when the archive
+    held 9466 entries, i.e. everything up to epoch 26025). Replaying an epoch
+    after 26025 is therefore honest but pessimistic: the archive it can see
+    stops at 26025. That is the price of an archive with no dates, and it is
+    the right side to err on -- the other side invents donors.
     """
     allowed_v, cdr3_len = params["allowed_v"], params["allowed_cdr3_length"]
     out: dict = {"epoch": params.get("epoch"), "allowed_v": allowed_v,
@@ -244,8 +282,15 @@ def propose(params: dict, target: str = NANOBODY_TARGET[0], candidates: int = 30
     df = pd.read_parquet(ds / f"{target}_nanobodies.parquet")
     if archive_cutoff is not None:
         before = len(df)
-        df = df[df["epoch"].isna() | (df["epoch"] < archive_cutoff)].copy()
-        log(f"archive restricted to before epoch {archive_cutoff}: {len(df)} of {before} sequences")
+        dated_ok = df["epoch"].notna() & (df["epoch"] < archive_cutoff)
+        snapshot = dated_archive_snapshot(target, archive_cutoff)
+        undated_ok = df["epoch"].isna() & df["sequence"].isin(snapshot)
+        df = df[dated_ok | undated_ok].copy()
+        log(f"archive restricted to before epoch {archive_cutoff}: {len(df)} of "
+            f"{before} sequences ({int(dated_ok.sum())} dated, "
+            f"{int(undated_ok.sum())} undated and in the {len(snapshot)}-sequence "
+            f"snapshot; undated rows outside it are sequences the archive gained "
+            f"since and cannot be placed in time)")
     df["true_rank_sum"] = rank_sum(df)
 
     compliant = df[(df["v_identity"] >= MIN_HUMAN_V_IDENTITY + GERMLINE_MARGIN)

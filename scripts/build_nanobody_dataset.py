@@ -93,6 +93,23 @@ def main():
     df["regions"] = archive.regions
     print(f"{len(df)} archived sequences, {sum(r is not None for r in archive.regions)} numberable")
 
+    # Stamp what is new to us with the epoch we saw it at, because the archive
+    # carries no submission date and a replay otherwise grafts from the future.
+    # The stamp is an upper bound on the real submission epoch, which is the
+    # safe direction: a replay may miss a donor that existed, never invent one.
+    try:
+        from nova_lab import archive_ledger
+        from nova_lab.chain import current_block
+        from nova_lab.config import EPOCH_LENGTH
+        import bittensor as bt
+        epoch = current_block(bt.Subtensor("wss://archive.chain.opentensor.ai:443")) // EPOCH_LENGTH
+        new = archive_ledger.record(args.target, df["sequence"], epoch)
+        print(f"archive ledger: {new} sequences newly stamped at epoch {epoch} "
+              f"-> {archive_ledger.path(args.target)}")
+    except Exception as error:  # noqa: BLE001 - the dataset must build regardless
+        print(f"archive ledger not updated ({type(error).__name__}: {error}); "
+              f"replays will see the frozen snapshot only")
+
     # epoch per sequence hash, where we know it
     epochs = {}
     cache = DATA_DIR / "scores" / "nanobodies.jsonl"
