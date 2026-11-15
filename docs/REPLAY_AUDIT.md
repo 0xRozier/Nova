@@ -81,7 +81,30 @@ Mesure de l'écart, sur les 63 candidats à nous dont BoltzGen a mesuré le
 et `..._repaired_...csv`), aucun présent dans l'un ou l'autre jeu
 d'entraînement :
 
-<!--MEASURE-SURROGATE-->
+| modèle | lignes d'entraînement | ρ de Spearman contre le vrai `design_iiptm` | son top-1 lit | son top-8 lit (médiane) |
+|---|---|---|---|---|
+| **celui du dépôt** (fuite totale) | 556 (champ 26299-26348 + nos candidats notés) | **0,244** (p = 0,017, n = 95) | **0,179** | 0,543 |
+| **honnête** (échantillon de 3000 de l'instantané ≤ 26025) | 3000 | **0,418** (p = 2,5·10⁻⁵, n = 95) | **0,581** | 0,535 |
+| le vivier lui-même | — | — | médiane 0,270, max 0,696 | 8 au hasard : 0,312 |
+
+**Le résultat va dans le sens inverse de l'intuition, et il faut le dire tel
+quel : la fuite ne rapporte rien.** Le modèle honnête ordonne *mieux* nos
+candidats (ρ = 0,418 contre 0,244) et son premier choix lit un vrai
+`design_iiptm` de 0,581 là où celui du dépôt lit 0,179 — pire que 8 candidats
+tirés au hasard (0,312). L'explication plausible est que le champ de novembre
+(médiane 0,71) ne ressemble pas à nos greffes (médiane 0,27), donc apprendre sur
+le champ transfère mal, tandis que l'archive ancienne couvre la même gamme que
+nos candidats.
+
+**Réserve honnête sur cette mesure** : les deux modèles n'ont pas le même nombre
+de lignes (3000 contre 556), donc une part de l'écart peut venir de la taille
+d'échantillon et non de l'honnêteté. Ce que la mesure établit solidement est le
+**signe** : la fuite n'achète aucune performance mesurable sur cette tâche, donc
+**aucun chiffre publié n'est gonflé par elle**. Ce qui reste cassé est autre
+chose : le rejeu fait tourner le sélecteur du mineur avec un modèle qui a vu le
+futur, donc il ne mesure pas le sélecteur que le mineur aura à l'époque suivante.
+Les 95 candidats du test incluent les 31 `humanised`, dont la liaison est très
+basse, ce qui élargit la gamme et facilite les deux modèles également.
 
 ### 1b. `Q9NZQ7_nanobody_surrogate.joblib` — le substitut 10 métriques
 
