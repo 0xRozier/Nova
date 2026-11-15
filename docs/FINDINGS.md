@@ -3968,3 +3968,76 @@ Conséquences pour le protocole :
   par séquence. Ce n'est pas le bon usage du quota.
 - La porte PSH et les portes déterministes restent, elles, hors de ce débat :
   elles sont déterministes et toujours le préalable à toute soumission.
+
+## 50. Pourquoi la liaison ne voyage pas avec le motif — et ce que ça règle pour IgLM
+
+La piste 2 (§47, §49) a réfuté l'humanisation sans dire *où* la liaison se
+perd. Les 32 humanisés notés ont été réappariés à leur donneur (`scripts.humanise`
+étant déterministe à `--cutoff` fixé, 30 des 32 se réalignent sur un CDR3 de
+même longueur), ce qui permet de compter les mutations et de corréler.
+
+| variable | Spearman avec la rétention | p |
+|---|---|---|
+| mutations dans le CDR3 | **+0,58** | 0,001 |
+| mutations dans la queue du CDR3 (3 résidus) | +0,58 | 0,001 |
+| mutations dans la charpente (médiane 12) | **−0,13** | 0,49 |
+
+| CDR3 conservé | n | rétention médiane |
+|---|---|---|
+| à l'identique (0 mutation) | 13 | **20 %** |
+| 1-2 mutations | 15 | 31 % |
+| 3 mutations | 2 | 42 % |
+
+**Conserver le CDR3 exactement donne la pire rétention des trois groupes.**
+Mon hypothèse était que la queue `FDY` forcée par le plancher d'identité J
+coûtait la liaison ; elle est fausse, et dans le mauvais sens. Le signe positif
+est à lire prudemment — n = 30 réparti sur 8 époques, et il suit la variation
+entre époques plutôt qu'entre candidats — mais le **null sur la charpente**
+(ρ = −0,13, p = 0,49, pour une médiane de 12 mutations) et les 20 % du groupe
+« CDR3 intact » sont solides.
+
+La lecture : **la liaison de ces séquences d'archive n'est pas portée par le
+CDR3**. Elle dépend du contexte de charpente qu'on remplace, et 12 mutations de
+charpente l'effacent quel que soit le soin apporté aux boucles.
+
+### Ce que ça règle pour IgLM
+
+IgLM est un modèle de langage à infilling entraîné sur ~558 M de séquences
+d'anticorps, avec des jetons `[HEAVY]`/`[CAMEL]` et une longueur d'infill
+variable. La seule variante que je m'étais engagé à défendre était
+**l'infilling sous contrainte de motif** : garder le CDR3 d'un bon lieur de
+l'archive et laisser IgLM régénérer la charpente conforme autour.
+
+C'est **exactement l'opération que le bras `humanised` vient de mesurer**, et
+dans sa version la plus favorable : la charpente n'était pas échantillonnée
+par un modèle de langage mais prise sur un vrai germline humain, et les CDR
+étaient greffés par `abnumber`. Résultat : 28 % de rétention médiane, 20 %
+quand le CDR3 est conservé au résidu près, et aucune dépendance au nombre de
+mutations de charpente. IgLM ferait la même chose avec deux handicaps en plus :
+
+1. il est **agnostique à la cible** — rien dans son entraînement ne connaît
+   Q9NZQ7, donc il ne peut pas retrouver le contexte de charpente perdu, il
+   peut seulement en proposer un vraisemblable ;
+2. la vraisemblance d'un modèle de langage d'anticorps est **décorrélée de la
+   liaison** ; elle sélectionne des séquences d'allure naturelle, ce que les
+   germlines humains de la piste 2 étaient déjà par construction.
+
+**Donc non, IgLM n'est pas une solution**, et ce n'est plus un argument mais
+une mesure : la piste a été testée par proxy sur 31 séquences GPU avec un
+substitut strictement meilleur que lui. Ce qu'IgLM pourrait encore servir —
+et seulement ça — est la **diversification de charpente à liaison déjà
+acquise** : si un jour un candidat lie à 0,72 mais butte sur une porte
+déterministe, IgLM propose des variantes de charpente conformes. C'est un
+outil de conformité, pas un générateur de liaison.
+
+### Ce qui reste comme pistes
+
+Le retard est de 0,211 d'iiptm (§49) et aucune manipulation de séquence à
+partir de l'archive ne l'a comblé. Les deux seules pistes que ce dépôt n'a pas
+réfutées par mesure :
+
+- **le vivier frais**, qui a rendu +0,075 et qui est gratuit, à refaire à
+  chaque époque plutôt qu'une fois ;
+- **le design conditionné par la structure** sur le vrai complexe 8AOK, qui
+  est ce que fait le champ et que nous n'avons jamais eu les moyens de faire
+  (§14 a réfuté la version naïve à 3 CDR de BoltzGen, pas la démarche).
