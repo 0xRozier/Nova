@@ -532,6 +532,86 @@ def donor_pool_lag(target: str, epoch: int) -> int | None:
     return None if dated.empty else int(epoch - dated.max())
 
 
+# What a donor-pool refresh costs, measured on this machine on 15 November.
+# Decrypting is per epoch and dominates; the other two steps are flat.
+REFRESH_DECRYPT_SECONDS = 22.0   # scripts.fetch_submissions, per epoch
+REFRESH_JOIN_SECONDS = 10.0      # scripts.analyze_nanobodies
+REFRESH_BUILD_SECONDS = 900.0    # scripts.build_nanobody_dataset, re-featurizes
+
+# Freshness is what pays: coverage of CDR3 lengths holding a donor at or above
+# the field's median went from 2 of 19 to 8 of 19 in a single day, and replaying
+# on the fresher pool lifted the best prediction by a median +0.115 over eight
+# epochs (FINDINGS 48), then +0.075 measured on GPU (FINDINGS 49). A donor from
+# sixty epochs back is worth little, so the refresh only looks that far.
+REFRESH_WINDOW_EPOCHS = 60
+
+
+def pool_epochs(target: str) -> set[int]:
+    """The epochs the generator's donor pool already holds."""
+    path = DATA_DIR / "dataset" / f"{target}_nanobodies.parquet"
+    if not path.exists():
+        return set()
+    dated = pd.read_parquet(path, columns=["epoch"])["epoch"].dropna()
+    return {int(e) for e in dated}
+
+
+def epochs_to_decrypt(present: set[int], epoch: int, limit: int,
+                      window: int = REFRESH_WINDOW_EPOCHS) -> list[int]:
+    """The newest epochs inside the window that the pool is missing, at most `limit`.
+
+    Newest first, and holes included rather than only the tail. Fetching just
+    the last few epochs would move `donor_pool_lag` to zero while leaving a
+    permanent hole in the middle -- the lag would then report a fresh pool that
+    is missing most of the week. Filling newest-first converges on full
+    coverage over successive epochs at a bounded cost per epoch.
+
+    The epoch in progress has nothing to decrypt yet, and the one before it is
+    not reliably scored, so both are left out.
+    """
+    newest = epoch - 2
+    oldest = max(newest - window + 1, 0)
+    missing = [e for e in range(newest, oldest - 1, -1) if e not in present]
+    return missing[:max(limit, 0)]
+
+
+def refresh_donor_pool(target: str, epochs: list[int], seconds_left: float,
+                       log=log) -> tuple[bool, str]:
+    """Decrypt, join and refeaturize, inside a time budget. (did_it, why).
+
+    The miner used to detect a stale pool and refuse the epoch, printing three
+    commands for a human to run. That turns a known, cheap, measured win into a
+    missed epoch: at 22 s per epoch, keeping up costs under a minute, while the
+    week-long catch-up that a missed refresh forces costs a quarter of an hour.
+
+    Each step runs as its own process so that one failing leaves the pool as it
+    was rather than half-rebuilt. The steps must run in this order: without the
+    first two the new sequences carry no epoch and the lag does not move.
+    """
+    if not epochs:
+        return False, "nothing to decrypt"
+    cost = (len(epochs) * REFRESH_DECRYPT_SECONDS + REFRESH_JOIN_SECONDS
+            + REFRESH_BUILD_SECONDS)
+    if cost > seconds_left:
+        return False, (f"a refresh of {len(epochs)} epochs needs about "
+                       f"{cost / 60:.0f} min and only {seconds_left / 60:.0f} "
+                       f"min of the epoch is left")
+    steps = [
+        ["scripts.fetch_submissions", "--from-epoch", str(min(epochs)),
+         "--to-epoch", str(max(epochs))],
+        ["scripts.analyze_nanobodies", "--target", target],
+        ["scripts.build_nanobody_dataset", "--target", target],
+    ]
+    for step in steps:
+        log(f"  refreshing: {step[0]}")
+        proc = subprocess.run([sys.executable, "-m", *step],
+                              capture_output=True, text=True,
+                              timeout=max(cost * 2, 300))
+        if proc.returncode != 0:
+            tail = (proc.stderr or proc.stdout or "").strip().splitlines()[-3:]
+            return False, f"{step[0]} failed: {' / '.join(tail)}"
+    return True, f"decrypted {len(epochs)} epochs and refeaturized"
+
+
 def mine_epoch(st, args, params: dict) -> dict:
     """One epoch, start to finish. Returns the journal entry."""
     from scripts.propose_nanobody import propose
@@ -582,6 +662,24 @@ def mine_epoch(st, args, params: dict) -> dict:
 
     stale = donor_pool_lag(args.target, epoch)
     entry["donor_lag_epochs"] = stale
+    if stale is not None and stale > args.refresh_donors_over and args.refresh_donors:
+        # A stale pool is the one bottleneck this repo has measured a cure for
+        # (+0.075 of design_iiptm on GPU, FINDINGS 49), and it is free. Detecting
+        # it and refusing the epoch, which is what this did before, spent the
+        # epoch to tell a human to run three commands.
+        todo = epochs_to_decrypt(pool_epochs(args.target), epoch,
+                                 args.refresh_donors_epochs)
+        spent = time.monotonic() - t0
+        log(f"donor pool is {stale} epochs behind "
+            f"({stale * 72 / 60 / 24:.1f} days); refreshing {len(todo)} epochs")
+        did, why = refresh_donor_pool(args.target, todo, left - spent, log=log)
+        timings["refresh_donors"] = round(time.monotonic() - t0 - spent, 1)
+        entry["donor_refresh"] = why
+        log(f"  {why}")
+        if did:
+            stale = donor_pool_lag(args.target, epoch)
+            entry["donor_lag_epochs"] = stale
+            log(f"donor pool is now {stale} epochs behind")
     if stale is not None and stale > args.max_donor_lag:
         # Measured in production: at epoch 26174 the pool stopped at 26025, and
         # none of the 55 scored submissions of 26173-26174 were in it. The
@@ -787,6 +885,15 @@ def main():
     # probability only collapses past 96. The veto is now the measured curve in
     # nova_lab.psh_calibration.
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--refresh-donors", action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help="decrypt and refeaturize the newest missing epochs "
+                             "before generating, when the pool is behind")
+    parser.add_argument("--refresh-donors-over", type=int, default=2,
+                        help="epochs of lag that trigger a refresh")
+    parser.add_argument("--refresh-donors-epochs", type=int, default=8,
+                        help="most epochs to decrypt in one refresh, which "
+                             "bounds what it costs inside an epoch")
     parser.add_argument("--max-donor-lag", type=int, default=40,
                         help="refuse to submit if the donor pool is older than this "
                              "many epochs (40 ~= 2 days)")
