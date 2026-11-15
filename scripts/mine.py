@@ -534,9 +534,11 @@ def donor_pool_lag(target: str, epoch: int) -> int | None:
 
 # What a donor-pool refresh costs, measured on this machine on 15 November.
 # Decrypting is per epoch and dominates; the other two steps are flat.
-REFRESH_DECRYPT_SECONDS = 22.0   # scripts.fetch_submissions, per epoch
-REFRESH_JOIN_SECONDS = 10.0      # scripts.analyze_nanobodies
-REFRESH_BUILD_SECONDS = 900.0    # scripts.build_nanobody_dataset, re-featurizes
+REFRESH_DECRYPT_SECONDS = 22.0   # scripts.fetch_submissions, per epoch (86 s for 4)
+REFRESH_JOIN_SECONDS = 10.0      # scripts.analyze_nanobodies (7.5 s)
+REFRESH_BUILD_SECONDS = 270.0    # scripts.build_nanobody_dataset (4 min 14 for
+                                 # 10536 rows; the regions cache is keyed by
+                                 # sequence, so only new ones are renumbered)
 
 # Freshness is what pays: coverage of CDR3 lengths holding a donor at or above
 # the field's median went from 2 of 19 to 8 of 19 in a single day, and replaying

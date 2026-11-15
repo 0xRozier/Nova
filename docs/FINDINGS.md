@@ -4041,3 +4041,97 @@ réfutées par mesure :
 - **le design conditionné par la structure** sur le vrai complexe 8AOK, qui
   est ce que fait le champ et que nous n'avons jamais eu les moyens de faire
   (§14 a réfuté la version naïve à 3 CDR de BoltzGen, pas la démarche).
+
+## 51. Le vivier conforme n'est plus de 20 séquences mais de 256, et le mineur le rafraîchit seul
+
+Le §48 et le §49 répètent un chiffre : « 3736 séquences de l'archive lient à
+0,72 ou mieux mais seules 20 sont conformes », avec un plafond utilisable de
+0,57-0,77 contre un champ à 0,72. **Les deux sont périmés**, et ce n'était pas
+une erreur de raisonnement mais une mesure prise sur un vivier vieux de six
+semaines.
+
+Après un rafraîchissement complet (déchiffrement de 26345-26348, jointure des
+métriques publiées, re-téléchargement de l'archive et re-caractérisation), le
+vivier porte 10536 lignes au lieu de 9960, et :
+
+| | avant (§48) | maintenant |
+|---|---|---|
+| séquences liant ≥ 0,72 | 3736 | 3972 |
+| **dont conformes** (V ≥ 82, J ≥ 86) | **20** | **256** |
+| longueurs de CDR3 (6-24) avec un donneur ≥ 0,72 | 2 puis 8 / 19 | **15 / 19** |
+| meilleur donneur conforme | 0,65 | **0,788** |
+
+Attribution, parce que la cause change ce qu'on en fait : 197 des 256 viennent
+de **l'archive** re-téléchargée et 59 des soumissions du champ que nous avons
+déchiffrées (époques 26306-26347). Les soumissions du champ ajoutent trois
+longueurs de couverture (12/19 → 15/19) et le meilleur donneur de tous (0,788
+contre 0,785). Ce n'est donc pas un seul des deux leviers : il faut les deux.
+
+Ce que le générateur verrait, époque par époque, sur les huit que nous rejouons :
+
+| époque | CDR3 | donneurs conformes ≥ 0,72 | meilleur |
+|---|---|---|---|
+| 26299 | 14 | 15 | 0,788 |
+| 26300 | 8 | 1 | 0,721 |
+| 26301 | 20 | 23 | 0,767 |
+| 26302 | 11 | 41 | 0,785 |
+| 26303 | 18 | 52 | 0,781 |
+| 26304 | 14 | 15 | 0,788 |
+| 26305 | 10 | 0 | — |
+| 26306 | 17 | 20 | 0,772 |
+
+Sept époques sur huit ont désormais un donneur conforme au niveau du champ, là
+où le §48 n'en trouvait pour presque aucune. Le plafond du vivier (0,788) est
+au-dessus du maximum du champ dans le run à trois bras (0,778).
+
+**Attention à ce que cela ne dit pas.** Greffer depuis un donneur à 0,788 ne
+produit pas un candidat à 0,788 : le bras `grafted` du §49 partait déjà de ce
+vivier-là, en moins frais, et sa médiane était de 0,499. La perte à la greffe
+reste le problème central, et le §50 a montré que la liaison ne voyage pas avec
+le motif. Ce que le vivier frais change est le point de départ, pas le
+rendement de l'opération.
+
+### Le mineur ne refuse plus l'époque, il rafraîchit
+
+Jusqu'ici le mineur détectait le vivier périmé et refusait l'époque en
+imprimant trois commandes pour un humain (`status: donor_pool_stale`). Il
+dépensait donc l'époque pour signaler un gain gratuit au lieu de le prendre.
+Coûts mesurés sur cette machine :
+
+| étape | coût |
+|---|---|
+| `scripts.fetch_submissions` | **22 s par époque** (86 s pour 4) |
+| `scripts.analyze_nanobodies` | 7,5 s |
+| `scripts.build_nanobody_dataset` | **4 min 14** (10536 lignes) |
+
+Soit **7,6 min** pour le rattrapage par défaut de 8 époques, sur les 72 d'une
+époque — contre 12 min pour 20 époques, et un quart d'heure si on laisse filer
+une semaine. C'est l'argument décisif pour le faire **à chaque époque** plutôt
+qu'une fois : tenir le rythme coûte une minute, rattraper coûte un quart
+d'heure, et le vivier périmé coûte l'époque entière.
+
+Deux points de conception valent d'être retenus :
+
+- les trous sont comblés **du plus récent au plus ancien** dans une fenêtre de
+  60 époques, pas seulement la queue. Ne déchiffrer que les dernières époques
+  ferait retomber `donor_pool_lag` à zéro en laissant un trou permanent au
+  milieu, et le mineur croirait son vivier frais alors qu'il lui manquerait la
+  semaine ;
+- les trois étapes tournent dans cet ordre (sans les deux premières les
+  nouvelles séquences ne portent pas d'époque et le retard ne bouge pas),
+  chacune dans son processus, et un rafraîchissement qui ne tient pas dans le
+  budget restant est refusé **avant** d'être commencé plutôt qu'interrompu au
+  milieu.
+
+Le refus à `--max-donor-lag` reste, en dernier recours : si le
+rafraîchissement échoue, mieux vaut ne pas soumettre que grafter depuis une
+génération que la compétition a dépassée.
+
+### Et PR 102 est en vigueur, sans conséquence pour nous
+
+Nous avons passé l'époque 26331. `scripts.verify_challenge` compare désormais
+notre dérivation au terrain sur **12 époques et 348 soumissions acceptées**,
+dont quatre postérieures au changement (26345-26348, 118 soumissions) : **12
+sur 12 d'accord**. L'avertissement Discord sur
+`get_challenge_params_from_blockhash` ne touche pas les paramètres nanobody,
+ce que le test sur 200 000 hashes prédisait et que le terrain confirme.

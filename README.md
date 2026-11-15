@@ -978,6 +978,16 @@ la corrélation donneur → résultat est de +0,027.
 Il reste **0,211 ± 0,007 d'iiptm** entre nous et le champ, soit 30 σ : c'est
 hors de tout doute, et c'est le chiffre à battre.
 
+**Mise à jour du 15 novembre (§51).** Un rafraîchissement complet du vivier
+porte le nombre de donneurs **conformes** liant à 0,72 ou mieux de 20 à
+**256**, la couverture des longueurs de CDR3 de 8 à **15 sur 19**, et le
+meilleur donneur conforme de 0,65 à **0,788** — au-dessus du maximum du champ
+dans le run ci-dessus. Sept des huit époques rejouées ont maintenant un donneur
+au niveau du champ. Le mineur fait ce rafraîchissement lui-même avant de
+générer (7,6 min sur les 72 d'une époque) au lieu de refuser l'époque. Ce que
+cela change est le point de départ, pas le rendement de la greffe : le bras
+`grafted` partait déjà de ce vivier, en moins frais, et perdait l'essentiel.
+
 **Un avertissement sur la façon de lire ces runs.** Les comptages de victoires
 par époque qu'affichaient les versions précédentes de ce fichier
 (« 8 époques sur 8, dernière place ») ne sont **pas mesurables** : en notant
