@@ -194,6 +194,78 @@ ACCENTS = {
     "sequences": "s\u00e9quences", "superieure": "sup\u00e9rieure",
     "telechargement": "t\u00e9l\u00e9chargement", "temoin": "t\u00e9moin",
     "tete": "t\u00eate", "tirees": "tir\u00e9es",
+    "a la bonne longueur": "à la bonne longueur",
+    "a l'autre": "à l'autre",
+    "identique a un": "identique à un",
+    "plancher a ": "plancher à ",
+    "neuve a ": "neuve à ",
+    "du a l'ecart": "dû à l'écart",
+    "a montre": "a montré",
+    "a 0,70": "à 0,70",
+    "a >=": "à >=",
+    "le sens ou": "le sens où",
+    "chaine ou": "chaîne où",
+    "vivier date": "vivier daté",
+    "Cote": "Côté",
+    "Decisif": "Décisif",
+    "Identite": "Identité",
+    "Identites": "Identités",
+    "Mediane": "Médiane",
+    "Meme": "Même",
+    "datee": "datée",
+    "datees": "datées",
+    "depend": "dépend",
+    "designe": "désigné",
+    "echantillon": "échantillon",
+    "empoisonne": "empoisonné",
+    "sous-estime": "sous-estimé",
+    "general": "général",
+    "imposees": "imposées",
+    "independants": "indépendants",
+    "litteralement": "littéralement",
+    "mecanisme": "mécanisme",
+    "negatifs": "négatifs",
+    "numerotables": "numérotables",
+    "numerotation": "numérotation",
+    "numerotee": "numérotée",
+    "numeroter": "numéroter",
+    "presents": "présents",
+    "probleme": "problème",
+    "qualite": "qualité",
+    "rafraichir": "rafraîchir",
+    "fraicheur": "fraîcheur",
+    "regions": "régions",
+    "reglera": "réglera",
+    "replique": "répliqué",
+    "retirees": "retirées",
+    "separement": "séparément",
+    "ventilees": "ventilées",
+    "verifie": "vérifié",
+    "motif partage": "motif partagé",
+    "est donne": "est donné",
+    "resultat": "résultat",
+    "donneurs dates": "donneurs datés",
+    "arrivee": "arrivée",
+    "pas ca": "pas ça",
+    "n'est recopie": "n'est recopié",
+    "seulement ou se trouve": "seulement où se trouve",
+    "est dessine": "est dessiné",
+    "comportement mesure": "comportement mesuré",
+    "reelle": "réelle",
+    "montre que": "montré que",
+    "motif greffe": "motif greffé",
+    "greffe dans": "greffé dans",
+    "**A notre": "**À notre",
+    "fragment contigu partage": "fragment contigu partagé",
+    "temoin a ": "témoin à ",
+    "c'est-a-dire": "c'est-à-dire",
+    "hasard a composition egale": "hasard à composition égale",
+    "reutilisation": "réutilisation",
+    "a l'interieur du champ": "à l'intérieur du champ",
+    "epoque a la suivante": "époque à la suivante",
+    "greffe tel quel": "greffé tel quel",
+    "depasser": "dépasser",
+    "numerotes": "numérotés",
 }
 
 
@@ -205,8 +277,10 @@ def accentuate(text: str) -> str:
         (r"\b" if k[0].isalpha() else "") + re.escape(k)
         + (r"\b" if k[-1].isalpha() else "") for k in keys))
 
+    decimal = re.compile(r"(?<=\d)\.(?=\d)")
+
     def fix(chunk: str) -> str:
-        return pattern.sub(lambda m: ACCENTS[m.group(0)], chunk)
+        return decimal.sub(",", pattern.sub(lambda m: ACCENTS[m.group(0)], chunk))
 
     return "".join(part if part.startswith("`") else fix(part)
                    for part in re.split(r"(`[^`]*`)", text))
@@ -242,14 +316,36 @@ def load_everything():
                 if seq not in reg and c3:
                     reg[seq] = (c1, c2, c3)
                     fr[seq] = f1 + f2 + f3 + f4
-    missing = [s for s in set(acc.sequence) | {q for _, q in submitted} | set(snapshot)
-               if s not in reg]
+    # The repo's own region cache marks 6740 of the archive's 17244 rows as
+    # non-numberable although ANARCI numbers them fine (point 10 of
+    # docs/REPLAY_AUDIT.md), and it holds nothing for the refused submissions.
+    # Whatever is missing is numbered here and kept in results/, so the regions
+    # used by this analysis never depend on the poisoned cache.
+    extra = Path(__file__).resolve().parents[1] / "results" / "field_method_regions.csv"
+    if extra.exists():
+        df = pd.read_csv(extra, keep_default_na=False)
+        for seq, c1, c2, c3, f1, f2, f3, f4 in zip(
+                df.sequence, df.CDR1, df.CDR2, df.CDR3, df.FR1, df.FR2, df.FR3, df.FR4):
+            if c3:
+                reg[seq] = (c1, c2, c3)
+                fr[seq] = f1 + f2 + f3 + f4
+    wanted = set(acc.sequence) | {q for _, q in submitted} | set(snapshot)
+    missing = [q for q in wanted if q not in reg]
     if missing:
         print(f"numbering {len(missing)} sequences with ANARCI ...", flush=True)
-        for s, r in zip(missing, regions_batch(missing)):
+        rows = []
+        for q, r in zip(missing, regions_batch(missing)):
             if r:
-                reg[s] = (r["CDR1"], r["CDR2"], r["CDR3"])
-                fr[s] = r["FR1"] + r["FR2"] + r["FR3"] + r["FR4"]
+                reg[q] = (r["CDR1"], r["CDR2"], r["CDR3"])
+                fr[q] = r["FR1"] + r["FR2"] + r["FR3"] + r["FR4"]
+                rows.append({"sequence": q, **r})
+        if rows:
+            old = (pd.read_csv(extra, keep_default_na=False).to_dict("records")
+                   if extra.exists() else [])
+            extra.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(old + rows, columns=("sequence", "CDR1", "CDR2", "CDR3",
+                                              "FR1", "FR2", "FR3", "FR4")
+                         ).to_csv(extra, index=False)
     return acc, submitted, snapshot, reg, fr
 
 
@@ -366,12 +462,16 @@ def main():
         c = pd.read_csv(CACHE, keep_default_na=False)
         if set(acc.sequence) <= set(c.sequence) and all(k in c.columns for k in CACHE_COLS):
             cached = c.drop_duplicates("sequence").set_index("sequence")
+            text_cols = ("best_whole_seq", "v_genes")
+            bool_cols = ("cdr3_exact_prior", "fr_exact_prior")
             for k in CACHE_COLS:
                 col = [cached.at[q, k] for q in acc.sequence]
-                acc[k] = pd.to_numeric(pd.Series(col), errors="ignore") if k not in (
-                    "best_whole_seq", "v_genes") else col
-            for k in ("cdr3_exact_prior", "fr_exact_prior"):
-                acc[k] = acc[k].astype(str).isin(["True", "true", "1", "1.0"])
+                if k in text_cols:
+                    acc[k] = col
+                elif k in bool_cols:
+                    acc[k] = [str(v) in ("True", "true", "1", "1.0") for v in col]
+                else:
+                    acc[k] = pd.to_numeric(pd.Series(col), errors="raise").values
             print(f"reusing {CACHE} ({len(cached)} rows)")
 
     lines: list[str] = []
@@ -400,8 +500,13 @@ def main():
 
     pool_cdr3 = [reg.get(q, ("", "", ""))[2] for q in pool]
     today = pd.read_csv(DATA_DIR / "archive" / f"{TARGET}_regions.csv", keep_default_na=False)
-    today_cdr3 = [c for c in today.CDR3 if c]
     today_seqs = set(today.sequence)
+    # The 348 accepted submissions are themselves archived by now, and so are
+    # their own epoch-mates, which the validator's duplicate check excludes from
+    # an epoch's own comparison. Leaving them in would make the "leaky" bound
+    # measure the field against itself, so every accepted sequence is dropped.
+    _own = set(acc.sequence)
+    today_cdr3 = [c for q, c in zip(today.sequence, today.CDR3) if c and q not in _own]
 
     # ---------------- Q1: whole + CDR3 identity to the prior pool -----------
     if cached is None:
@@ -442,8 +547,6 @@ def main():
         for c3 in acc.cdr3:
             b = 0.0
             for d in today_cdr3:
-                if d == c3:
-                    continue  # its own archived copy
                 v = cdr_identity(c3, d)
                 if v > b:
                     b = v
@@ -454,7 +557,7 @@ def main():
     W("Analyse de 348 soumissions acceptees sur 12 epoques (26299-26306, 26345-26348),")
     W("reproductible par `PYTHONPATH=. .venv/bin/python scripts/analyze_field_method.py`.\n")
     W("## 0. Discipline anti-fuite et ce qu'elle coute\n")
-    W("L'archive publique ne porte **aucune date**. Le seul etat date dont nous")
+    W("L'archive publique ne porte **aucune date**. La seule vue datee dont nous")
     W(f"disposons est l'instantane `data/prebuilt/{TARGET}_regions.csv`, **{len(snapshot)}**")
     W(f"sequences, qui couvre tout ce qui a ete soumis jusqu'a l'epoque")
     W(f"{archive_ledger.SNAPSHOT_EPOCH}. `data/archive/{TARGET}_first_seen.csv` n'existe pas :")
@@ -485,15 +588,19 @@ def main():
     W("")
     for lo, hi in ((0.0, 0.70), (0.70, 0.80), (0.80, 0.85), (0.85, 0.90), (0.90, 0.95), (0.95, 1.01)):
         n = int(((acc.best_whole >= lo) & (acc.best_whole < hi)).sum())
-        W(f"* identite entiere dans [{lo:.2f}, {hi:.2f}) : {n} / {len(acc)} ({100*n/len(acc):.1f} %)")
+        W(f"* identite entiere entre {100*lo:.0f} et {min(100*hi, 100):.0f} % : "
+          f"{n} / {len(acc)} ({100*n/len(acc):.1f} %)")
     W("")
-    W(f"CDR3 identique a l'identique a un donneur anterieur : "
+    W(f"CDR3 repris a l'identique d'un donneur anterieur : "
       f"{int(acc.cdr3_exact_prior.sum())} / {len(acc)}.")
     W(f"CDR3 a >= 85 % d'un donneur anterieur : "
       f"{int((acc.best_cdr3 >= 0.85).sum())} / {len(acc)}.")
-    W(f"CDR3 a >= 85 % d'une entree de l'archive d'aujourd'hui (vue **fuitee**, "
-      f"bornee par le haut) : {int((acc.leaky_best_cdr3 >= 0.85).sum())} / {len(acc)}, "
-      f"median {100*quantiles(acc.leaky_best_cdr3)[0.5]:.1f} %.\n")
+    W(f"CDR3 a >= 85 % d'une entree de l'archive d'aujourd'hui, les 348 acceptees "
+      f"elles-memes retirees du vivier (vue **fuitee**, donc bornee par le haut) : "
+      f"{int((acc.leaky_best_cdr3 >= 0.85).sum())} / {len(acc)}, "
+      f"median {100*quantiles(acc.leaky_best_cdr3)[0.5]:.1f} %. Cette vue ne porte "
+      f"que sur les {len(today_cdr3)} sequences de l'archive que le cache de regions "
+      "sait numeroter (voir 1 bis).\n")
 
     # ---------------- Q1bis: numbering-free substring test -----------------
     print("Q1bis: exact CDR3 substring over the whole archive ...", flush=True)
@@ -508,12 +615,12 @@ def main():
     hits_dated = [substring_hits(c3, dated_seqs) for c3 in acc.cdr3]
     hits_undated = [substring_hits(c3, undated_seqs) for c3 in acc.cdr3]
     W("### 1 bis. Un test qui ne depend d'aucune numerotation ni d'aucune date\n")
-    W("Un CDR3 greffe litteralement reste un **sous-mot exact** de la sequence")
+    W("Un CDR3 greffe tel quel reste un **sous-mot exact** de la sequence")
     W("donneuse. On cherche donc chaque CDR3 accepte comme sous-chaine dans les")
     W(f"sequences brutes de l'archive, en excluant les {len(acc)} acceptees")
     W("elles-memes. Ce test ne demande aucune numerotation IMGT, donc il couvre")
-    W(f"l'archive **entiere** ({len(arch_all)} sequences), et il est donne separement")
-    W("pour la partie datee et la partie indatable.\n")
+    W(f"l'archive **entiere** ({len(arch_all)} sequences), et le resultat est donne")
+    W("separement pour la partie datee et la partie indatable.\n")
     W(f"* presents dans la partie datee ({len(dated_seqs)} sequences) : "
       f"**{sum(1 for h in hits_dated if h)} / {len(acc)}**")
     W(f"* presents dans la partie indatable ({len(undated_seqs)} sequences, donc une "
@@ -619,8 +726,8 @@ def main():
         acc["v_identity"] = vi
         acc["j_identity"] = ji
         acc["v_genes"] = vg
-    vok = [v for v in vi if v == v]
-    jok = [j for j in ji if j == j]
+    vok = [v for v in acc.v_identity if v == v]
+    jok = [j for j in acc.j_identity if j == j]
     W("## 4. Les charpentes sont-elles germinales ou dessinees ?\n")
     W(f"n = {len(vok)} (identite germinale calculee par `germline_identity`, "
       f"planchers du validateur V >= 82, J >= 86).\n")
@@ -726,15 +833,6 @@ def main():
     W(f"identite CDR3 mediane {100*rec.leaky_best_cdr3.median():.1f} %, "
       f"{int((rec.leaky_best_cdr3 >= 0.85).sum())} / {len(rec)} a >= 85 %.\n")
 
-    # best-scoring submissions table
-    W("## 7. Les meilleures soumissions du champ, en clair\n")
-    W("| epoque | uid | iiptm | long. CDR3 | CDR3 | ident. V | ident. J | meilleur donneur anterieur (%) | meilleur CDR3 anterieur (%) |")
-    W("|---|---|---|---|---|---|---|---|---|")
-    for _, r in acc.nlargest(15, "design_iiptm").iterrows():
-        W(f"| {int(r.epoch)} | {int(r.uid)} | {r.design_iiptm:.3f} | {r.cdr3_len} | `{r.cdr3}` | "
-          f"{r.v_identity:.1f} | {r.j_identity:.1f} | {100*r.best_whole:.1f} | {100*r.best_cdr3:.1f} |")
-    W("")
-
     # ---------------- Q6bis: the motif, not the whole CDR3 -----------------
     print("Q6bis: shared motifs ...", flush=True)
     import random
@@ -773,7 +871,7 @@ def main():
     snap_bank = bank_of(snap_cdr3)
     W("## 6 bis. Le motif plutot que le CDR3 entier\n")
     W("La longueur du CDR3 est **imposee par epoque** (section 2) : un CDR3 d'archive")
-    W("de la mauvaise longueur a une identite plafonnee a `1 - |dL| / L`, donc le")
+    W("de la mauvaise longueur ne peut pas depasser `1 - |dL| / L` d'identite, donc le")
     W("greffage litteral est structurellement impossible la plupart du temps. La")
     W("bonne question est donc : le **motif** voyage-t-il ? On mesure, pour chaque")
     W("CDR3 accepte, la longueur du plus long fragment contigu qu'il partage avec un")
@@ -811,12 +909,22 @@ def main():
     all_nul_s = [v for _, _, n, _, _ in motif_rows for v in n]
     all_obs_p = [v for e, _, _, o, _ in motif_rows if e != epochs[0] for v in o]
     all_nul_p = [v for e, _, _, _, n in motif_rows if e != epochs[0] for v in n]
-    W(f"Tous epoques confondues (n = {len(all_obs_s)}) : motif partage avec")
+    W(f"Toutes epoques confondues (n = {len(all_obs_s)}) : motif partage avec")
     W(f"l'instantane, median **{quantiles(all_obs_s)[0.5]:.0f}** residus contre")
     W(f"**{sum(all_nul_s)/len(all_nul_s):.1f}** pour le temoin permute.")
     W(f"Hors premiere epoque (n = {len(all_obs_p)}) : motif partage avec les acceptees")
     W(f"des epoques anterieures, median **{quantiles(all_obs_p)[0.5]:.0f}** contre")
     W(f"**{sum(all_nul_p)/len(all_nul_p):.1f}** pour le temoin.\n")
+    W("Lecture : contre l'instantane, le motif partage est de "
+      f"{quantiles(all_obs_s)[0.5]:.0f} residus pour un temoin a "
+      f"{sum(all_nul_s)/len(all_nul_s):.1f} -- c'est-a-dire **au niveau du hasard a "
+      "composition egale**. Contre les acceptees des epoques anterieures du champ "
+      f"lui-meme, {quantiles(all_obs_p)[0.5]:.0f} contre "
+      f"{sum(all_nul_p)/len(all_nul_p):.1f} : un peu au-dessus du hasard, mais un "
+      "motif de 4 residus n'est pas un greffage. Le seul cas net du tableau "
+      "ci-dessous est `RFQPRYP` (7 residus), qui voyage de la longueur 20 (26301) "
+      "a la longueur 17 (26306). Il existe donc une reutilisation de motifs courts "
+      "**a l'interieur du champ**, d'une epoque a la suivante, et elle est faible.\n")
     W("Les plus longs motifs effectivement repris, pour les 12 meilleures acceptees :\n")
     W("| epoque | uid | iiptm | CDR3 | motif partage avec une acceptee anterieure | avec l'instantane |")
     W("|---|---|---|---|---|---|")
@@ -833,6 +941,15 @@ def main():
         W(f"| {int(r.epoch)} | {int(r.uid)} | {r.design_iiptm:.3f} | `{r.cdr3}` | "
           f"`{shared_motif(r.cdr3, b, kp) if kp else '-'}` ({kp}) | "
           f"`{shared_motif(r.cdr3, snap_bank, ks) if ks else '-'}` ({ks}) |")
+    W("")
+
+    # best-scoring submissions table
+    W("## 7. Les meilleures soumissions du champ, en clair\n")
+    W("| epoque | uid | iiptm | long. CDR3 | CDR3 | ident. V | ident. J | meilleur donneur anterieur (%) | meilleur CDR3 anterieur (%) |")
+    W("|---|---|---|---|---|---|---|---|---|")
+    for _, r in acc.nlargest(15, "design_iiptm").iterrows():
+        W(f"| {int(r.epoch)} | {int(r.uid)} | {r.design_iiptm:.3f} | {r.cdr3_len} | `{r.cdr3}` | "
+          f"{r.v_identity:.1f} | {r.j_identity:.1f} | {100*r.best_whole:.1f} | {100*r.best_cdr3:.1f} |")
     W("")
 
     # ---------------- Q8: frameworks, grafted or designed? -----------------
@@ -864,7 +981,7 @@ def main():
     W("Si le champ greffe, la charpente (FR1+FR2+FR3+FR4, concatenee) doit souvent")
     W("etre **exactement** celle d'un donneur anterieur, tandis que le CDR3 est neuf.")
     W(f"n = {len(acc)}.\n")
-    W(f"* charpente identique a l'identique a un donneur anterieur prouvable : "
+    W(f"* charpente reprise a l'identique d'un donneur anterieur prouvable : "
       f"{int(acc.fr_exact_prior.sum())} / {len(acc)} ({100*acc.fr_exact_prior.mean():.1f} %)")
     W(f"* identite de charpente au meilleur donneur anterieur (positionnelle) : "
       f"mediane {100*acc.fr_best_prior.median():.1f} %, p95 "
@@ -1012,8 +1129,7 @@ def main():
     snapset = set(snapshot)
     dated = arch[arch.sequence.isin(snapset)].copy()
     dated["L"] = [len(reg.get(q, ("", "", ""))[2]) for q in dated.sequence]
-    W("## 11. Pourquoi le greffage est structurellement mort : le vivier date")
-    W("n'a de bons lieurs qu'a **une seule** longueur de CDR3\n")
+    W("## 11. Le vivier date n'a de bons lieurs qu'a **une seule** longueur de CDR3\n")
     W(f"Les {len(dated)} sequences datees (<= {archive_ledger.SNAPSHOT_EPOCH}), ventilees")
     W("par longueur de CDR3, pour les longueurs imposees par les 12 epoques analysees :\n")
     W("| longueur imposee | epoque(s) | n donneurs dates | dont iiptm >= 0,70 | dont >= 0,75 | meilleur iiptm |")
@@ -1034,11 +1150,11 @@ def main():
     W(f"Sur l'ensemble du vivier date, **{tot70}** sequences lient a 0,70 ou mieux, et")
     W(f"**{at13}** d'entre elles, soit {100*at13/max(tot70,1):.1f} %, ont un CDR3 de")
     W("longueur **13**. L'archive publique n'est pas un vivier general : c'est **une")
-    W("seule famille de solutions, a une seule longueur**. Pour 11 des 12 epoques")
+    W("seule famille de solutions, sur une seule longueur**. Pour 11 des 12 epoques")
     W("analysees, la longueur imposee n'est pas 13, et le vivier date n'offre alors")
     W("**aucun** donneur a 0,70 ou mieux a la bonne longueur.\n")
     W("C'est le plafond mecanique de notre methode, et il ne depend ni du reglage du")
-    W("generateur ni de la fraicheur de l'archive : le vivier **date** est meme")
+    W("generateur ni de la fraicheur de l'archive : le vivier date est meme")
     und = arch[~arch.sequence.isin(snapset)]
     W(f"meilleur que la partie indatable arrivee depuis (mediane "
       f"{dated.design_iiptm.median():.3f} contre {und.design_iiptm.median():.3f}, "
@@ -1073,33 +1189,49 @@ def main():
       f"**{acc.j_identity.median():.1f} %** pour un plancher a 86. Ils ne sont pas "
       "colles au plancher : la charpente n'est pas la variable qu'ils poussent.\n")
     W("### Ce que les mesures soutiennent\n")
-    W("**Le champ dessine un CDR3 neuf par epoque, a la longueur imposee, sur une "
-      "charpente humaine standard qu'il ne touche quasiment pas, puis il soumet la "
-      "meme molecule a quelques residus pres sur toutes ses hotkeys.** Les quatre "
-      "faits qui le portent :\n")
-    W(f"* la charpente est recyclee et le CDR3 est neuf : identite de charpente au "
-      f"meilleur donneur anterieur mediane **{100*acc.fr_best_prior.median():.1f} %** "
-      f"({int(acc.fr_exact_prior.sum())} / {len(acc)} charpentes identiques a "
-      f"l'identique), contre {100*acc.best_cdr3.median():.1f} % pour le CDR3 ;")
-    W(f"* au sein d'une epoque et d'un proprietaire, les CDR3 forment **une seule "
-      f"famille** (identite mediane {100*quantiles(wsame)[0.5]:.1f} %), et les "
-      "meilleures acceptees de "
-      "proprietaires **differents** convergent sur le meme motif (`ARFQPRYP…` en "
-      "26301, `ARAYYRHWDW…` en 26303, `ARGYHRD…` en 26346) ;")
+    W("**Rien n'est recopie : ni le CDR3, ni la charpente.** Les deux tests directs "
+      f"du greffage sont negatifs. Cote CDR3 : {int(acc.cdr3_exact_prior.sum())} / "
+      f"{len(acc)} reprise exacte, identite mediane "
+      f"{100*acc.best_cdr3.median():.1f} %. Cote charpente : "
+      f"{int(acc.fr_exact_prior.sum())} / {len(acc)} charpentes reprises a "
+      f"l'identique, identite mediane {100*acc.fr_best_prior.median():.1f} %. Les "
+      "91 % de la charpente ne sont pas un recyclage : c'est le fond commun de "
+      "toutes les VHH, que n'importe quelle charpente conforme atteint. L'ecart "
+      "entre les deux chiffres dit seulement ou se trouve le travail : la "
+      "charpente est standard, le CDR3 est neuf.\n")
+    W("**Le CDR3 est dessine par epoque, et la famille est partagee dans "
+      "l'epoque.** Quatre faits convergents :\n")
+    W(f"* au sein d'une epoque et d'un meme proprietaire de depot, les CDR3 forment "
+      f"**une seule famille** : identite mediane {100*quantiles(wsame)[0.5]:.1f} % "
+      f"(n = {len(wsame)}), contre {100*quantiles(base_c2)[0.5]:.1f} % entre "
+      f"proprietaires differents de la meme epoque (n = {len(base_c2)}) ;")
+    W("* les meilleures acceptees de proprietaires **differents** convergent "
+      "pourtant sur le meme motif dans une meme epoque (`ARFQPRYP...` en 26301, "
+      "`ARAYYRHWDW...` en 26303, `ARGYHRD...` / `ARGFHRH...` en 26346, "
+      "`ARH..NTFK..` en 26345) : le probleme a une solution dominante que "
+      "plusieurs pipelines independants retrouvent ;")
     W(f"* {shared_n} / {len(acc)} acceptees partagent leur CDR3 avec une autre "
       f"acceptee de la meme epoque, et ces paires ont "
-      f"{100*quantiles(wid)[0.5]:.1f} % d'identite de sequence entiere : ce sont des "
-      "copies d'un meme candidat reparties sur plusieurs hotkeys, pas une "
-      "exploration ;")
-    W("* le budget est de **72 minutes par epoque**, ce qui exclut une recherche "
-      "large et impose un pipeline qui converge vite.\n")
-    W("La seule famille de methode compatible avec ces quatre faits est la "
-      "**conception conditionnee par la structure du complexe**, relancee a chaque "
-      "epoque avec la longueur de boucle imposee comme contrainte, sur une charpente "
-      "fixe. C'est ce que le paragraphe 50 de `FINDINGS.md` avait identifie comme "
-      "la derniere piste non refutee, et c'est maintenant soutenu par le "
-      "comportement du champ et non par deduction.\n")
-    W("### Le mecanisme du plafond, chiffre\n")
+      f"{100*quantiles(wid)[0.5]:.1f} % d'identite de sequence entiere : c'est le "
+      "**meme candidat replique sur plusieurs hotkeys**, pas une exploration ;")
+    W("* le budget est de **72 minutes par epoque** (361 blocs), ce qui exclut une "
+      "recherche large et impose un pipeline qui converge vite.\n")
+    W("La seule famille de methode compatible avec ces faits est la **conception "
+      "d'une boucle CDR3 conditionnee par la structure du complexe**, relancee a "
+      "chaque epoque avec la longueur imposee comme contrainte, sur une charpente "
+      "conforme tenue fixe. C'est ce que le paragraphe 50 de `FINDINGS.md` avait "
+      "designe comme la derniere piste non refutee ; c'est maintenant soutenu par "
+      "le comportement mesure du champ et non par deduction.\n")
+    W("**Et la « transposition de motif » du paragraphe 47 est reelle mais faible.** "
+      f"Le plus long fragment contigu partage avec un CDR3 accepte anterieur vaut "
+      f"{quantiles(all_obs_p)[0.5]:.0f} residus en mediane contre "
+      f"{sum(all_nul_p)/len(all_nul_p):.1f} pour un temoin permute, et "
+      f"{quantiles(all_obs_s)[0.5]:.0f} contre "
+      f"{sum(all_nul_s)/len(all_nul_s):.1f} contre l'instantane, soit le hasard. "
+      "Un `RFQPRYP` qui passe de la longueur 20 a la longueur 17 existe, mais c'est "
+      "l'exception : on ne peut pas construire un generateur sur un signal de "
+      "4 residus contre 2,7.\n")
+    W("### Le mecanisme du plafond, en chiffres\n")
     W(f"La raison pour laquelle notre methode ne peut pas atteindre 0,70 n'est pas la "
       f"qualite du vivier mais **sa monoculture de longueur** : {at13} des {tot70} "
       "sequences datees qui lient a 0,70 ou mieux ont un CDR3 de longueur 13, et la "
