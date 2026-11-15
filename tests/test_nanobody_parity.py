@@ -36,11 +36,17 @@ def epoch_params(epoch: int) -> dict:
     """The epoch's allowed V gene and CDR3 length, from its first block hash.
 
     Cached in `data/submissions/epoch_params_cache.json`, because a block hash
-    is immutable: once an epoch is read it never needs the chain again. Without
-    the cache this file alone took 23 minutes and failed at random on the public
-    archive node's HTTP 429 -- the same rate limit that killed the production
-    miner for five hours. A test that fails on someone else's quota teaches
-    nothing.
+    is immutable: once an epoch is read it never needs the chain again. What
+    this buys is reliability, not speed -- the file used to fail at random on
+    the public archive node's HTTP 429, the same rate limit that killed the
+    production miner for five hours, and a test that fails on someone else's
+    quota teaches nothing.
+
+    It does **not** make this file quick. The 21 minutes are the archive scan:
+    `duplicate_of` computes a whole-sequence identity against each of the
+    archive's 16700 entries before its 0.70 cheap gate can discard anything, so
+    the cost is 100 sequences x 16700 alignments and it grows with the archive.
+    That cost is also paid inside an epoch by the miner.
 
     A cache miss still goes to the chain, with backoff, and is written back.
     """
