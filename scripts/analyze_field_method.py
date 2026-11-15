@@ -1255,9 +1255,9 @@ def main():
       "Le champ ne gagne pas sur la charpente et nous perdons de la liaison a "
       "chaque mutation de charpente (paragraphe 50).")
     W("* **A notre portee** : reconnaitre que la longueur imposee change a chaque "
-      "epoque et qu'un CDR3 de la mauvaise longueur a une identite plafonnee a "
-      "`1 - |dL| / L`. L'archive n'offre donc presque jamais un donneur utilisable "
-      "a la longueur du jour, ce qui explique mecaniquement le plafond de notre "
+      "epoque et qu'un CDR3 de la mauvaise longueur ne peut pas depasser "
+      "`1 - |dL| / L` d'identite. L'archive n'offre donc presque jamais un donneur "
+      "utilisable a la longueur du jour, ce qui explique mecaniquement le plafond de notre "
       "vivier.")
     W("* **Hors de notre portee sans GPU** : le dessin conditionne par la structure "
       "lui-meme. C'est le gap, et il est methodologique, pas parametrique.\n")

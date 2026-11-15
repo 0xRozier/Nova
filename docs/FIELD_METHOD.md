@@ -263,7 +263,7 @@ identité CDR3 médiane 61,5 %, 0 / 118 à >= 85 %.
 ## 6 bis. Le motif plutôt que le CDR3 entier
 
 La longueur du CDR3 est **imposée par époque** (section 2) : un CDR3 d'archive
-de la mauvaise longueur ne peut pas depasser `1 - |dL| / L` d'identité, donc le
+de la mauvaise longueur ne peut pas dépasser `1 - |dL| / L` d'identité, donc le
 greffage littéral est structurellement impossible la plupart du temps. La
 bonne question est donc : le **motif** voyage-t-il ? On mesure, pour chaque
 CDR3 accepté, la longueur du plus long fragment contigu qu'il partage avec un
