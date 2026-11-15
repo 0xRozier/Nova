@@ -24,17 +24,36 @@ from nova_lab.nanobodies import NanobodyArchive, check_sequence, seq_hash
 
 SAMPLE = 100
 
+# data/prebuilt/<target>_regions.csv was frozen with the archive at 9466
+# entries, which is every sequence up to this epoch.
+SNAPSHOT_EPOCH = 26025
+
+
+PARAMS_CACHE = DATA_DIR / "submissions" / "epoch_params_cache.json"
+
 
 def epoch_params(epoch: int) -> dict:
     """The epoch's allowed V gene and CDR3 length, from its first block hash.
 
-    One connection per epoch, with backoff: the public archive node answers
-    HTTP 429 under load, which is what killed the production miner for five
-    hours and what makes this suite fail at random when run whole rather than
-    file by file. A test that fails on someone else's rate limit teaches
+    Cached in `data/submissions/epoch_params_cache.json`, because a block hash
+    is immutable: once an epoch is read it never needs the chain again. Without
+    the cache this file alone took 23 minutes and failed at random on the public
+    archive node's HTTP 429 -- the same rate limit that killed the production
+    miner for five hours. A test that fails on someone else's quota teaches
     nothing.
+
+    A cache miss still goes to the chain, with backoff, and is written back.
     """
     import time
+
+    cache = {}
+    if PARAMS_CACHE.exists():
+        try:
+            cache = json.loads(PARAMS_CACHE.read_text())
+        except json.JSONDecodeError:  # a truncated write is not worth failing on
+            cache = {}
+    if str(epoch) in cache:
+        return cache[str(epoch)]
 
     from scripts.epoch_info import challenge_params
     import bittensor as bt
@@ -46,12 +65,17 @@ def epoch_params(epoch: int) -> dict:
         try:
             st = bt.Subtensor("wss://archive.chain.opentensor.ai:443")
             block_hash = st.determine_block_hash(epoch * EPOCH_LENGTH)
-            return challenge_params(block_hash, len(reaction_ids()))
+            params = challenge_params(block_hash, len(reaction_ids()))
+            cache[str(epoch)] = {"allowed_v": params["allowed_v"],
+                                 "allowed_cdr3_length": params["allowed_cdr3_length"]}
+            PARAMS_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            PARAMS_CACHE.write_text(json.dumps(cache, indent=1, sort_keys=True))
+            return cache[str(epoch)]
         except Exception as error:  # noqa: BLE001 - any transport failure retries
             last = error
             time.sleep(5 * 2 ** attempt)
-    pytest.skip(f"the archive node would not answer for epoch {epoch}: "
-                f"{type(last).__name__}: {last}")
+    pytest.skip(f"the archive node would not answer for epoch {epoch}, and it is "
+                f"not in {PARAMS_CACHE.name}: {type(last).__name__}: {last}")
 
 
 @pytest.fixture(scope="module")
@@ -84,26 +108,36 @@ def archive():
 
 @pytest.fixture(scope="module")
 def exclude_by_epoch():
-    """Sequences submitted at or after an epoch: already archived today, but not
-    when that epoch ran."""
+    """Sequences already in today's archive that did not exist at an epoch.
+
+    The validator's novelty gate compares a submission against the archive **as
+    it stood then**, so replaying an epoch means subtracting everything that
+    arrived later. Three sources date the archive, and together they do not
+    cover it:
+
+    - `submissions.jsonl`, for the epochs we decrypted;
+    - `data/prebuilt/<target>_regions.csv`, keyed by sequence and frozen when
+      the archive held 9466 entries, i.e. everything up to epoch 26025. What is
+      outside it arrived later;
+    - `<target>_nanobody_results.csv`, which carries an epoch per scored
+      submission and dates the 230 that FINDINGS 48 merged into the pool.
+
+    What remains undated is about 7000 sequences that the archive fetch brought
+    in from epochs after 26025, with no date anywhere in the data. So the
+    archive **cannot be reconstructed for an epoch after 26025**, and the
+    novelty gate cannot be replayed there -- see `novelty_is_replayable`.
+    """
     by_epoch = {}
     for line in (DATA_DIR / "submissions" / "submissions.jsonl").open():
         s = json.loads(line)
         if s["sequences"]:
             by_epoch.setdefault(s["epoch"], set()).add(s["sequences"][0])
 
-    # submissions.jsonl only covers the epochs we decrypted, so it cannot
-    # exclude everything the archive gained since. The archive carries no date
-    # column, but data/prebuilt/<target>_regions.csv is keyed by sequence and
-    # was built when the archive held 9466 entries, covering up to epoch 26025
-    # — so it is a dated snapshot. Anything outside it arrived later and must
-    # not count as a duplicate when replaying an earlier epoch. Without this,
-    # refreshing the archive to 12842 made the checker reject 4 of 85 sequences
-    # the validators had accepted.
-    snapshot, snapshot_epoch = set(), 26025
+    import pandas as pd
+
+    snapshot = set()
     snap = DATA_DIR / "prebuilt" / f"{NANOBODY_TARGET[0]}_regions.csv"
     if snap.exists():
-        import pandas as pd
         frame = pd.read_csv(snap, keep_default_na=False)
         if "sequence" in frame.columns:
             snapshot = set(frame["sequence"])
@@ -111,26 +145,87 @@ def exclude_by_epoch():
     current = set(NanobodyArchive(with_regions=False).sequences)
     arrived_later = (current - snapshot) if snapshot else set()
 
+    dated = {}
+    results = DATA_DIR / "submissions" / f"{NANOBODY_TARGET[0]}_nanobody_results.csv"
+    if results.exists():
+        frame = pd.read_csv(results)
+        if {"sequence", "epoch"} <= set(frame.columns):
+            dated = frame.groupby("sequence")["epoch"].min().to_dict()
+
     def exclude(epoch: int) -> set:
         later = {s for e, seqs in by_epoch.items() if e >= epoch for s in seqs}
-        if epoch <= snapshot_epoch:
+        if epoch <= SNAPSHOT_EPOCH:
             later |= arrived_later
+        later |= {s for s, e in dated.items() if e >= epoch}
         return later
 
     return exclude
 
 
-def test_never_rejects_a_sequence_the_validator_accepted(labelled, params, archive, exclude_by_epoch):
-    wrong = []
+def novelty_is_replayable(epoch: int) -> bool:
+    """Whether today's archive can be rewound to this epoch.
+
+    Only up to the dated snapshot. Past it, roughly 7000 archive entries carry
+    no date in any of our data, so a sequence that was novel at epoch 26300 may
+    sit 95 % away from something that arrived at 26400 -- and the gate would
+    refuse it for a reason that did not exist then. Asserting on novelty there
+    would test the age of our archive, not this code.
+    """
+    return epoch <= SNAPSHOT_EPOCH
+
+
+def without_novelty(problems: list[str]) -> list[str]:
+    return [p for p in problems if "archived sequence" not in p]
+
+
+def test_never_rejects_a_sequence_the_validator_accepted(labelled, params, archive,
+                                                        exclude_by_epoch):
+    """No false refusal on a submission the validators took.
+
+    Novelty is asserted only where the archive can be rewound
+    (`novelty_is_replayable`); elsewhere a duplicate verdict says our archive
+    is younger than the epoch, not that the gate is wrong.
+    """
+    wrong, unverifiable = [], 0
     for seq, epoch, accepted in labelled:
         if not accepted:
             continue
         p = params[epoch]
         problems = check_sequence(seq, p["allowed_v"], p["allowed_cdr3_length"],
                                   archive, exclude_by_epoch(epoch), warnings=[])
+        if not novelty_is_replayable(epoch):
+            unverifiable += len(problems) - len(without_novelty(problems))
+            problems = without_novelty(problems)
         if problems:
             wrong.append((epoch, seq[:30], problems))
+    if unverifiable:
+        print(f"\n{unverifiable} novelty verdicts left unasserted: their epochs "
+              f"are past {SNAPSHOT_EPOCH} and the archive cannot be rewound there")
     assert not wrong, f"{len(wrong)} false rejections, e.g. {wrong[:3]}"
+
+
+def test_the_novelty_gate_is_exact_where_the_archive_can_be_rewound(
+        labelled, params, archive, exclude_by_epoch):
+    """The gate itself, on the epochs the snapshot dates.
+
+    This is the half of the guarantee the test above gives up. If no sampled
+    epoch is old enough there is nothing to assert, and saying so is better
+    than passing silently.
+    """
+    old = [(s, e) for s, e, ok in labelled if ok and novelty_is_replayable(e)]
+    if not old:
+        pytest.skip(f"no accepted submission in the sample is at or before "
+                    f"epoch {SNAPSHOT_EPOCH}")
+    wrong = []
+    for seq, epoch in old:
+        p = params[epoch]
+        problems = check_sequence(seq, p["allowed_v"], p["allowed_cdr3_length"],
+                                  archive, exclude_by_epoch(epoch), warnings=[])
+        duplicate = [x for x in problems if "archived sequence" in x]
+        if duplicate:
+            wrong.append((epoch, seq[:30], duplicate))
+    assert not wrong, (f"{len(wrong)}/{len(old)} accepted submissions called "
+                       f"duplicates on a datable epoch: {wrong[:3]}")
 
 
 def test_the_germline_floor_is_still_enforced(archive):
@@ -195,6 +290,8 @@ def test_it_flags_nothing_the_validator_was_happy_with(labelled, params, archive
         problems = check_sequence(seq, params[epoch]["allowed_v"],
                                   params[epoch]["allowed_cdr3_length"],
                                   archive, exclude_by_epoch(epoch), warnings=[])
+        if not novelty_is_replayable(epoch):
+            problems = without_novelty(problems)
         if problems:
             wrong.append((epoch, problems[0]))
     assert not wrong, f"{len(wrong)}/{len(accepted)} false refusals, e.g. {wrong[:3]}"
