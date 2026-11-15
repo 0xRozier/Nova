@@ -266,6 +266,35 @@ ACCENTS = {
     "greffe tel quel": "greffé tel quel",
     "depasser": "dépasser",
     "numerotes": "numérotés",
+    "a du etre recalcule": "a dû être recalculé",
+    "recalculees": "recalculées",
+    "numerote": "numérote",
+    "gardees": "gardées",
+    "herite": "hérite",
+    "calculees": "calculées",
+    "similarite": "similarité",
+    "resultats": "résultats",
+    "intermediaires": "intermédiaires",
+    "couteux": "coûteux",
+    "gardes": "gardés",
+    "rejouable": "rejouable",
+    "colle au plancher": "collé au plancher",
+    "non-germinalite": "non-germinalité",
+    "depense": "dépense",
+    "la ou le champ": "là où le champ",
+    "a moins de deux": "à moins de deux",
+    "plancher a 82": "plancher à 82",
+    "plancher a 86": "plancher à 86",
+    "correlation": "corrélation",
+    "s'arrete": "s'arrête",
+    "l'a refute": "l'a réfuté",
+    "L'ecart-la": "L'écart-là",
+    "gratuite a mesurer": "gratuite à mesurer",
+    "negative": "négative",
+    "ressemble a l'archive": "ressemble à l'archive",
+    "a l'interieur": "à l'intérieur",
+    "La difference entre les deux chiffres": "La différence entre les deux chiffres",
+    "memes correlations, **a longueur": "mêmes corrélations, **à longueur",
 }
 
 
@@ -574,6 +603,22 @@ def main():
     W("borne inferieure**. Un vrai donneur plus proche a pu exister sans que nous")
     W("puissions le dater. Les conclusions ne sont donc tirees que dans le sens ou")
     W("cette borne les autorise.\n")
+    W("### Ce qui a du etre recalcule plutot que lu dans le depot\n")
+    W("Rien ici ne vient des colonnes mises en cache :\n")
+    W("* les regions IMGT (CDR1/2/3, FR1-FR4) des 348 acceptees et des 458")
+    W("  soumissions decryptees sont recalculees par `nanobodies.regions_batch` sur")
+    W("  la sequence brute, parce que `data/archive/Q9NZQ7_regions.csv` marque 6740")
+    W("  de ses 17244 lignes comme non numerotables alors qu'ANARCI les numerote")
+    W("  (voir 1 bis). Elles sont gardees dans `results/field_method_regions.csv` ;")
+    W("* les identites V et J sont recalculees par `nanobodies.germline_identity`,")
+    W("  pas lues dans `data/dataset/Q9NZQ7_nanobodies.parquet`, qui n'a d'epoque")
+    W("  datee que pour 152 de ses 10536 lignes et herite du meme cache ;")
+    W("* les identites de sequence entiere et de CDR3 sont calculees avec les")
+    W("  formules exactes du validateur (`whole_identity`, la similarite par CDR de")
+    W("  `cdr_similarity`), pas avec une approximation.\n")
+    W("Les resultats intermediaires couteux sont gardes dans")
+    W("`results/field_method_cache.csv` pour que le script soit rejouable en")
+    W("quelques minutes ; supprimer ce fichier force le recalcul complet.\n")
     W("Trou de 39 epoques entre 26306 et 26345 : aucune soumission decryptee n'existe")
     W("pour 26307-26344, le vivier des 4 epoques recentes est donc particulierement")
     W("sous-estime.\n")
@@ -680,17 +725,17 @@ def main():
                 c3pairs.append(cdr_identity(seqs[i][2], seqs[j][2]))
         if not pairs:
             continue
-        rows.append((hk, int(g.uid.iloc[0]), len(g), len(set(g.epoch)),
+        rows.append((hk[:6], int(g.uid.iloc[0]), len(g), len(set(g.epoch)),
                      sum(pairs) / len(pairs), max(pairs),
                      sum(c3pairs) / len(c3pairs), max(c3pairs),
                      g.design_iiptm.mean(), g.design_iiptm.max()))
     rows.sort(key=lambda r: -r[9])
     W(f"{len(rows)} hotkeys avec >= 2 soumissions acceptees sur >= 2 epoques. "
       f"Identites entre paires de soumissions du meme hotkey, epoques differentes.\n")
-    W("| uid | n acc. | n epoques | ident. entiere moy. | max | ident. CDR3 moy. | max | iiptm moy. | iiptm max |")
-    W("|---|---|---|---|---|---|---|---|---|")
+    W("| hotkey | uid | n acc. | n epoques | ident. entiere moy. | max | ident. CDR3 moy. | max | iiptm moy. | iiptm max |")
+    W("|---|---|---|---|---|---|---|---|---|---|")
     for hk, uid, n, ne, mw, xw, mc, xc, mi, xi in rows:
-        W(f"| {uid} | {n} | {ne} | {100*mw:.1f} | {100*xw:.1f} | {100*mc:.1f} | {100*xc:.1f} | {mi:.3f} | {xi:.3f} |")
+        W(f"| `{hk}` | {uid} | {n} | {ne} | {100*mw:.1f} | {100*xw:.1f} | {100*mc:.1f} | {100*xc:.1f} | {mi:.3f} | {xi:.3f} |")
     allw = [r[4] for r in rows]
     allc = [r[6] for r in rows]
     W("")
@@ -783,7 +828,7 @@ def main():
         rho, p, n = spearman(sub[col].tolist(), sub.design_iiptm.tolist())
         W(f"| {label} | {rho:+.3f} | {p:.3g} | {n} |")
     W("")
-    W("Les memes correlations **a longueur de CDR3 fixee par epoque** (partielles "
+    W("Les memes correlations, **a longueur de CDR3 fixee par epoque** (partielles "
       "grossieres : correlation intra-epoque, moyennee ponderee par n) :\n")
     W("| variable | rho intra-epoque moyen | n total |")
     W("|---|---|---|")
@@ -1183,11 +1228,20 @@ def main():
       f"(n = {len(samelen_same_owner)}), contre "
       f"{100*quantiles(wsame)[0.5]:.1f} % au sein d'une meme epoque "
       f"(n = {len(wsame)}). Chaque epoque recoit une famille neuve.\n")
-    W("**3. Le generateur du champ n'est pas contraint par les planchers "
-      "germinaux.** Identite V mediane "
-      f"**{acc.v_identity.median():.1f} %** pour un plancher a 82, J mediane "
-      f"**{acc.j_identity.median():.1f} %** pour un plancher a 86. Ils ne sont pas "
-      "colles au plancher : la charpente n'est pas la variable qu'ils poussent.\n")
+    near_v = sum(1 for v in acc.v_identity if v < 84)
+    W("**3. Un seul des deux planchers germinaux les contraint, et c'est celui du "
+      f"gene V.** Identite V mediane **{acc.v_identity.median():.1f} %** pour un "
+      f"plancher a 82, minimum **{acc.v_identity.min():.1f} %**, et "
+      f"{near_v} / {len(acc)} ({100*near_v/len(acc):.0f} %) sont a moins de deux "
+      "points du plancher : le champ est **colle au plancher V**. Le plancher J, "
+      f"lui, ne contraint rien : mediane {acc.j_identity.median():.1f} % pour un "
+      "plancher a 86, et aucune acceptee en dessous de 92,9. Et la correlation "
+      "intra-epoque de la section 5 va dans le meme sens (rho = -0,25 entre "
+      "identite V et `design_iiptm`) : **moins la charpente est germinale, mieux "
+      "elle lie**, et le plancher a 82 est exactement la ou le champ s'arrete. "
+      "Ce qu'il faut en retenir n'est pas que la charpente porte la liaison -- le "
+      "paragraphe 50 l'a refute -- mais que le champ depense sa marge de "
+      "non-germinalite jusqu'au dernier point disponible.\n")
     W("### Ce que les mesures soutiennent\n")
     W("**Rien n'est recopie : ni le CDR3, ni la charpente.** Les deux tests directs "
       f"du greffage sont negatifs. Cote CDR3 : {int(acc.cdr3_exact_prior.sum())} / "
@@ -1196,7 +1250,7 @@ def main():
       f"{int(acc.fr_exact_prior.sum())} / {len(acc)} charpentes reprises a "
       f"l'identique, identite mediane {100*acc.fr_best_prior.median():.1f} %. Les "
       "91 % de la charpente ne sont pas un recyclage : c'est le fond commun de "
-      "toutes les VHH, que n'importe quelle charpente conforme atteint. L'ecart "
+      "toutes les VHH, que n'importe quelle charpente conforme atteint. La difference "
       "entre les deux chiffres dit seulement ou se trouve le travail : la "
       "charpente est standard, le CDR3 est neuf.\n")
     W("**Le CDR3 est dessine par epoque, et la famille est partagee dans "
@@ -1243,9 +1297,12 @@ def main():
       "suit pas.\n")
     W("### Ce que notre generateur devrait arreter de faire\n")
     W("Chercher un bon donneur dans l'archive et lui transporter son CDR3. La "
-      f"mesure de la section 5 est sans ambiguite : au sein des acceptees, "
-      "`design_iiptm` **ne correle pas** avec l'identite au meilleur donneur "
-      "anterieur, ni avec l'identite V ou J. Il n'y a rien a optimiser de ce cote. "
+      "mesure de la section 5 est sans ambiguite : au sein des acceptees, "
+      "`design_iiptm` ne monte **pas** avec la ressemblance au meilleur donneur "
+      "anterieur -- la correlation est negative, rho = -0,25 pour l'identite "
+      "entiere et -0,39 pour celle du CDR3, et elle reste negative a l'interieur "
+      "d'une epoque (-0,17 et -0,06). Plus un candidat ressemble a l'archive, moins "
+      "il lie. Il n'y a donc rien a optimiser de ce cote. "
       "Le paragraphe 50 avait deja montre que la liaison ne voyage pas avec le motif "
       "greffe ; la presente mesure montre en plus que **personne dans le champ "
       "n'essaie**.\n")
@@ -1259,6 +1316,9 @@ def main():
       "`1 - |dL| / L` d'identite. L'archive n'offre donc presque jamais un donneur "
       "utilisable a la longueur du jour, ce qui explique mecaniquement le plafond de notre "
       "vivier.")
+    W("* **A notre portee** : descendre l'identite V jusqu'au plancher de 82 plutot "
+      "que rester confortablement au-dessus. C'est la seule variable de charpente "
+      "sur laquelle le champ se distingue de nous, et elle est gratuite a mesurer.")
     W("* **Hors de notre portee sans GPU** : le dessin conditionne par la structure "
       "lui-meme. C'est le gap, et il est methodologique, pas parametrique.\n")
     W("### La reserve qui limite tout ce qui precede\n")

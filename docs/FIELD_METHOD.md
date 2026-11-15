@@ -26,6 +26,26 @@ borne inférieure**. Un vrai donneur plus proche a pu exister sans que nous
 puissions le dater. Les conclusions ne sont donc tirées que dans le sens où
 cette borne les autorise.
 
+### Ce qui a dû être recalculé plutôt que lu dans le dépôt
+
+Rien ici ne vient des colonnes mises en cache :
+
+* les régions IMGT (CDR1/2/3, FR1-FR4) des 348 acceptées et des 458
+  soumissions décryptées sont recalculées par `nanobodies.regions_batch` sur
+  la séquence brute, parce que `data/archive/Q9NZQ7_regions.csv` marque 6740
+  de ses 17244 lignes comme non numérotables alors qu'ANARCI les numérote
+  (voir 1 bis). Elles sont gardées dans `results/field_method_regions.csv` ;
+* les identités V et J sont recalculées par `nanobodies.germline_identity`,
+  pas lues dans `data/dataset/Q9NZQ7_nanobodies.parquet`, qui n'a d'époque
+  datée que pour 152 de ses 10536 lignes et hérite du même cache ;
+* les identités de séquence entière et de CDR3 sont calculées avec les
+  formules exactes du validateur (`whole_identity`, la similarité par CDR de
+  `cdr_similarity`), pas avec une approximation.
+
+Les résultats intermédiaires coûteux sont gardés dans
+`results/field_method_cache.csv` pour que le script soit rejouable en
+quelques minutes ; supprimer ce fichier force le recalcul complet.
+
 Trou de 39 époques entre 26306 et 26345 : aucune soumission décryptée n'existe
 pour 26307-26344, le vivier des 4 époques récentes est donc particulièrement
 sous-estimé.
@@ -89,60 +109,60 @@ Contre l'instantané (n = 348) : 0 CDR3 à >= 85 % d'un CDR3 de l'instantané.
 
 52 hotkeys avec >= 2 soumissions acceptées sur >= 2 époques. Identités entre paires de soumissions du même hotkey, époques différentes.
 
-| uid | n acc. | n époques | ident. entière moy. | max | ident. CDR3 moy. | max | iiptm moy. | iiptm max |
-|---|---|---|---|---|---|---|---|---|
-| 26 | 11 | 11 | 78,8 | 86,8 | 17,8 | 36,4 | 0,722 | 0,788 |
-| 63 | 11 | 11 | 79,2 | 85,1 | 14,8 | 57,1 | 0,711 | 0,788 |
-| 23 | 4 | 4 | 76,3 | 79,7 | 14,7 | 21,4 | 0,620 | 0,787 |
-| 17 | 10 | 10 | 77,4 | 81,6 | 15,0 | 35,0 | 0,722 | 0,787 |
-| 29 | 10 | 10 | 78,8 | 84,1 | 15,9 | 40,0 | 0,715 | 0,785 |
-| 25 | 8 | 8 | 78,2 | 84,0 | 16,6 | 40,0 | 0,690 | 0,780 |
-| 19 | 4 | 4 | 75,8 | 78,8 | 15,9 | 23,1 | 0,640 | 0,779 |
-| 48 | 9 | 9 | 78,6 | 84,7 | 15,4 | 57,1 | 0,722 | 0,774 |
-| 4 | 7 | 7 | 78,7 | 83,5 | 17,1 | 42,9 | 0,642 | 0,771 |
-| 62 | 9 | 9 | 78,1 | 84,5 | 18,9 | 42,9 | 0,700 | 0,770 |
-| 18 | 10 | 10 | 79,1 | 84,0 | 14,3 | 42,9 | 0,713 | 0,768 |
-| 57 | 9 | 9 | 79,0 | 86,0 | 15,4 | 42,9 | 0,697 | 0,767 |
-| 7 | 11 | 11 | 81,3 | 89,5 | 18,2 | 50,0 | 0,685 | 0,763 |
-| 12 | 9 | 9 | 80,4 | 84,9 | 16,2 | 64,3 | 0,713 | 0,762 |
-| 50 | 7 | 7 | 78,0 | 82,1 | 18,8 | 40,0 | 0,705 | 0,761 |
-| 2 | 3 | 3 | 75,2 | 77,3 | 10,4 | 15,4 | 0,615 | 0,761 |
-| 31 | 6 | 6 | 78,1 | 84,5 | 20,0 | 42,9 | 0,650 | 0,761 |
-| 2 | 7 | 7 | 81,8 | 89,9 | 18,7 | 31,6 | 0,689 | 0,760 |
-| 23 | 6 | 6 | 78,8 | 82,8 | 15,8 | 42,9 | 0,673 | 0,760 |
-| 24 | 3 | 3 | 82,3 | 84,6 | 22,9 | 26,3 | 0,718 | 0,756 |
-| 61 | 9 | 9 | 78,1 | 83,2 | 14,9 | 42,9 | 0,648 | 0,754 |
-| 10 | 6 | 6 | 81,7 | 87,6 | 17,7 | 71,4 | 0,657 | 0,752 |
-| 38 | 7 | 7 | 80,7 | 84,0 | 14,5 | 35,7 | 0,702 | 0,751 |
-| 6 | 4 | 4 | 78,6 | 81,2 | 13,8 | 21,4 | 0,655 | 0,751 |
-| 59 | 9 | 9 | 79,9 | 86,4 | 16,8 | 50,0 | 0,660 | 0,749 |
-| 58 | 4 | 4 | 82,3 | 86,6 | 11,0 | 17,6 | 0,694 | 0,748 |
-| 16 | 10 | 10 | 80,3 | 87,4 | 17,5 | 64,3 | 0,664 | 0,748 |
-| 36 | 8 | 8 | 79,2 | 87,9 | 18,3 | 30,0 | 0,697 | 0,747 |
-| 58 | 3 | 3 | 76,3 | 79,7 | 21,8 | 28,6 | 0,679 | 0,746 |
-| 53 | 11 | 11 | 79,7 | 87,3 | 17,1 | 42,9 | 0,659 | 0,744 |
-| 1 | 7 | 7 | 79,7 | 87,1 | 17,1 | 36,8 | 0,674 | 0,743 |
-| 9 | 4 | 4 | 83,9 | 85,7 | 15,6 | 40,0 | 0,679 | 0,736 |
-| 62 | 6 | 6 | 77,7 | 81,8 | 15,3 | 38,9 | 0,691 | 0,736 |
-| 19 | 8 | 8 | 76,6 | 81,8 | 11,8 | 35,7 | 0,637 | 0,735 |
-| 45 | 8 | 8 | 78,5 | 83,2 | 17,6 | 35,7 | 0,654 | 0,731 |
-| 25 | 3 | 3 | 79,3 | 83,2 | 16,5 | 23,5 | 0,695 | 0,731 |
-| 54 | 9 | 9 | 78,0 | 90,1 | 19,2 | 64,3 | 0,645 | 0,730 |
-| 55 | 7 | 7 | 78,9 | 84,5 | 16,9 | 40,0 | 0,669 | 0,730 |
-| 51 | 8 | 8 | 77,1 | 82,8 | 17,6 | 40,0 | 0,623 | 0,729 |
-| 47 | 6 | 6 | 82,4 | 85,2 | 14,7 | 28,6 | 0,662 | 0,725 |
-| 49 | 5 | 5 | 80,2 | 84,6 | 11,1 | 20,0 | 0,678 | 0,725 |
-| 14 | 6 | 6 | 78,2 | 84,0 | 19,2 | 41,2 | 0,689 | 0,723 |
-| 47 | 4 | 4 | 77,7 | 80,5 | 13,8 | 21,4 | 0,590 | 0,723 |
-| 13 | 10 | 10 | 81,7 | 88,0 | 18,6 | 85,7 | 0,674 | 0,721 |
-| 61 | 4 | 4 | 77,1 | 81,2 | 13,8 | 21,4 | 0,649 | 0,715 |
-| 58 | 5 | 5 | 76,4 | 82,4 | 15,7 | 35,7 | 0,621 | 0,699 |
-| 34 | 4 | 4 | 75,5 | 77,8 | 10,0 | 15,4 | 0,496 | 0,698 |
-| 15 | 8 | 8 | 80,5 | 87,7 | 16,9 | 40,0 | 0,579 | 0,694 |
-| 4 | 2 | 2 | 76,2 | 76,2 | 5,3 | 5,3 | 0,544 | 0,681 |
-| 6 | 4 | 4 | 76,2 | 81,0 | 16,4 | 42,9 | 0,635 | 0,675 |
-| 8 | 2 | 2 | 89,9 | 89,9 | 35,7 | 35,7 | 0,598 | 0,644 |
-| 31 | 2 | 2 | 79,5 | 79,5 | 14,3 | 14,3 | 0,498 | 0,635 |
+| hotkey | uid | n acc. | n époques | ident. entière moy. | max | ident. CDR3 moy. | max | iiptm moy. | iiptm max |
+|---|---|---|---|---|---|---|---|---|---|
+| `5CZspf` | 26 | 11 | 11 | 78,8 | 86,8 | 17,8 | 36,4 | 0,722 | 0,788 |
+| `5Ek25S` | 63 | 11 | 11 | 79,2 | 85,1 | 14,8 | 57,1 | 0,711 | 0,788 |
+| `5HEoUD` | 23 | 4 | 4 | 76,3 | 79,7 | 14,7 | 21,4 | 0,620 | 0,787 |
+| `5F4QDX` | 17 | 10 | 10 | 77,4 | 81,6 | 15,0 | 35,0 | 0,722 | 0,787 |
+| `5DEyd2` | 29 | 10 | 10 | 78,8 | 84,1 | 15,9 | 40,0 | 0,715 | 0,785 |
+| `5FEumR` | 25 | 8 | 8 | 78,2 | 84,0 | 16,6 | 40,0 | 0,690 | 0,780 |
+| `5H5pue` | 19 | 4 | 4 | 75,8 | 78,8 | 15,9 | 23,1 | 0,640 | 0,779 |
+| `5Ebkgi` | 48 | 9 | 9 | 78,6 | 84,7 | 15,4 | 57,1 | 0,722 | 0,774 |
+| `5HR4bE` | 4 | 7 | 7 | 78,7 | 83,5 | 17,1 | 42,9 | 0,642 | 0,771 |
+| `5ED6e5` | 62 | 9 | 9 | 78,1 | 84,5 | 18,9 | 42,9 | 0,700 | 0,770 |
+| `5Dnni5` | 18 | 10 | 10 | 79,1 | 84,0 | 14,3 | 42,9 | 0,713 | 0,768 |
+| `5GP2tp` | 57 | 9 | 9 | 79,0 | 86,0 | 15,4 | 42,9 | 0,697 | 0,767 |
+| `5GmtNR` | 7 | 11 | 11 | 81,3 | 89,5 | 18,2 | 50,0 | 0,685 | 0,763 |
+| `5Cu82K` | 12 | 9 | 9 | 80,4 | 84,9 | 16,2 | 64,3 | 0,713 | 0,762 |
+| `5CFVtQ` | 50 | 7 | 7 | 78,0 | 82,1 | 18,8 | 40,0 | 0,705 | 0,761 |
+| `5Di9bt` | 2 | 3 | 3 | 75,2 | 77,3 | 10,4 | 15,4 | 0,615 | 0,761 |
+| `5EepKr` | 31 | 6 | 6 | 78,1 | 84,5 | 20,0 | 42,9 | 0,650 | 0,761 |
+| `5ChSoR` | 2 | 7 | 7 | 81,8 | 89,9 | 18,7 | 31,6 | 0,689 | 0,760 |
+| `5HTmwr` | 23 | 6 | 6 | 78,8 | 82,8 | 15,8 | 42,9 | 0,673 | 0,760 |
+| `5EHoC9` | 24 | 3 | 3 | 82,3 | 84,6 | 22,9 | 26,3 | 0,718 | 0,756 |
+| `5GrjSp` | 61 | 9 | 9 | 78,1 | 83,2 | 14,9 | 42,9 | 0,648 | 0,754 |
+| `5GnaLU` | 10 | 6 | 6 | 81,7 | 87,6 | 17,7 | 71,4 | 0,657 | 0,752 |
+| `5Ev8z4` | 38 | 7 | 7 | 80,7 | 84,0 | 14,5 | 35,7 | 0,702 | 0,751 |
+| `5D52Aj` | 6 | 4 | 4 | 78,6 | 81,2 | 13,8 | 21,4 | 0,655 | 0,751 |
+| `5Co4aE` | 59 | 9 | 9 | 79,9 | 86,4 | 16,8 | 50,0 | 0,660 | 0,749 |
+| `5FWrxc` | 58 | 4 | 4 | 82,3 | 86,6 | 11,0 | 17,6 | 0,694 | 0,748 |
+| `5HNirp` | 16 | 10 | 10 | 80,3 | 87,4 | 17,5 | 64,3 | 0,664 | 0,748 |
+| `5H1RZM` | 36 | 8 | 8 | 79,2 | 87,9 | 18,3 | 30,0 | 0,697 | 0,747 |
+| `5DDEGa` | 58 | 3 | 3 | 76,3 | 79,7 | 21,8 | 28,6 | 0,679 | 0,746 |
+| `5D7HHQ` | 53 | 11 | 11 | 79,7 | 87,3 | 17,1 | 42,9 | 0,659 | 0,744 |
+| `5HNkQq` | 1 | 7 | 7 | 79,7 | 87,1 | 17,1 | 36,8 | 0,674 | 0,743 |
+| `5CQ4v4` | 9 | 4 | 4 | 83,9 | 85,7 | 15,6 | 40,0 | 0,679 | 0,736 |
+| `5HayZU` | 62 | 6 | 6 | 77,7 | 81,8 | 15,3 | 38,9 | 0,691 | 0,736 |
+| `5DUmwx` | 19 | 8 | 8 | 76,6 | 81,8 | 11,8 | 35,7 | 0,637 | 0,735 |
+| `5EJ7P3` | 45 | 8 | 8 | 78,5 | 83,2 | 17,6 | 35,7 | 0,654 | 0,731 |
+| `5EFCQM` | 25 | 3 | 3 | 79,3 | 83,2 | 16,5 | 23,5 | 0,695 | 0,731 |
+| `5FjSxG` | 54 | 9 | 9 | 78,0 | 90,1 | 19,2 | 64,3 | 0,645 | 0,730 |
+| `5FuhZE` | 55 | 7 | 7 | 78,9 | 84,5 | 16,9 | 40,0 | 0,669 | 0,730 |
+| `5HKuuP` | 51 | 8 | 8 | 77,1 | 82,8 | 17,6 | 40,0 | 0,623 | 0,729 |
+| `5H3Fgz` | 47 | 6 | 6 | 82,4 | 85,2 | 14,7 | 28,6 | 0,662 | 0,725 |
+| `5HZ8L1` | 49 | 5 | 5 | 80,2 | 84,6 | 11,1 | 20,0 | 0,678 | 0,725 |
+| `5HjRab` | 14 | 6 | 6 | 78,2 | 84,0 | 19,2 | 41,2 | 0,689 | 0,723 |
+| `5CPHBm` | 47 | 4 | 4 | 77,7 | 80,5 | 13,8 | 21,4 | 0,590 | 0,723 |
+| `5Cf5Eq` | 13 | 10 | 10 | 81,7 | 88,0 | 18,6 | 85,7 | 0,674 | 0,721 |
+| `5CSqKL` | 61 | 4 | 4 | 77,1 | 81,2 | 13,8 | 21,4 | 0,649 | 0,715 |
+| `5HbYAs` | 58 | 5 | 5 | 76,4 | 82,4 | 15,7 | 35,7 | 0,621 | 0,699 |
+| `5EJVuf` | 34 | 4 | 4 | 75,5 | 77,8 | 10,0 | 15,4 | 0,496 | 0,698 |
+| `5G1Exw` | 15 | 8 | 8 | 80,5 | 87,7 | 16,9 | 40,0 | 0,579 | 0,694 |
+| `5G9isX` | 4 | 2 | 2 | 76,2 | 76,2 | 5,3 | 5,3 | 0,544 | 0,681 |
+| `5FpRmU` | 6 | 4 | 4 | 76,2 | 81,0 | 16,4 | 42,9 | 0,635 | 0,675 |
+| `5EHw8D` | 8 | 2 | 2 | 89,9 | 89,9 | 35,7 | 35,7 | 0,598 | 0,644 |
+| `5Egqxf` | 31 | 2 | 2 | 79,5 | 79,5 | 14,3 | 14,3 | 0,498 | 0,635 |
 
 Médiane des moyennes par hotkey : identité entière 78,8 %, identité CDR3 16,4 %.
 Référence (paires de hotkeys **différents** dans la même époque, n = 720) : identité entière médiane 82,3 %, identité CDR3 médiane 45,5 %.
@@ -212,7 +232,7 @@ Spearman de `design_iiptm` contre, au sein des acceptées.
 | charge nette du CDR3 | +0,270 | 3,09e-07 | 348 |
 | longueur CDR totale | +0,365 | 2,01e-12 | 348 |
 
-Les mêmes correlations **a longueur de CDR3 fixée par époque** (partielles grossières : correlation intra-époque, moyennée pondérée par n) :
+Les mêmes corrélations, **à longueur de CDR3 fixée par époque** (partielles grossières : corrélation intra-époque, moyennée pondérée par n) :
 
 | variable | rho intra-époque moyen | n total |
 |---|---|---|
@@ -454,11 +474,11 @@ meilleur que la partie indatable arrivée depuis (médiane 0,669 contre 0,635, p
 
 **2. Ce n'est pas non plus une bibliothèque pré-calculée par (gène V, longueur).** Les trois époques imposant L = 14 ne ressortent pas la même famille de CDR3 : identité médiane entre époques de même longueur, même propriétaire, **35,7 %** (n = 617), contre 64,3 % au sein d'une même époque (n = 1143). Chaque époque reçoit une famille neuve.
 
-**3. Le générateur du champ n'est pas contraint par les planchers germinaux.** Identité V médiane **83,7 %** pour un plancher à 82, J médiane **92,9 %** pour un plancher à 86. Ils ne sont pas collés au plancher : la charpente n'est pas la variable qu'ils poussent.
+**3. Un seul des deux planchers germinaux les contraint, et c'est celui du gène V.** Identité V médiane **83,7 %** pour un plancher à 82, minimum **82,5 %**, et 195 / 348 (56 %) sont à moins de deux points du plancher : le champ est **collé au plancher V**. Le plancher J, lui, ne contraint rien : médiane 92,9 % pour un plancher à 86, et aucune acceptée en dessous de 92,9. Et la corrélation intra-époque de la section 5 va dans le même sens (rho = -0,25 entre identité V et `design_iiptm`) : **moins la charpente est germinale, mieux elle lie**, et le plancher à 82 est exactement là où le champ s'arrête. Ce qu'il faut en retenir n'est pas que la charpente porte la liaison -- le paragraphe 50 l'a réfuté -- mais que le champ dépense sa marge de non-germinalité jusqu'au dernier point disponible.
 
 ### Ce que les mesures soutiennent
 
-**Rien n'est recopié : ni le CDR3, ni la charpente.** Les deux tests directs du greffage sont négatifs. Côté CDR3 : 0 / 348 reprise exacte, identité médiane 56,3 %. Côté charpente : 2 / 348 charpentes reprises à l'identique, identité médiane 91,2 %. Les 91 % de la charpente ne sont pas un recyclage : c'est le fond commun de toutes les VHH, que n'importe quelle charpente conforme atteint. L'ecart entre les deux chiffres dit seulement où se trouve le travail : la charpente est standard, le CDR3 est neuf.
+**Rien n'est recopié : ni le CDR3, ni la charpente.** Les deux tests directs du greffage sont négatifs. Côté CDR3 : 0 / 348 reprise exacte, identité médiane 56,3 %. Côté charpente : 2 / 348 charpentes reprises à l'identique, identité médiane 91,2 %. Les 91 % de la charpente ne sont pas un recyclage : c'est le fond commun de toutes les VHH, que n'importe quelle charpente conforme atteint. La différence entre les deux chiffres dit seulement où se trouve le travail : la charpente est standard, le CDR3 est neuf.
 
 **Le CDR3 est dessiné par époque, et la famille est partagée dans l'époque.** Quatre faits convergents :
 
@@ -477,12 +497,13 @@ La raison pour laquelle notre méthode ne peut pas atteindre 0,70 n'est pas la q
 
 ### Ce que notre générateur devrait arrêter de faire
 
-Chercher un bon donneur dans l'archive et lui transporter son CDR3. La mesure de la section 5 est sans ambiguïté : au sein des acceptées, `design_iiptm` **ne corrèle pas** avec l'identité au meilleur donneur antérieur, ni avec l'identité V ou J. Il n'y a rien à optimiser de ce côté. Le paragraphe 50 avait déjà montré que la liaison ne voyage pas avec le motif greffé ; la présente mesure montre en plus que **personne dans le champ n'essaie**.
+Chercher un bon donneur dans l'archive et lui transporter son CDR3. La mesure de la section 5 est sans ambiguïté : au sein des acceptées, `design_iiptm` ne monte **pas** avec la ressemblance au meilleur donneur antérieur -- la corrélation est négative, rho = -0,25 pour l'identité entière et -0,39 pour celle du CDR3, et elle reste négative à l'intérieur d'une époque (-0,17 et -0,06). Plus un candidat ressemble à l'archive, moins il lie. Il n'y a donc rien à optimiser de ce côté. Le paragraphe 50 avait déjà montré que la liaison ne voyage pas avec le motif greffé ; la présente mesure montre en plus que **personne dans le champ n'essaie**.
 
 ### Ce qui reste à notre portée, et ce qui ne l'est pas
 
 * **À notre portée** : fixer la charpente, ne pas la muter du tout, et consacrer tout le budget de calcul au dessin du CDR3 à la longueur imposée. Le champ ne gagne pas sur la charpente et nous perdons de la liaison à chaque mutation de charpente (paragraphe 50).
-* **À notre portée** : reconnaître que la longueur imposée change à chaque époque et qu'un CDR3 de la mauvaise longueur à une identité plafonnée a `1 - |dL| / L`. L'archive n'offre donc presque jamais un donneur utilisable à la longueur du jour, ce qui explique mécaniquement le plafond de notre vivier.
+* **À notre portée** : reconnaître que la longueur imposée change à chaque époque et qu'un CDR3 de la mauvaise longueur ne peut pas dépasser `1 - |dL| / L` d'identité. L'archive n'offre donc presque jamais un donneur utilisable à la longueur du jour, ce qui explique mécaniquement le plafond de notre vivier.
+* **À notre portée** : descendre l'identité V jusqu'au plancher de 82 plutôt que rester confortablement au-dessus. C'est la seule variable de charpente sur laquelle le champ se distingue de nous, et elle est gratuite à mesurer.
 * **Hors de notre portée sans GPU** : le dessin conditionné par la structure lui-même. C'est le gap, et il est méthodologique, pas paramétrique.
 
 ### La réserve qui limite tout ce qui précède
