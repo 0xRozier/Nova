@@ -4135,3 +4135,73 @@ dont quatre postérieures au changement (26345-26348, 118 soumissions) : **12
 sur 12 d'accord**. L'avertissement Discord sur
 `get_challenge_params_from_blockhash` ne touche pas les paramètres nanobody,
 ce que le test sur 200 000 hashes prédisait et que le terrain confirme.
+
+## 52. La conception BoltzGen est bornée à 0,39 — et le goulot n'est pas le générateur, c'est le débit de notation
+
+Le §14 avait réfuté la conception à trois CDR en la comparant au greffage. Il
+laissait deux hypothèses ouvertes, dont « conception libre à grande échelle :
+cohérent avec le `--num_designs` typiquement 10 000 du CLI — mais 10 000
+designs font ~10 jours de Kaggle ». Cette hypothèse se teste sans GPU, par la
+queue de la distribution déjà mesurée.
+
+### La conception plafonne, et 10 000 designs n'y changeraient rien
+
+Ajustement d'une loi de Pareto généralisée sur les dépassements des 151 designs
+de `results/boltzgen_design_3cdr.csv` (protocole `nanobody-anything`, charpente
+et CDR1/CDR2 fixes, CDR3 conçu) :
+
+| seuil | ξ | max attendu sur 1 000 | sur 10 000 | sur 100 000 | borne |
+|---|---|---|---|---|---|
+| 0,235 (30 dépassements) | −0,53 | 0,378 | 0,384 | 0,386 | **0,387** |
+| 0,260 (15 dépassements) | −1,89 | 0,367 | 0,367 | 0,367 | **0,367** |
+
+**ξ < 0 aux deux seuils : la queue est bornée.** Concevoir le CDR3 avec
+BoltzGen sur une charpente VHH conforme ne dépasse pas ~0,39, quel que soit le
+nombre de designs. L'hypothèse de l'échelle est donc morte **dans cette forme**,
+et le dixième de jour-Kaggle qu'elle réclamait est économisé.
+
+Ce qui n'est pas réfuté : une conception libre, sans charpente imposée, puis
+filtrage sur la conformité. Mais le champ, lui, a bien une charpente germinale
+(identité V médiane 83,7), donc ce n'est pas ce qu'il fait.
+
+### Le greffage, lui, n'est pas borné sous le champ
+
+La même analyse sur le bras `grafted` du §49 donne le résultat inverse :
+
+| | ξ | max attendu sur 32 | 128 | 256 | 512 | borne |
+|---|---|---|---|---|---|---|
+| `grafted` | −0,25 | 0,654 | 0,695 | **0,711** | 0,724 | **0,795** |
+| `real` (le champ) | −1,27 | 0,775 | 0,778 | 0,778 | 0,778 | 0,778 |
+
+La borne du greffage, **0,795**, est au-dessus du meilleur du champ dans ce run
+(0,778) et au-dessus de son meilleur gagnant sur 12 époques (0,788). Ce qui
+nous plafonne n'est pas le générateur : c'est que nous n'en notons que 32.
+
+Bootstrap sur 400 rejeux, parce que n = 32 avec 10 dépassements est mince :
+max attendu sur 256 candidats **0,702 [0,610 – 0,764]**. L'intervalle est
+large et il faut le dire, mais son centre est au niveau du champ.
+
+### Ce que cela coûte, et pourquoi c'est la vraie question
+
+À 1,4 min par séquence sur 2×T4 :
+
+| candidats notés | durée | tient dans une époque de 72 min ? |
+|---|---|---|
+| 47 | 1,1 h | tout juste |
+| 128 | 3,0 h | non |
+| 256 | 6,0 h | non |
+| 512 | 11,9 h | non |
+
+Le gain de 47 à 256 candidats vaut **+0,06 d'iiptm** sur l'espérance du
+maximum. La question « faut-il louer un GPU » cesse donc d'être une question de
+confort : elle a un prix et un rendement. Il faut environ **5× le débit de deux
+T4** pour noter 256 candidats dans une époque.
+
+### La réserve qui décide du prochain run
+
+Le bras `grafted` du §49 a été produit sur le vivier **fuité** (§REPLAY_AUDIT).
+Sa distribution est donc optimiste d'une quantité inconnue, et toute cette
+section en hérite. Le run qui tranche n'est pas un run de conception : c'est un
+lot **honnête et profond** — peu d'époques, beaucoup de candidats — qui mesure
+la queue réelle du greffage. C'est le seul chiffre qui dise si augmenter le
+débit de notation suffit, ou s'il faut changer de méthode malgré tout.
