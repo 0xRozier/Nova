@@ -222,13 +222,22 @@ def observe_epoch(params: dict, target: str, args) -> dict:
     # was wrong, so it describes a selector that no longer exists. The pool
     # therefore comes out wide and `scripts.mine.select_by_expected_value` cuts
     # it, exactly as in production.
+    # `skip_surrogate` and `skip_archive` must match scripts.mine, which passes
+    # both. Until 2026-11-16 this call passed neither, so the replay handed the
+    # selector the surrogate's best k while the miner handed it the first k in
+    # generation order: the audit measured the expected overlap of the two
+    # pools at 0.1 to 5.5 sequences out of 13 to 66 (docs/REPLAY_AUDIT.md,
+    # entry 5). The replay was scoring a miner that does not exist, and the
+    # surrogate doing the ranking was trained entirely on labels from epochs
+    # at or after the one being replayed.
     from scripts.mine import psh_pool_for, select_by_expected_value, surrogate_rank
     psh_pool, _ = psh_pool_for(cdr3_len, args.psh_pool, args.candidates)
     result = propose(params, target, candidates=args.candidates, n_donors=args.donors,
                      n_cdr3=args.cdr3_pool,
                      shortlist=max(psh_pool, args.shortlist) if args.psh else args.shortlist,
                      seed=args.seed + epoch, archive_cutoff=cutoff,
-                     generator_name=args.generator)
+                     generator_name=args.generator,
+                     skip_surrogate=True, skip_archive=True)
     shortlist = result["shortlist"]
     psh_folds, psh_best, psh_risk = 0, None, None
     if args.psh and not shortlist.empty:
@@ -240,6 +249,17 @@ def observe_epoch(params: dict, target: str, args) -> dict:
         shortlist = (shortlist.set_index("sequence").loc[chosen].reset_index()
                      if chosen else shortlist.iloc[:0])
         shortlist["psh"] = [psh.get(s) for s in shortlist["sequence"]]
+        # The miner runs archive_screen here, on the few PSH left, and it is
+        # stricter than what propose applies: check_sequence turns every
+        # non-`certain` duplicate hit into a rejection when `warnings` is None,
+        # which propose never does. Measured in the audit: 3 of 20 sampled
+        # candidates (15 %) survived the replay and would be thrown out by the
+        # miner. A batch carrying those measures sequences we could not submit.
+        if not shortlist.empty:
+            from scripts.mine import archive_screen
+            kept = set(archive_screen(list(shortlist["sequence"]), target,
+                                      result["allowed_v"], cdr3_len))
+            shortlist = shortlist[shortlist["sequence"].isin(kept)]
         if chosen and psh.get(chosen[0]) is not None:
             from nova_lab.psh_calibration import refusal_probability
             psh_best = round(float(psh[chosen[0]]), 2)
