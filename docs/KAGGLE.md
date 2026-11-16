@@ -30,40 +30,66 @@ BoltzGen étant stochastique (écart de ~14,5 places entre deux tirages des mêm
 séquences), nos candidats et leurs rivaux sont notés **dans le même run** : des
 métriques venant de deux runs différents ne sont pas comparables.
 
-## Le lot à lancer maintenant : trois bras (14 novembre)
+## Le lot à lancer maintenant : profond et honnête (16 novembre)
 
-Le lot `repaired_26299_26306` est **périmé** : il a été noté (§46), et son
-vivier de donneurs était anormalement vieux.
-Le lot courant est `Q9NZQ7_arms.csv`, **95 séquences, ~2,2 h**, et il répond à
-deux questions dans le même run plutôt qu'une :
+Les lots précédents sont **périmés deux fois** : ils ont été produits avec la
+coupure d'archive qui laissait passer les lignes non datées — donc des donneurs
+venus du futur (§REPLAY_AUDIT, entrée 1) — et par un rejeu qui ne donnait pas
+au sélecteur le même vivier que le mineur (entrée 5). Le lot courant est le
+premier dont les deux défauts sont corrigés.
 
-| bras | n | question |
-|---|---|---|
-| `grafted` | 32 | le vivier frais suffit-il ? (prédiction +0,115, §48) |
-| `humanised` | 31 | l'humanisation conserve-t-elle la liaison du donneur ? (§47) |
-| `real` | 32 | les 4 meilleures soumissions réelles, rang officiel connu |
+Le lot est `data/observation/batches/Q9NZQ7_deep.csv` : **170 séquences,
+~4,0 h sur 2×T4**.
+
+| époque | candidats | rivaux | vivier honnête |
+|---|---|---|---|
+| 26304 | 45 | 4 | 8 donneurs ≥ 0,72, plafond 0,774 (gagnant 0,763) |
+| 26345 | 54 | 4 | 16 donneurs ≥ 0,72, plafond 0,779 (gagnant 0,788) |
+| 26347 | 59 | 4 | aucun donneur ≥ 0,72, plafond 0,675 (gagnant 0,723) |
+
+**La question de ce run, et elle n'est pas « gagnons-nous ».** Le §52 a montré
+par analyse de valeurs extrêmes que la queue du greffage n'est pas bornée sous
+le champ : borne 0,795, au-dessus du meilleur gagnant sur 12 époques (0,788),
+et une espérance du maximum qui passe de 0,654 sur 32 candidats à 0,711 sur
+256. Mais cette queue a été ajustée sur le bras `grafted` du §49, **produit
+avec le vivier fuité**. Ce run mesure la queue **honnête**, à six fois la
+profondeur du précédent.
+
+Comment lire le résultat, par ordre :
+
+1. **La queue.** Ajuster la même loi sur les 45-59 candidats de chaque époque.
+   Si ξ reste négatif avec une borne au-dessus de 0,75, la voie « noter plus de
+   candidats » est validée et le problème devient matériel, avec un prix connu
+   (~5× le débit de deux T4 pour tenir 256 candidats dans une époque).
+2. **L'époque 26347**, qui n'a aucun donneur au niveau du champ. Si sa queue
+   s'effondre quand celles de 26304 et 26345 tiennent, c'est la disponibilité
+   des donneurs qui commande tout, et aucun débit de notation ne sauvera les
+   11 époques sur 12 où elle manque.
+3. **Les 12 rivaux réels**, notés dans le même run, servent d'ancrage : leurs
+   métriques publiées sont connues, donc ils disent si la mesure elle-même est
+   fidèle. Le §49 a chiffré son bruit à σ = 0,028 sur l'iiptm, ce qui interdit
+   tout classement intra-époque contre 4 rivaux serrés — on juge des
+   distributions, pas des places.
+
+**Une déviation à connaître** : le crible PSH a tourné à **une réplique au lieu
+de trois**, faute de temps de calcul (12 min par réplique sur 160 candidats).
+Cela ne touche pas la mesure de liaison, mais rend un peu plus bruité le choix
+de *quels* candidats sont notés.
 
 ```sh
-python -m scripts.build_arms_batch \
-  --humanised-dir <dossier des sorties de scripts.humanise> --depth 4 \
-  --out data/observation/batches/Q9NZQ7_arms.csv
+python -m scripts.build_arms_batch --depth 60 --epochs 26304,26345,26347 \
+  --out data/observation/batches/Q9NZQ7_deep.csv
 ```
 
 ```sh
 python -m scripts.build_boltzgen_notebook \
-  --batch data/observation/batches/Q9NZQ7_arms.csv --run arms_26299_26306
+  --batch data/observation/batches/Q9NZQ7_deep.csv --run deep_26304_26345_26347
 ```
 
-**Le carnet dans `notebooks/` est déjà celui-là** (`RUN="arms_26299_26306"`,
-95 séquences, vérifié). Les deux commandes ci-dessus ne servent qu'à le
-reconstruire si le vivier change d'ici là — et il faut le reconstruire si plus
-d'une journée passe, puisque c'est précisément la fraîcheur du vivier qui a
-valu +0,115.
-
-**Comment lire ce run :** le bras `humanised` se juge contre le `design_iiptm`
-de son propre donneur, pas contre le champ. S'il le conserve à 0,05 près,
-la piste 2 tient et le vivier utilisable passe de 20 séquences à des milliers.
-S'il s'effondre, l'humanisation coûte l'affinité et la piste est morte.
+**Le carnet dans `notebooks/kaggle_boltzgen.ipynb` est déjà celui-là**
+(`RUN="deep_26304_26345_26347"`, 170 séquences, vérifié). `--epochs` est
+obligatoire : sans lui le script ramasse tous les lots journalisés sur disque,
+y compris ceux des runs fuités.
 
 ## La marche à suivre
 
