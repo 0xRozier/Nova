@@ -91,6 +91,62 @@ python -m scripts.build_boltzgen_notebook \
 obligatoire : sans lui le script ramasse tous les lots journalisés sur disque,
 y compris ceux des runs fuités.
 
+## Le lot de conception (16 novembre) : la piste rouverte par le §55
+
+Les deux runs de conception publiés (§11, §14) sont **retirés** : leurs 210
+designs avaient **zéro cystéine**, le pont disulfure canonique Cys23-Cys104
+détruit par l'inverse folding de la BoltzGen embarquée, qui manque la
+machinerie de contrainte des résidus. Ils n'étaient même pas soumissibles
+(`min_cysteines`). La conception conditionnée par la structure n'est donc pas
+réfutée : elle n'a jamais été testée.
+
+Ce lot la teste. **Deux étapes, délibérément, et non un seul carnet** — un DSSP
+silencieusement cassé, une fuite d'archive et 210 designs sans cystéine ont
+tous les trois survécu à des runs qui « marchaient ».
+
+### Étape 1 — concevoir (`notebooks/kaggle_design.ipynb`)
+
+`RUN = "design_cdr3_26345"`, **120 designs**, et il installe
+**`boltzgen==0.3.2`, l'originale**, pas celle des validateurs.
+
+La spécification est dans `data/design/26345_cdr3/` : **6 charpentes conformes
+IGHV3-74** (V 84,7-85,7, J 92,9, **2 cystéines chacune**), CDR1 et CDR2 **fixes**,
+le CDR3 conçu sur **9 résidus** à la longueur 14 que l'époque impose, tête `AR`
+et queue (`FDV`/`FDY`) gelées. Les 6 structures sont repliées par
+NanoBodyBuilder2 et les spans vérifiés résidu par résidu.
+
+L'époque 26345 est choisie pour que ce bras soit **directement comparable** au
+bras greffage honnête du §53 : même époque, mêmes rivaux, et notre meilleur
+greffé honnête y lit 0,726 contre 0,788 pour le meilleur rival.
+
+### Étape 2 — vérifier, sur CPU, avant de dépenser du GPU de notation
+
+```sh
+python -m scripts.verify_designs --file results/designs_design_cdr3_26345.csv
+```
+
+**Ne pas lire les scores si ça échoue.** Le garde-fou compte les cystéines
+contre le plancher du validateur *et* contre la paire canonique, et compare les
+régions que la spécification a gelées. Passé sur les anciens runs il les refuse
+tous les deux, et il y trouve au passage sept variantes distinctes de FR1 là où
+la spécification en imposait une.
+
+Si ça passe, construire le lot de notation avec le chemin éprouvé — celui des
+170 séquences du §53 — pour obtenir des métriques comparables au champ :
+
+```sh
+python -m scripts.build_boltzgen_notebook \
+  --batch data/observation/batches/Q9NZQ7_design.csv --run design_scored_26345
+```
+
+### Ce que le run tranche
+
+Une seule question : **la BoltzGen originale respecte-t-elle les positions que
+la spécification gèle ?** Si les 120 designs portent leurs deux cystéines et la
+charpente imposée, la conception devient enfin mesurable et on lit ses scores.
+S'ils ne les portent pas, le défaut n'est pas la version embarquée et la
+spécification elle-même est en cause.
+
 ## La marche à suivre
 
 ### 1. Construire le lot et le notebook
