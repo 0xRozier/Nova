@@ -174,8 +174,18 @@ py = str(VENV / "bin/python")
 bg = str(VENV / "bin/boltzgen")
 step("installation de torch 2.7.1 CUDA")
 sh(f"uv pip install -q --python {py} torch==2.7.1 --index-url https://download.pytorch.org/whl/cu126")
-step("installation de la BoltzGen des validateurs")
-sh(f"uv pip install -q --python {py} {NOVA}/boltzgen pandas requests")
+# LA BoltzGen ORIGINALE, pas celle des validateurs. Le guide amont le dit:
+# "l implementation incluse dans le depot NOVA est adaptee pour servir de
+# moteur de NOTATION et non de pipeline generatif. Vous utiliserez
+# l implementation originale pour creer vos designs."
+# Mesure a l appui (FINDINGS 55): la 0.2.0 embarquee manque 173 lignes de
+# inverse_fold.py, dont build_constraint_logit_mask, donc l evitement de la
+# cysteine impose par filter_cysteine=true s applique AUSSI aux positions que
+# la specification a gelees. Resultat des deux runs precedents: 210 designs
+# sur 210 a zero cysteine, Cys23 du pont disulfure canonique remplacee par un
+# glutamate, et des sequences que min_cysteines aurait refusees.
+step("installation de la BoltzGen ORIGINALE 0.3.2 (conception)")
+sh(f"uv pip install -q --python {py} boltzgen==0.3.2 pandas requests")
 site = pathlib.Path(sh([py, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"]).strip())
 sh(["cp", str(WORK / "kaggle" / "bittensor.py"), str(site / "bittensor.py")])
 # ASSERTION, pas affichage. Le lancement precedent a imprime
