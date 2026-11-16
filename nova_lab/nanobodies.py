@@ -296,7 +296,8 @@ class NanobodyArchive:
 
     URL = "https://huggingface.co/datasets/Metanova/Submission-Archive/resolve/main/{target}_nanobodies.csv"
 
-    def __init__(self, target: str = "Q9NZQ7", refresh: bool = False, with_regions: bool = True):
+    def __init__(self, target: str = "Q9NZQ7", refresh: bool = False, with_regions: bool = True,
+                 retry_failed: bool = False):
         import pandas as pd
         path = DATA_DIR / "archive" / f"{target}_nanobodies.csv"
         if refresh or not path.exists():
@@ -305,17 +306,32 @@ class NanobodyArchive:
         df = pd.read_csv(path)
         self.sequences = list(df["sequence"])
         self.hashes = set(df["sequence_hash"])
-        self.regions = self._cached_regions(target, path) if with_regions else [None] * len(self.sequences)
+        self.regions = (self._cached_regions(target, path, retry_failed) if with_regions
+                        else [None] * len(self.sequences))
 
     REGION_KEYS = ("CDR1", "CDR2", "CDR3", "FR1", "FR2", "FR3", "FR4")
 
-    def _cached_regions(self, target: str, source) -> list:
+    def _cached_regions(self, target: str, source, retry_failed: bool = False) -> list:
         """Numbering the whole archive takes minutes, so keep it on disk.
 
         The cache is keyed by sequence rather than by row, so a refreshed
         archive only costs the numbering of its new sequences. Keying it by
         position instead meant every refresh renumbered all ~9500, which is the
         ten minutes that made a fresh miner slow to start.
+
+        A FAILURE used to be cached exactly like a success: the row was written
+        with an empty CDR3, read back as None, and never appeared in `missing`
+        again. One transient ANARCI outage was therefore engraved for good. It
+        was: on 15 November 6740 of the archive's 17244 rows were marked
+        unnumberable in a single contiguous block, and renumbering them gave
+        6740 of 6740. That cost the generator 446 compliant donors binding at
+        0.72 or better -- the pool fell from 521 to 75 and its coverage from
+        15 of 19 CDR3 lengths to 12.
+
+        So `retry_failed` renumbers the cached failures. It is off by default,
+        because a genuinely unnumberable sequence fails again and the miner
+        cannot spend minutes on that inside an epoch; `scripts.build_nanobody_dataset`
+        turns it on, which is where the time already exists.
         """
         import pandas as pd
         cache = DATA_DIR / "archive" / f"{target}_regions.csv"
@@ -333,6 +349,10 @@ class NanobodyArchive:
                 known[seq] = None if not record["CDR3"] else record
 
         missing = [s for s in dict.fromkeys(self.sequences) if s not in known]
+        if retry_failed:
+            retry = [s for s in dict.fromkeys(self.sequences)
+                     if s in known and known[s] is None]
+            missing = list(dict.fromkeys(missing + retry))
         if missing:
             for seq, reg in zip(missing, regions_batch(missing)):
                 known[seq] = reg

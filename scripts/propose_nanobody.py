@@ -40,7 +40,16 @@ AAS = "ACDEFGHIKLMNPQRSTVWY"
 # Most of the archive predates the germline floors (6227 of 8578 undated
 # sequences are below them) and those old sequences score better, so donors and
 # the reference pool must both come from sequences that satisfy today's rules.
-GERMLINE_MARGIN = 2.0  # headroom donors need, since mutating CDRs lowers V identity
+# Headroom a donor needs above the V floor, because the graft lowers V identity.
+# Measured on 15 November, and the two numbers are coupled:
+#   - one CDR1 or CDR2 mutation costs 1.02 points of V identity (n=25, max 1.03);
+#   - the CDR3 graft alone costs 0.00 at the median and 1.03 at worst, and 0 of
+#     60 grafts cost more than 2 points.
+# At P_MUTATE_CDR1 = P_MUTATE_CDR2 = 0 the only cost left is the graft, so 1.1
+# covers the worst case observed. The margin was 2.0, which is exactly two CDR
+# mutations, and it kept donors between 83.1 and 84.0 out of the pool for a
+# headroom nothing spends any more.
+GERMLINE_MARGIN = 1.1
 REFERENCE_POOL = 200
 # The validator calls a sequence a duplicate at CDR3 identity >= 0.85, so a
 # grafted CDR3 has to be mutated away from every archived one of that length.
@@ -57,8 +66,17 @@ MIN_SAME_V_CDR3_DONORS = 15
 
 # How often a candidate's CDR1 / CDR2 is mutated as well as its CDR3. Exposed
 # as constants and as generate() arguments so the cost can be measured.
-P_MUTATE_CDR1 = 0.15
-P_MUTATE_CDR2 = 0.10
+#
+# Both are 0 since 16 November, on the field's own evidence (docs/FIELD_METHOD.md):
+# the competing miners hold everything but the CDR3 fixed. Over 348 accepted
+# submissions, a hotkey's own sequences share only 16.4 % of their CDR3 -- less
+# than sequences from different hotkeys in the same epoch -- so what varies
+# between their candidates is the CDR3 and nothing else. Mutating CDR1 and CDR2
+# bought us no binding (the correlation of archive similarity with design_iiptm
+# is NEGATIVE, rho -0.248 whole-sequence and -0.389 on the CDR3) and cost
+# 1.02 points of V identity each, which is what forced the old 2.0 margin.
+P_MUTATE_CDR1 = 0.0
+P_MUTATE_CDR2 = 0.0
 
 
 def mutate_region(seq: str, rng: random.Random, n: int, keep_tail: int = 0) -> str:
