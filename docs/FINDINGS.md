@@ -4205,3 +4205,93 @@ section en hérite. Le run qui tranche n'est pas un run de conception : c'est un
 lot **honnête et profond** — peu d'époques, beaucoup de candidats — qui mesure
 la queue réelle du greffage. C'est le seul chiffre qui dise si augmenter le
 débit de notation suffit, ou s'il faut changer de méthode malgré tout.
+
+## 53. Le premier run honnête et profond : la queue tient, le témoin se retourne, et une époque s'effondre
+
+Lot `deep_26304_26345_26347` : 170 séquences notées dans un seul run sur 2×T4,
+158 candidats greffés sur trois époques et 12 soumissions réelles comme
+ancrages. **Premier lot dont les deux défauts du rejeu sont corrigés** — la
+coupure d'archive ne laisse plus passer les lignes non datées, et `observe`
+donne au sélecteur le même vivier et les mêmes portes que le mineur.
+Preuves : `results/scores_nanobody_deep_26304_26345_26347.csv`,
+`results/boltzgen_deep_26304_26345_26347.log`.
+
+### La mesure est fidèle
+
+Les 12 ancrages portent leurs métriques publiées. Écart absolu médian sur
+l'iiptm : **0,012**, maximum 0,042 — cohérent avec le σ = 0,028 d'une mesure
+établi au §49. L'instrument lit juste ; ce qui suit peut être lu.
+
+### La queue du greffage tient, et le §52 survit à la mesure honnête
+
+| | ξ | borne | max attendu sur 256 |
+|---|---|---|---|
+| §52, vivier **fuité**, n = 32 | −0,25 | 0,795 | 0,711 |
+| **ce run, vivier honnête, n = 158** | **−0,31** | **0,762** | **0,704** |
+
+La fuite n'avait donc **pas** gonflé la queue de façon significative, et c'est
+la première prédiction de cette série que la mesure confirme. L'espérance du
+maximum passe de 0,651 sur 32 candidats à 0,704 sur 256 : noter plus de
+candidats paie, et le prix reste celui du §52 (~5× le débit de deux T4 pour
+tenir 256 candidats dans une époque).
+
+Mais la borne honnête, **0,762**, est **sous** le meilleur gagnant du champ sur
+douze époques (0,788) et sous deux des trois gagnants de ce run. Noter plus
+nous amène au contact, pas devant.
+
+### Le témoin se retourne : la disponibilité des donneurs ne commande pas
+
+L'époque 26347 avait été mise dans le lot comme témoin négatif — **aucun**
+donneur conforme à 0,72, plafond 0,675. La prédiction était que sa queue
+s'effondrerait. C'est l'inverse :
+
+| époque | donneurs ≥ 0,72 | plafond du vivier | médiane obtenue | max | ξ | borne |
+|---|---|---|---|---|---|---|
+| 26304 | 8 | 0,774 | **0,161** | 0,507 | +0,83 | — |
+| 26345 | 16 | 0,779 | 0,490 | 0,726 | −0,24 | 0,802 |
+| 26347 | **0** | 0,675 | **0,521** | 0,653 | −0,64 | 0,659 |
+
+L'époque sans aucun bon donneur donne la **meilleure médiane des trois**, et
+celle qui avait huit donneurs à 0,774 s'effondre. L'hypothèse que je voulais
+tester est donc réfutée — mais rien de propre ne la remplace.
+
+(Le ξ positif de 26304 est à jeter : sur 45 points dont 87 % sous 0,25,
+l'ajustement extrapole un maximum de 1,56 pour une grandeur bornée par 1.)
+
+### L'effondrement de 26304, et ce qu'il dit de notre variance
+
+26304 et 26345 **imposent les mêmes paramètres** — IGHV3-74, CDR3 de 14 — et
+leurs viviers honnêtes sont presque les mêmes : 201 contre 233 donneurs
+conformes de longueur 14, 8 contre 16 à 0,72 ou mieux, plafonds 0,774 et 0,779.
+Ce qui diffère est la graine du générateur et un crible PSH à une réplique.
+
+| époque | p10 | p25 | p50 | p75 | p90 | max | sous 0,25 | au-dessus de 0,60 |
+|---|---|---|---|---|---|---|---|---|
+| 26304 | 0,131 | 0,141 | 0,161 | 0,190 | 0,254 | 0,507 | **87 %** | **0 %** |
+| 26345 | 0,148 | 0,192 | 0,490 | 0,592 | 0,635 | 0,726 | 35 % | 20 % |
+| 26347 | 0,181 | 0,368 | 0,521 | 0,572 | 0,601 | 0,653 | 17 % | 10 % |
+
+**À entrées quasi identiques, la médiane varie d'un facteur trois et la part de
+quasi non-lieurs de 17 % à 87 %.** C'est le résultat le plus dur de ce run : la
+qualité d'un lot de candidats n'est pas une propriété du vivier ni de l'époque,
+elle dépend d'un tirage que nous ne contrôlons pas et ne savons pas prédire. Un
+mineur qui ne note que quelques candidats est donc exposé à tomber sur une
+époque comme 26304, où **aucun** de ses 45 candidats n'atteint 0,60.
+
+Cela renforce la conclusion du §52 par un autre chemin : la profondeur de
+notation n'est pas seulement un gain d'espérance, c'est la seule protection
+contre cette variance.
+
+### Où nous en sommes contre le champ
+
+| époque | notre meilleur | meilleur rival | écart |
+|---|---|---|---|
+| 26304 | 0,507 | 0,777 | 0,270 |
+| 26345 | **0,726** | 0,788 | **0,063** |
+| 26347 | 0,653 | 0,746 | 0,093 |
+
+Sur l'époque 26345, notre meilleur candidat honnête est à **0,063** du meilleur
+rival — l'écart le plus court jamais mesuré, contre 0,211 de médiane à médiane
+au §49. Le classement du validateur porte sur dix métriques, donc cela ne dit
+pas que nous aurions gagné ; cela dit que sur une époque favorable et avec
+54 candidats notés, nous sommes entrés dans le bruit du champ.
