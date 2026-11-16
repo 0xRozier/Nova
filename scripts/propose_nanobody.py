@@ -41,15 +41,25 @@ AAS = "ACDEFGHIKLMNPQRSTVWY"
 # sequences are below them) and those old sequences score better, so donors and
 # the reference pool must both come from sequences that satisfy today's rules.
 # Headroom a donor needs above the V floor, because the graft lowers V identity.
-# Measured on 15 November, and the two numbers are coupled:
+# Measured on 15-16 November:
 #   - one CDR1 or CDR2 mutation costs 1.02 points of V identity (n=25, max 1.03);
-#   - the CDR3 graft alone costs 0.00 at the median and 1.03 at worst, and 0 of
-#     60 grafts cost more than 2 points.
-# At P_MUTATE_CDR1 = P_MUTATE_CDR2 = 0 the only cost left is the graft, so 1.1
-# covers the worst case observed. The margin was 2.0, which is exactly two CDR
-# mutations, and it kept donors between 83.1 and 84.0 out of the pool for a
-# headroom nothing spends any more.
-GERMLINE_MARGIN = 1.1
+#   - the CDR3 graft alone costs 0.00 at the median and 1.03 at worst over 60
+#     pairs -- and that maximum was an artefact of too small a sample.
+#
+# It was briefly lowered to 1.1, on the reasoning that with P_MUTATE_CDR1 and
+# P_MUTATE_CDR2 at 0 the only cost left is the graft. Measured end to end on
+# epoch 26345, that was wrong in the direction that matters: refusals at the
+# V floor DOUBLED (25 to 50 of 1500) and 21 valid candidates were lost. The
+# graft's cost has a longer tail than 60 pairs showed.
+#
+# The field's evidence (docs/FIELD_METHOD.md) does say low V identity is where
+# the binding is -- 195 of 348 accepted submissions sit within 2 points of the
+# floor, and intra-epoch rho(V identity, design_iiptm) = -0.25. But loosening
+# this filter is the wrong way to get there: it admits donors whose candidates
+# then fail the floor. The right way is to PREFER low-V donors among those that
+# already clear the margin, which is a change to the ranking and needs a GPU
+# run to show it buys binding. Until then, the measured number wins.
+GERMLINE_MARGIN = 2.0
 REFERENCE_POOL = 200
 # The validator calls a sequence a duplicate at CDR3 identity >= 0.85, so a
 # grafted CDR3 has to be mutated away from every archived one of that length.
