@@ -4295,3 +4295,69 @@ rival — l'écart le plus court jamais mesuré, contre 0,211 de médiane à mé
 au §49. Le classement du validateur porte sur dix métriques, donc cela ne dit
 pas que nous aurions gagné ; cela dit que sur une époque favorable et avec
 54 candidats notés, nous sommes entrés dans le bruit du champ.
+
+## 54. Notre porte de nouveauté applique une règle qui n'existe pas, et elle jette la moitié du vivier
+
+Le guide de stratégie amont (`docs/nanobody_stragegy_guide.md` dans
+metanova-labs/nova) n'avait **jamais été lu par ce dépôt** — aucun document ne
+le citait. Il nomme la vraie règle de diversité, et le code du filtre la
+confirme.
+
+### Ce que le validateur applique vraiment
+
+`metanano/validators/diversity_validator.py` n'enforce que deux choses :
+
+1. un regroupement MMseqs2 **intra-lot** (`global_cluster_identity`), que le
+   guide déclare non activé pour l'instant ;
+2. contre l'historique : **similarité de Jaccard sur k-mers de longueur 5**,
+   seuil **0,9**, et la stratégie par défaut est `plan_b` — la comparaison
+   porte sur les **50 meilleures** séquences seulement, pas sur l'archive.
+
+Il n'y a **ni** règle d'identité de séquence entière à 95 %, **ni** règle de
+CDR3 à 85 %. Notre `is_duplicate` les a tirées du `search_service` du même
+dépôt — un moteur de recherche par similarité (Jaccard grossier puis
+alignement fin) offert aux mineurs comme outil de consultation, que le
+validateur de diversité n'appelle jamais.
+
+### Ce que cela coûte, mesuré
+
+Jaccard k=5 contre les 50 meilleures (approchées par notre `rank_sum` sur les
+17 679 séquences notées) :
+
+| | Jaccard max vs top 50 | refusés par la vraie règle |
+|---|---|---|
+| nos 158 candidats notés au §53 | médiane 0,172 · p90 0,239 · **max 0,286** | **0 sur 158** |
+| 5064 lieurs d'archive à ≥ 0,72 (250 échantillonnés) | médiane 0,314 | 3 % |
+| ceux d'entre eux conformes germline (71) | — | **0 %** |
+
+Nos candidats sont à **0,29 au pire** pour un seuil à 0,90 : la contrainte
+réelle n'est pas près de mordre. Pendant ce temps notre porte refusait, sur la
+seule époque 26345, **1497 candidats sur 3000** au motif « CDR3 ≥ 85 % identique
+à un CDR archivé », plus 6 des 60 retenus à ≥ 95 % d'identité entière.
+
+### Les deux conséquences, par ordre d'importance
+
+**1. `MAX_CDR3_IDENTITY = 0.85` est à supprimer.** Le générateur mute
+délibérément le CDR3 greffé pour descendre sous 85 % d'identité avec tout CDR3
+archivé. C'est-à-dire qu'il **dégrade exprès la seule chose qu'il emprunte à un
+bon lieur**, pour satisfaire une règle inexistante. Greffer le CDR3 d'un donneur
+**verbatim** est permis : l'unicité globale du Layer 1 porte sur la séquence
+entière, et la charpente diffère.
+
+**2. Le vivier double.** Ne plus jeter la moitié des candidats multiplie par
+deux le nombre de candidats disponibles à coût de génération constant — et le
+§52 comme le §53 ont montré que la profondeur de notation est le seul levier
+mesuré (espérance du maximum de 0,651 sur 32 candidats à 0,704 sur 256).
+
+### Ce qui reste à vérifier avant de changer la porte
+
+La porte actuelle est notre filet avant soumission : la relâcher sur la foi
+d'une lecture de code est exactement le genre de geste qui a coûté onze
+soumissions à ce dépôt. Deux points à établir d'abord :
+
+- le top 50 doit être calculé par `utils.minmax_weighted_rank`, l'algorithme que
+  le guide nomme, et non approché par notre `rank_sum` ;
+- le guide dit que la contrainte intra-lot (« au moins 2 mutations dans les CDR,
+  dont 1 dans le CDR3 ») n'est pas active mais le sera. Un greffage verbatim
+  doit donc rester compatible avec elle, ce qui est le cas si les séquences d'un
+  même lot diffèrent entre elles.
