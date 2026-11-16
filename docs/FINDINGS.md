@@ -1114,6 +1114,14 @@ de se tromper de 0,137.
 
 ## 14. Trois CDR conçus au lieu d'un : réfutation nette
 
+> **RETIRÉ le 16 novembre (§55).** Les 150 designs de cette section n'ont
+> **aucune cystéine** — le pont disulfure canonique Cys23-Cys104 a été détruit
+> dans 100 % des cas par l'inverse folding de la version embarquée de BoltzGen,
+> qui manque la machinerie de contrainte des résidus. La comparaison porte donc
+> sur des protéines cassées, et ces designs n'étaient même pas soumissibles
+> (`min_cysteines`). La conception conditionnée par la structure n'est pas
+> réfutée : elle n'a pas été testée.
+
 60 designs, pipeline complet sur 2×T4 (design 2076 s + inverse_folding 59 s +
 folding 3023 s + analysis 61 s + filtering 18 s ≈ **1 h 25**).
 `results/boltzgen_design_3cdr.csv`.
@@ -4136,7 +4144,7 @@ sur 12 d'accord**. L'avertissement Discord sur
 `get_challenge_params_from_blockhash` ne touche pas les paramètres nanobody,
 ce que le test sur 200 000 hashes prédisait et que le terrain confirme.
 
-## 52. La conception BoltzGen est bornée à 0,39 — et le goulot n'est pas le générateur, c'est le débit de notation
+## 52. La conception BoltzGen est bornée à 0,39 — [la borne est retirée, voir §55] — et le goulot n'est pas le générateur, c'est le débit de notation
 
 Le §14 avait réfuté la conception à trois CDR en la comparant au greffage. Il
 laissait deux hypothèses ouvertes, dont « conception libre à grande échelle :
@@ -4361,3 +4369,85 @@ soumissions à ce dépôt. Deux points à établir d'abord :
   dont 1 dans le CDR3 ») n'est pas active mais le sera. Un greffage verbatim
   doit donc rester compatible avec elle, ce qui est le cas si les séquences d'un
   même lot diffèrent entre elles.
+
+## 55. Nos 210 designs n'avaient aucune cystéine : la réfutation du §14 et la borne du §52 sont des artefacts
+
+Le guide amont avertit que « l'implémentation de BoltzGen incluse dans le dépôt
+NOVA est adaptée pour servir de moteur de **notation** et non de pipeline
+génératif. Vous utiliserez l'implémentation originale pour créer vos designs. »
+Nos runs de conception (§11, §14) ont utilisé la version embarquée. Vérification
+faite, l'avertissement est fondé — mais pas de la façon que je craignais.
+
+### Ce qui est identique, et ce qui manque
+
+| | embarquée (NOVA) | originale |
+|---|---|---|
+| version | 0.2.0 | 0.3.2 |
+| poids de conception | `boltzgen1_diverse.ckpt`, `boltzgen1_adherence.ckpt`, `boltzgen1_ifold.ckpt` | **les mêmes** |
+| `resources/config/design.yaml` | — | **identique à l'octet** |
+| `model/modules/diffusion.py` | 2 lignes de différence, aucune touchant pas, bruit, sigma ou échantillonnage |  |
+| `model/modules/inverse_fold.py` | **173 lignes absentes**, dont `build_constraint_logit_mask` et `_build_symmetric_groups` |  |
+
+Le générateur n'est donc pas bridé : mêmes poids, même diffusion, même config.
+Ce qui manque est la machinerie qui **contraint les résidus** que l'inverse
+folding peut poser — précisément ce sur quoi notre spécification repose, puisque
+elle fixe la charpente, CDR1, CDR2, et la tête et la queue du CDR3.
+
+### La preuve, sur les designs que nous avons déjà
+
+Le protocole `nanobody-anything` pose `filter_cysteine=true` et le CLI construit
+une liste `inverse_fold_avoid`. Sans le masque de contrainte qui protège les
+positions gelées, l'évitement de la cystéine s'est appliqué **partout**, y
+compris aux positions que la spécification avait figées :
+
+| | cystéines par séquence |
+|---|---|
+| conception 1 CDR (§11), n = 60 | min 0 · médiane 0 · max **0** |
+| conception 3 CDR (§14), n = 150 | min 0 · médiane 0 · max **0** |
+| les 348 soumissions acceptées du champ | min **2** · médiane 2 |
+
+**210 designs sur 210 à zéro cystéine.** La charpente lit `...SLRLSEAASG` là où
+le motif canonique est `...SLRLSCAASG` : la **Cys23**, que le guide décrit comme
+formant avec Cys104 le pont disulfure « critique pour la stabilité du
+repliement », a été remplacée par un glutamate dans tous les cas. FR1 dérive
+aussi (quatre variantes des 26 premiers résidus là où la spécification en
+imposait une).
+
+Un nanobody sans son pont disulfure canonique ne se replie pas comme un
+nanobody. Cela explique tout ce que le §11 et le §14 ont observé et n'ont pas
+su expliquer : un `design_iiptm` plafonné à 0,21-0,37, des poses à 9,23 Å pour
+un seuil de 2,5, et le fait que **corriger la pose ne remontait pas la liaison
+d'un point**. Ce n'était pas une limite de la méthode, c'était une protéine
+cassée.
+
+Et ces designs n'étaient de toute façon **pas soumissibles** : la validité
+Layer 1 exige `min_cysteines`, typiquement ≥ 1.
+
+### Ce qui tombe
+
+- **§14, « Trois CDR conçus au lieu d'un : réfutation nette »** : la réfutation
+  ne porte pas. Elle compare le greffage à des séquences dépourvues du pont
+  disulfure canonique.
+- **§11** : même défaut, même population.
+- **§52, la borne de 0,39** : l'ajustement de Pareto généralisé a été fait sur
+  ces 151 designs. Il mesure la queue de distribution de protéines cassées, pas
+  celle de la conception. **La borne est retirée.** Ce que le §52 disait de la
+  conception à grande échelle — « 10 000 designs n'y changeraient rien » — n'est
+  plus établi.
+- Par conséquent, **la conception conditionnée par la structure n'est pas
+  réfutée. Elle n'a jamais été testée.**
+
+### Ce qui tient dans le §52
+
+La moitié qui porte sur le **greffage** est intacte : elle a été ajustée sur le
+bras `grafted` du §49, puis confirmée honnêtement au §53 (ξ = −0,31, borne
+0,762, espérance du maximum de 0,651 sur 32 candidats à 0,704 sur 256). La
+profondeur de notation reste le seul levier mesuré.
+
+### Ce qu'il faut faire
+
+Refaire la conception avec **BoltzGen 0.3.2 original**, pas la version
+embarquée, et vérifier avant toute conclusion que les designs rendus portent
+leurs deux cystéines canoniques et la charpente que la spécification impose.
+C'est un contrôle de trois lignes qui aurait dû exister dès le §11 : compter les
+cystéines et comparer les régions gelées à ce qu'on avait gelé.
