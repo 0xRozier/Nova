@@ -4508,3 +4508,78 @@ greffés honnêtes du §53 et les 4 rivaux réels de l'époque, **notés dans le
 run** par le moteur des validateurs. 178 séquences, ~4,2 h sur 2×T4. Pour
 mémoire, sur cette époque et sur l'échelle du validateur, notre meilleur greffé
 honnête lit 0,726 et le meilleur rival 0,788.
+
+## 57. Nous perdons la moitié « confiance » et gagnons la moitié « interaction » : place 3 sur 5, 2 rivaux battus
+
+Lot `design3arms_26345` : 178 séquences notées par le moteur des validateurs
+dans un seul run — 120 designs du §56, les 54 greffés honnêtes du §53, et les
+4 rivaux réels de l'époque. Preuves :
+`results/scores_nanobody_design3arms_26345.csv`,
+`results/boltzgen_design3arms_26345.log`.
+
+Fidélité : écart absolu médian de **0,029** sur les 4 ancrages contre leurs
+métriques publiées, cohérent avec σ = 0,028.
+
+### Sur l'iiptm, le greffage reste meilleur que la conception
+
+| bras | n | médiane | max | pae médian |
+|---|---|---|---|---|
+| `design` | 120 | 0,395 | **0,741** | 16,82 |
+| `grafted` | 54 | **0,491** | 0,729 | 13,72 |
+| `real` | 4 | 0,787 | 0,789 | 8,79 |
+
+Les deux maxima sont séparés de 0,012, soit bien moins que σ : indiscernables.
+La médiane, elle, favorise clairement le greffage. Queue sur l'échelle du
+validateur, même run : `grafted` ξ = −0,29 et max attendu 0,747 sur
+256 candidats, `design` ξ = −0,12 et 0,713. **Sur cette métrique, concevoir
+n'apporte rien.**
+
+### Mais le validateur ne classe pas sur l'iiptm, et là tout s'inverse
+
+Notre meilleur **design** contre les 4 rivaux, dans un vivier de cinq séquences
+— celui qui ressemble à une vraie époque, où nous soumettons quelques séquences
+contre le champ :
+
+| métrique | nous | rang | rivaux |
+|---|---|---|---|
+| `design_iiptm` | 0,637 | **5** | 0,755 – 0,789 |
+| `design_ptm` | 0,808 | **5** | 0,828 – 0,837 |
+| `design_to_target_iptm` | 0,596 | **5** | 0,668 – 0,689 |
+| `min_design_to_target_pae` | 3,233 | **5** | 1,903 – 1,992 |
+| `interaction_pae` | 10,643 | **5** | 8,750 – 8,902 |
+| `plip_hbonds_refolded` | 10 | **1** | 5 – 9 |
+| `plip_saltbridge_refolded` | 5 | **1** | 3 – 5 |
+| `delta_sasa_refolded` | 873,6 | **1** | 751,5 – 799,7 |
+| `liability_score` | 190 | **1** | 200 – 210 |
+| `liability_num_violations` | 21 | **1** | 23 – 24 |
+| **rang-somme** | | **30** | 21 – 31 |
+
+**Dernier sur les cinq métriques de confiance, premier sur les cinq métriques
+d'interaction et de développabilité.** Rang-somme 30 contre 21 à 31 :
+**place 3 sur 5, 2 rivaux sur 4 battus**. C'est le meilleur résultat jamais
+mesuré dans ce dépôt, et il vient du bras `design`, pas du greffage — dont le
+meilleur candidat finit 5ᵉ sur 5 dans le même exercice.
+
+### Ce que cela corrige dans ma façon de juger
+
+J'ai passé toute cette série à juger sur `design_iiptm` seul. Le guide amont le
+dit en clair : « vous êtes classé sur 10 dimensions simultanément », et « un
+design 5ᵉ sur cinq métriques (total 25) bat un design 1ᵉʳ sur quatre et 100ᵉ sur
+une (total 104) ». L'écart à combler n'est donc pas « 0,048 d'iiptm » mais
+**cinq rangs sur le bloc confiance**, en conservant l'avance sur l'autre moitié.
+
+Et cela réhabilite la conception : sur l'iiptm elle perd, sur le rang-somme elle
+gagne. Les deux bras ne sont pas concurrents, ils sont complémentaires — le
+greffage lie mieux, la conception est mieux équilibrée.
+
+### Un piège de `scripts.review_observation`, à corriger
+
+Le script annonce pour ce lot « place 1 sur 5 ; bat 4 rivaux sur 4 ». C'est
+**vrai dans le vivier complet** (174 des nôtres plus 4 rivaux) et **faux dans
+une vraie époque** : avec 174 de nos candidats dans le vivier, les rangs
+par métrique des rivaux sont tirés vers le bas sur les métriques où nos
+candidats les dominent en nombre, surtout les liabilities. Recalculé sur un
+vivier de cinq séquences, le même candidat greffé passe de place 1 à **place 5
+sur 5**. Le rang-somme n'est pas une propriété d'une séquence, c'est une
+propriété d'une séquence **dans son vivier**, et le vivier réel comptait
+31 soumissions acceptées, pas 4 ni 178.
