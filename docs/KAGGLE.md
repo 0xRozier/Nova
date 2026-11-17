@@ -119,6 +119,31 @@ L'époque 26345 est choisie pour que ce bras soit **directement comparable** au
 bras greffage honnête du §53 : même époque, mêmes rivaux, et notre meilleur
 greffé honnête y lit 0,726 contre 0,788 pour le meilleur rival.
 
+### Le lot courant (17 novembre) : 40 charpentes au lieu de 6
+
+`notebooks/kaggle_design.ipynb`, `RUN = "design_wide_26345"`, **120 designs sur
+40 charpentes** (environ 3 par charpente), spécification dans
+`data/design/26345_wide/` — les 40 portent leurs 2 cystéines et 9 résidus
+conçus, vérifié.
+
+**Budget GPU identique** au run `design_cdr3_26345` (120 designs sur
+6 charpentes), même époque, donc les deux sont directement comparables. C'est
+le test que le §59 laisse ouvert : le bloc confiance est porté par la charpente
+(facteur 2,6 entre la meilleure et la pire), la qualité d'une charpente ne se
+prédit pas à bas coût, et concentrer le budget sur la meilleure médiane
+**réduirait** le maximum — notre meilleur design venait de la charpente de
+rang 4 sur 6.
+
+**La prédiction, écrite avant la mesure.** Si le maximum dépasse **0,741** (le
+meilleur à 6 charpentes), la diversité de charpentes est le levier et il faut en
+ouvrir davantage. S'il plafonne vers 0,70-0,74, la queue est une propriété du
+générateur et non du choix de charpente, et il faut revenir à la profondeur de
+notation du §53.
+
+Le repliement des 40 charpentes est groupé et reprenable depuis le
+`524a3ff` : `fold_many` charge NanoBodyBuilder2 une fois et saute ce qui est
+déjà sur disque.
+
 ### Étape 2 — vérifier, sur CPU, avant de dépenser du GPU de notation
 
 ```sh
