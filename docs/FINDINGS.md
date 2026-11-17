@@ -4451,3 +4451,60 @@ embarquée, et vérifier avant toute conclusion que les designs rendus portent
 leurs deux cystéines canoniques et la charpente que la spécification impose.
 C'est un contrôle de trois lignes qui aurait dû exister dès le §11 : compter les
 cystéines et comparer les régions gelées à ce qu'on avait gelé.
+
+## 56. La BoltzGen originale respecte les positions gelées : la conception est enfin mesurable
+
+Run `design_cdr3_26345`, 120 designs, BoltzGen **0.3.2 originale** installée
+depuis PyPI, 6 charpentes conformes IGHV3-74, CDR1 et CDR2 fixes, CDR3 conçu sur
+9 résidus à la longueur 14. Preuves : `results/designs_design_cdr3_26345.csv`,
+`results/design_design_cdr3_26345.log`.
+
+### Le garde-fou passe, et il confirme le diagnostic du §55
+
+| | cystéines | à zéro | sans la paire canonique | variantes de FR1 |
+|---|---|---|---|---|
+| §11 / §14, BoltzGen **embarquée** | médiane 0 | **210 / 210** | 210 / 210 | 7 (pour 4 charpentes) |
+| ce run, BoltzGen **originale** | **médiane 2** | **0** | **0** | 6 (pour 6 charpentes) |
+
+Le §55 avait attribué la destruction du pont disulfure à l'absence de
+`build_constraint_logit_mask` dans la version embarquée. L'expérience le
+confirme : à spécification identique, la version originale rend des nanobodies
+avec leurs deux cystéines et une variante de FR1 par charpente, exactement ce
+que la spécification impose.
+
+**Et les 120 designs passent nos portes déterministes, 120 sur 120** : bon gène
+V, CDR3 de longueur 14, planchers germinaux, marqueurs VHH, pas d'homopolymère,
+pas de peptide signal. Ce sont des séquences soumissibles, là où les 210
+précédentes auraient été refusées sur `min_cysteines`.
+
+### Ce que les designs valent, sur l'échelle de BoltzGen 0.3.2
+
+| | médiane | max | part > 0,50 | part > 0,60 |
+|---|---|---|---|---|
+| §11, 1 CDR (invalide) | 0,214 | 0,311 | — | — |
+| §14, 3 CDR (invalide) | 0,171 | 0,367 | — | — |
+| **ce run, CDR3 seul, valide** | **0,241** | **0,650** | **34 %** | **8 %** |
+
+Le maximum passe de 0,367 à **0,650**. La médiane bouge peu, ce qui est
+cohérent avec ce qu'on attend d'un générateur : la plupart des tirages ne lient
+pas, et c'est la queue qui compte.
+
+Queue ajustée sur les 271 lignes : ξ = **−0,59**, borne **0,658**, et le maximum
+attendu ne monte qu'à 0,657 sur 10 000 designs. La borne retirée du §52 disait
+0,387 ; la vraie borne de cette spécification est **0,658**. Concevoir plus ne
+paiera donc pas beaucoup au-delà de quelques centaines — mais ce plafond vaut
+pour *cette* spécification (6 charpentes, 9 résidus libres), pas pour la
+méthode.
+
+### La réserve qui interdit de conclure maintenant
+
+Ces métriques sortent de **BoltzGen 0.3.2**, pas du moteur de notation des
+validateurs. Les deux builds diffèrent sur 45 fichiers, et le §49 a mesuré
+σ = 0,028 rien que sur le bruit d'une mesure. **Aucune comparaison au champ
+n'est licite avant que les designs soient notés par la build des validateurs.**
+
+C'est l'objet du lot `design3arms_26345` : 120 designs, les 54 candidats
+greffés honnêtes du §53 et les 4 rivaux réels de l'époque, **notés dans le même
+run** par le moteur des validateurs. 178 séquences, ~4,2 h sur 2×T4. Pour
+mémoire, sur cette époque et sur l'échelle du validateur, notre meilleur greffé
+honnête lit 0,726 et le meilleur rival 0,788.
