@@ -4726,3 +4726,61 @@ meilleur candidat**, et concentrer le budget l'aurait coûté.
   mesurant. C'est la question à instruire ensuite, et elle est bon marché à
   poser : il suffit de noter quelques designs sur beaucoup de charpentes au lieu
   de beaucoup de designs sur six.
+
+## 60. `--num_designs` échantillonne la liste de charpentes, il ne la parcourt pas : 9 sur 40
+
+Lot `design_wide_26345` : 120 designs, spécification à **40 charpentes**,
+BoltzGen 0.3.2. Preuves : `results/designs_design_wide_26345.csv`,
+`results/design_design_wide_26345.log`.
+
+### L'expérience que j'avais conçue n'a pas eu lieu
+
+Le garde-fou passe (médiane 2 cystéines, aucun design à zéro, 120 sur 120
+passent nos portes déterministes) mais il signale **9 variantes de FR1** pour
+40 charpentes dans la spécification. Appariement fait contre `report.json` :
+
+| charpentes dans la spec | effectivement utilisées | designs par charpente |
+|---|---|---|
+| 40 | **9** | 20 à 47 |
+
+`--num_designs 120` ne distribue donc pas 3 designs sur chacune des 40 : il
+**échantillonne** la liste. L'étape `design` affiche six lots dans les deux
+runs et prend le même temps (2097 s contre 2175 s), quelle que soit la taille
+de la liste. Mon plan « 40 × 3 » reposait sur une lecture fausse de l'outil ;
+pour couvrir 40 charpentes il faudrait 40 travaux de conception, pas une
+spécification à 40 entrées.
+
+### Ce que le run dit quand même, et c'est en faveur de la diversité
+
+Sur l'échelle de BoltzGen 0.3.2, donc comparable d'un run de conception à
+l'autre mais **pas** aux métriques du validateur :
+
+| | charpentes utilisées | médiane | max | designs > 0,60 | passent `filter_rmsd` |
+|---|---|---|---|---|---|
+| `design_cdr3_26345` | 6 | 0,241 | 0,650 | 23 | 3 / 120 |
+| `design_wide_26345` | **9** | **0,349** | **0,708** | **43** | **11 / 120** |
+
+Trois charpentes absentes de la première spécification valent mieux que tout
+ce qu'elle contenait : la charpente 39 rend une médiane de **0,588** (max
+0,708) et la 38 de 0,548, contre 0,533 pour la meilleure des six. La part de
+designs au-dessus de 0,60 passe de 23 à 43, et la part qui passe le filtre de
+pose du pipeline de 3 à 11 sur 120.
+
+Donc **ouvrir le vivier de charpentes paie, même échantillonné** — neuf tirées
+au hasard parmi quarante battent six choisies. C'est cohérent avec le §59 :
+l'effet est porté par la charpente, sa qualité ne se prédit pas, et la seule
+façon d'en trouver une bonne est d'en essayer.
+
+### La prédiction que je m'étais engagé à lire, et pourquoi je ne la lis pas
+
+J'avais écrit : « si le maximum dépasse 0,741, la diversité est le levier ».
+Ce 0,741 est sur l'**échelle du validateur** et le 0,708 d'ici sur celle de
+BoltzGen 0.3.2 — les comparer serait exactement l'erreur que le §56 interdit.
+Le run précédent lisait 0,650 sur l'échelle BoltzGen et 0,741 sur celle du
+validateur ; le rapport entre les deux n'est pas une constante qu'on peut
+appliquer.
+
+La prédiction reste donc ouverte, et le lot `wide4arms_26345` la tranche :
+120 designs larges, les 30 meilleurs designs à 6 charpentes, les 20 meilleurs
+greffés et les 4 rivaux réels, **notés dans le même run** par le moteur des
+validateurs. 174 séquences, ~4,1 h sur 2×T4.

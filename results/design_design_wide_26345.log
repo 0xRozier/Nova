@@ -1,0 +1,347 @@
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/5] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/5] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/6 [00:00<?, ?it/s]   
+[Step 1/5] design - Predicting DataLoader 0: :   0%|          | 0/6 [00:00<?, ?it/s]
+[Step 1/5] design - Predicting DataLoader 0: :  17%|█▋        | 1/6 [05:30<27:34,  0.00it/s]
+[Step 1/5] design - Predicting DataLoader 0: :  33%|███▎      | 2/6 [11:02<22:05,  0.00it/s]
+[Step 1/5] design - Predicting DataLoader 0: :  50%|█████     | 3/6 [16:35<16:35,  0.00it/s]Switched step_scale to 2.0
+Switched noise_scale to 0.88
+
+[Step 1/5] design - Predicting DataLoader 0: :  67%|██████▋   | 4/6 [22:07<11:03,  0.00it/s]
+[Step 1/5] design - Predicting DataLoader 0: :  83%|████████▎ | 5/6 [27:39<05:31,  0.00it/s]Switched step_scale to 2.0
+Switched noise_scale to 0.88
+Number of failed examples: 0
+
+[Step 1/5] design - Predicting DataLoader 0: : 100%|██████████| 6/6 [33:12<00:00,  0.00it/s]Number of failed examples: 0
+
+[Step 1/5] design - Predicting DataLoader 0: : 100%|██████████| 6/6 [33:12<00:00,  0.00it/s]
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/designs/design_wide_26345/intermediate_designs
+[Info] Number of files to process (including already processed ones): 120
+Found 1 targets and 120 remaining designs that still need to be processed in this step.
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/designs/design_wide_26345/intermediate_designs
+[Info] Number of files to process (including already processed ones): 120
+Found 1 targets and 120 remaining designs that still need to be processed in this step.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/5] inverse_folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/5] inverse_folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/60 [00:00<?, ?it/s]           
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   0%|          | 0/60 [00:00<?, ?it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   2%|▏         | 1/60 [00:01<01:52,  0.53it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   3%|▎         | 2/60 [00:02<01:17,  0.75it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   5%|▌         | 3/60 [00:03<01:05,  0.87it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   7%|▋         | 4/60 [00:04<00:59,  0.94it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :   8%|▊         | 5/60 [00:05<00:55,  1.00it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  10%|█         | 6/60 [00:05<00:52,  1.03it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  12%|█▏        | 7/60 [00:06<00:49,  1.06it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  13%|█▎        | 8/60 [00:07<00:48,  1.08it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  15%|█▌        | 9/60 [00:08<00:46,  1.09it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  17%|█▋        | 10/60 [00:09<00:45,  1.11it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  18%|█▊        | 11/60 [00:09<00:43,  1.12it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  20%|██        | 12/60 [00:10<00:42,  1.13it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  22%|██▏       | 13/60 [00:11<00:41,  1.14it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  23%|██▎       | 14/60 [00:12<00:39,  1.15it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  25%|██▌       | 15/60 [00:12<00:38,  1.16it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  27%|██▋       | 16/60 [00:13<00:37,  1.16it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  28%|██▊       | 17/60 [00:14<00:36,  1.17it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  30%|███       | 18/60 [00:15<00:35,  1.18it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  32%|███▏      | 19/60 [00:15<00:34,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  33%|███▎      | 20/60 [00:16<00:33,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  35%|███▌      | 21/60 [00:17<00:32,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  37%|███▋      | 22/60 [00:18<00:32,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  38%|███▊      | 23/60 [00:19<00:31,  1.18it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  40%|████      | 24/60 [00:20<00:30,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  42%|████▏     | 25/60 [00:21<00:29,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  43%|████▎     | 26/60 [00:21<00:28,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  45%|████▌     | 27/60 [00:22<00:27,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  47%|████▋     | 28/60 [00:23<00:26,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  48%|████▊     | 29/60 [00:24<00:25,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  50%|█████     | 30/60 [00:25<00:25,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  52%|█████▏    | 31/60 [00:25<00:24,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  53%|█████▎    | 32/60 [00:26<00:23,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  55%|█████▌    | 33/60 [00:27<00:22,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  57%|█████▋    | 34/60 [00:28<00:21,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  58%|█████▊    | 35/60 [00:29<00:20,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  60%|██████    | 36/60 [00:30<00:20,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  62%|██████▏   | 37/60 [00:31<00:19,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  63%|██████▎   | 38/60 [00:32<00:18,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  65%|██████▌   | 39/60 [00:32<00:17,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  67%|██████▋   | 40/60 [00:33<00:16,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  68%|██████▊   | 41/60 [00:34<00:15,  1.19it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  70%|███████   | 42/60 [00:35<00:15,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  72%|███████▏  | 43/60 [00:35<00:14,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  73%|███████▎  | 44/60 [00:36<00:13,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  75%|███████▌  | 45/60 [00:37<00:12,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  77%|███████▋  | 46/60 [00:38<00:11,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  78%|███████▊  | 47/60 [00:39<00:10,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  80%|████████  | 48/60 [00:39<00:09,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  82%|████████▏ | 49/60 [00:40<00:09,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  83%|████████▎ | 50/60 [00:41<00:08,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  85%|████████▌ | 51/60 [00:42<00:07,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  87%|████████▋ | 52/60 [00:42<00:06,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  88%|████████▊ | 53/60 [00:43<00:05,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  90%|█████████ | 54/60 [00:44<00:04,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  92%|█████████▏| 55/60 [00:45<00:04,  1.21it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  93%|█████████▎| 56/60 [00:46<00:03,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  95%|█████████▌| 57/60 [00:47<00:02,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  97%|█████████▋| 58/60 [00:48<00:01,  1.20it/s]
+[Step 2/5] inverse_folding - Predicting DataLoader 0: :  98%|█████████▊| 59/60 [00:48<00:00,  1.21it/s]Number of failed examples: 0
+
+[Step 2/5] inverse_folding - Predicting DataLoader 0: : 100%|██████████| 60/60 [00:49<00:00,  1.22it/s]Number of failed examples: 0
+
+[Step 2/5] inverse_folding - Predicting DataLoader 0: : 100%|██████████| 60/60 [00:49<00:00,  1.22it/s]
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/designs/design_wide_26345/intermediate_designs_inverse_folded
+[Info] Number of files to process (including already processed ones): 120
+Found 1 targets and 120 remaining designs that still need to be processed in this step.
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/designs/design_wide_26345/intermediate_designs_inverse_folded
+[Info] Number of files to process (including already processed ones): 120
+Found 1 targets and 120 remaining designs that still need to be processed in this step.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 3/5] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 3/5] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/60 [00:00<?, ?it/s]   
+[Step 3/5] folding - Predicting DataLoader 0: :   0%|          | 0/60 [00:00<?, ?it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :   2%|▏         | 1/60 [01:29<1:28:03,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :   3%|▎         | 2/60 [02:59<1:26:34,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :   5%|▌         | 3/60 [04:28<1:25:06,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :   7%|▋         | 4/60 [05:58<1:23:36,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :   8%|▊         | 5/60 [07:27<1:22:07,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  10%|█         | 6/60 [08:57<1:20:36,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  12%|█▏        | 7/60 [10:26<1:19:05,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  13%|█▎        | 8/60 [11:56<1:17:35,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  15%|█▌        | 9/60 [13:25<1:16:05,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  17%|█▋        | 10/60 [14:54<1:14:34,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  18%|█▊        | 11/60 [16:24<1:13:03,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  20%|██        | 12/60 [17:53<1:11:33,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  22%|██▏       | 13/60 [19:22<1:10:03,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  23%|██▎       | 14/60 [20:52<1:08:33,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  25%|██▌       | 15/60 [22:21<1:07:04,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  27%|██▋       | 16/60 [23:50<1:05:35,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  28%|██▊       | 17/60 [25:20<1:04:05,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  30%|███       | 18/60 [26:49<1:02:36,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  32%|███▏      | 19/60 [28:19<1:01:07,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  33%|███▎      | 20/60 [29:48<59:37,  0.01it/s]  
+[Step 3/5] folding - Predicting DataLoader 0: :  35%|███▌      | 21/60 [31:18<58:08,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  37%|███▋      | 22/60 [32:48<56:39,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  38%|███▊      | 23/60 [34:17<55:10,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  40%|████      | 24/60 [35:46<53:40,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  42%|████▏     | 25/60 [37:16<52:11,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  43%|████▎     | 26/60 [38:46<50:41,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  45%|████▌     | 27/60 [40:15<49:12,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  47%|████▋     | 28/60 [41:45<47:43,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  48%|████▊     | 29/60 [43:14<46:13,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  50%|█████     | 30/60 [44:44<44:44,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  52%|█████▏    | 31/60 [46:13<43:14,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  53%|█████▎    | 32/60 [47:43<41:45,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  55%|█████▌    | 33/60 [49:13<40:16,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  57%|█████▋    | 34/60 [50:42<38:46,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  58%|█████▊    | 35/60 [52:12<37:17,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  60%|██████    | 36/60 [53:41<35:47,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  62%|██████▏   | 37/60 [55:11<34:18,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  63%|██████▎   | 38/60 [56:40<32:48,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  65%|██████▌   | 39/60 [58:10<31:19,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  67%|██████▋   | 40/60 [59:39<29:49,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  68%|██████▊   | 41/60 [1:01:09<28:20,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  70%|███████   | 42/60 [1:02:39<26:51,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  72%|███████▏  | 43/60 [1:04:08<25:21,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  73%|███████▎  | 44/60 [1:05:38<23:52,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  75%|███████▌  | 45/60 [1:07:07<22:22,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  77%|███████▋  | 46/60 [1:08:36<20:52,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  78%|███████▊  | 47/60 [1:10:06<19:23,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  80%|████████  | 48/60 [1:11:35<17:53,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  82%|████████▏ | 49/60 [1:13:04<16:24,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  83%|████████▎ | 50/60 [1:14:34<14:54,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  85%|████████▌ | 51/60 [1:16:03<13:25,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  87%|████████▋ | 52/60 [1:17:32<11:55,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  88%|████████▊ | 53/60 [1:19:02<10:26,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  90%|█████████ | 54/60 [1:20:31<08:56,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  92%|█████████▏| 55/60 [1:22:01<07:27,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  93%|█████████▎| 56/60 [1:23:30<05:57,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  95%|█████████▌| 57/60 [1:25:00<04:28,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  97%|█████████▋| 58/60 [1:26:29<02:58,  0.01it/s]
+[Step 3/5] folding - Predicting DataLoader 0: :  98%|█████████▊| 59/60 [1:27:58<01:29,  0.01it/s]Number of failed structure predictions: 0
+
+[Step 3/5] folding - Predicting DataLoader 0: : 100%|██████████| 60/60 [1:29:28<00:00,  0.01it/s]Number of failed structure predictions: 0
+
+[Step 3/5] folding - Predicting DataLoader 0: : 100%|██████████| 60/60 [1:29:28<00:00,  0.01it/s]
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/designs/design_wide_26345/intermediate_designs_inverse_folded
+[Info] Number of files to process (including already processed ones): 120
+Found 1 targets and 120 remaining designs that still need to be processed in this step.
+
+Processing samples:   0%|          | 0/120 [00:00<?, ?it/s]
+Processing samples:   1%|          | 1/120 [00:17<35:17, 17.79s/it]
+Processing samples:   4%|▍         | 5/120 [00:19<05:44,  3.00s/it]
+Processing samples:   5%|▌         | 6/120 [00:19<04:24,  2.32s/it]
+Processing samples:   7%|▋         | 8/120 [00:19<02:40,  1.43s/it]
+Processing samples:   8%|▊         | 9/120 [00:21<02:40,  1.45s/it]
+Processing samples:  10%|█         | 12/120 [00:21<01:23,  1.29it/s]
+Processing samples:  11%|█         | 13/120 [00:22<01:36,  1.11it/s]
+Processing samples:  12%|█▏        | 14/120 [00:23<01:24,  1.25it/s]
+Processing samples:  14%|█▍        | 17/120 [00:24<01:03,  1.62it/s]
+Processing samples:  15%|█▌        | 18/120 [00:24<01:00,  1.70it/s]
+Processing samples:  18%|█▊        | 21/120 [00:26<00:53,  1.85it/s]
+Processing samples:  18%|█▊        | 22/120 [00:26<00:50,  1.93it/s]
+Processing samples:  19%|█▉        | 23/120 [00:26<00:42,  2.26it/s]
+Processing samples:  21%|██        | 25/120 [00:28<00:50,  1.88it/s]
+Processing samples:  22%|██▏       | 26/120 [00:28<00:42,  2.22it/s]
+Processing samples:  22%|██▎       | 27/120 [00:28<00:37,  2.45it/s]
+Processing samples:  23%|██▎       | 28/120 [00:28<00:31,  2.92it/s]
+Processing samples:  24%|██▍       | 29/120 [00:30<00:49,  1.84it/s]
+Processing samples:  25%|██▌       | 30/120 [00:30<00:44,  2.01it/s]
+Processing samples:  26%|██▌       | 31/120 [00:30<00:35,  2.50it/s]
+Processing samples:  28%|██▊       | 33/120 [00:32<00:48,  1.81it/s]
+Processing samples:  29%|██▉       | 35/120 [00:32<00:31,  2.72it/s]
+Processing samples:  30%|███       | 36/120 [00:32<00:26,  3.18it/s]
+Processing samples:  31%|███       | 37/120 [00:33<00:50,  1.65it/s]
+Processing samples:  34%|███▍      | 41/120 [00:35<00:40,  1.95it/s]
+Processing samples:  37%|███▋      | 44/120 [00:35<00:25,  3.00it/s]
+Processing samples:  38%|███▊      | 46/120 [00:37<00:34,  2.18it/s]
+Processing samples:  40%|████      | 48/120 [00:37<00:25,  2.83it/s]
+Processing samples:  41%|████      | 49/120 [00:38<00:38,  1.87it/s]
+Processing samples:  42%|████▏     | 50/120 [00:39<00:32,  2.13it/s]
+Processing samples:  42%|████▎     | 51/120 [00:39<00:28,  2.43it/s]
+Processing samples:  44%|████▍     | 53/120 [00:40<00:35,  1.89it/s]
+Processing samples:  46%|████▌     | 55/120 [00:41<00:24,  2.63it/s]
+Processing samples:  48%|████▊     | 57/120 [00:42<00:32,  1.94it/s]
+Processing samples:  49%|████▉     | 59/120 [00:42<00:23,  2.60it/s]
+Processing samples:  51%|█████     | 61/120 [00:44<00:29,  2.02it/s]
+Processing samples:  52%|█████▎    | 63/120 [00:44<00:21,  2.69it/s]
+Processing samples:  54%|█████▍    | 65/120 [00:46<00:27,  2.01it/s]
+Processing samples:  56%|█████▌    | 67/120 [00:46<00:19,  2.72it/s]
+Processing samples:  57%|█████▋    | 68/120 [00:46<00:17,  3.04it/s]
+Processing samples:  57%|█████▊    | 69/120 [00:47<00:27,  1.88it/s]
+Processing samples:  58%|█████▊    | 70/120 [00:47<00:22,  2.21it/s]
+Processing samples:  60%|██████    | 72/120 [00:48<00:15,  3.01it/s]
+Processing samples:  61%|██████    | 73/120 [00:49<00:26,  1.77it/s]
+Processing samples:  62%|██████▏   | 74/120 [00:49<00:21,  2.10it/s]
+Processing samples:  64%|██████▍   | 77/120 [00:51<00:20,  2.07it/s]
+Processing samples:  65%|██████▌   | 78/120 [00:51<00:18,  2.32it/s]
+Processing samples:  67%|██████▋   | 80/120 [00:51<00:12,  3.16it/s]
+Processing samples:  68%|██████▊   | 81/120 [00:52<00:19,  2.00it/s]
+Processing samples:  68%|██████▊   | 82/120 [00:53<00:16,  2.27it/s]
+Processing samples:  69%|██████▉   | 83/120 [00:53<00:14,  2.59it/s]
+Processing samples:  70%|███████   | 84/120 [00:53<00:12,  2.91it/s]
+Processing samples:  71%|███████   | 85/120 [00:54<00:19,  1.81it/s]
+Processing samples:  72%|███████▎  | 87/120 [00:54<00:11,  2.78it/s]
+Processing samples:  73%|███████▎  | 88/120 [00:55<00:11,  2.73it/s]
+Processing samples:  74%|███████▍  | 89/120 [00:56<00:17,  1.78it/s]
+Processing samples:  76%|███████▌  | 91/120 [00:56<00:10,  2.64it/s]
+Processing samples:  77%|███████▋  | 92/120 [00:57<00:11,  2.39it/s]
+Processing samples:  78%|███████▊  | 93/120 [00:58<00:14,  1.87it/s]
+Processing samples:  78%|███████▊  | 94/120 [00:58<00:11,  2.27it/s]
+Processing samples:  80%|████████  | 96/120 [00:58<00:09,  2.65it/s]
+Processing samples:  81%|████████  | 97/120 [00:59<00:11,  2.04it/s]
+Processing samples:  82%|████████▏ | 98/120 [00:59<00:09,  2.38it/s]
+Processing samples:  83%|████████▎ | 100/120 [01:00<00:08,  2.35it/s]
+Processing samples:  84%|████████▍ | 101/120 [01:01<00:09,  2.09it/s]
+Processing samples:  85%|████████▌ | 102/120 [01:01<00:07,  2.57it/s]
+Processing samples:  87%|████████▋ | 104/120 [01:02<00:07,  2.19it/s]
+Processing samples:  88%|████████▊ | 105/120 [01:03<00:06,  2.26it/s]
+Processing samples:  88%|████████▊ | 106/120 [01:03<00:05,  2.37it/s]
+Processing samples:  90%|█████████ | 108/120 [01:04<00:05,  2.17it/s]
+Processing samples:  91%|█████████ | 109/120 [01:04<00:04,  2.44it/s]
+Processing samples:  92%|█████████▏| 110/120 [01:05<00:04,  2.34it/s]
+Processing samples:  92%|█████████▎| 111/120 [01:05<00:03,  2.90it/s]
+Processing samples:  93%|█████████▎| 112/120 [01:06<00:04,  1.92it/s]
+Processing samples:  94%|█████████▍| 113/120 [01:06<00:02,  2.40it/s]
+Processing samples:  95%|█████████▌| 114/120 [01:06<00:02,  2.13it/s]
+Processing samples:  96%|█████████▌| 115/120 [01:07<00:01,  2.71it/s]
+Processing samples:  97%|█████████▋| 116/120 [01:07<00:01,  2.00it/s]
+Processing samples:  98%|█████████▊| 117/120 [01:08<00:01,  2.39it/s]
+Processing samples:  98%|█████████▊| 118/120 [01:08<00:00,  2.42it/s]
+Processing samples: 100%|██████████| 120/120 [01:08<00:00,  3.07it/s]
+Processing samples: 100%|██████████| 120/120 [01:11<00:00,  1.69it/s]
+Computed metrics successfully for 120 out of 120.
+
+Loading saved metrics from disk. 1% of total:   0%|          | 0/120 [00:00<?, ?it/s]
+Loading saved metrics from disk. 1% of total:   5%|▌         | 6/120 [00:00<00:02, 53.27it/s]
+Loading saved metrics from disk. 1% of total:  10%|█         | 12/120 [00:00<00:01, 54.60it/s]
+Loading saved metrics from disk. 1% of total:  15%|█▌        | 18/120 [00:00<00:01, 54.89it/s]
+Loading saved metrics from disk. 1% of total:  20%|██        | 24/120 [00:00<00:01, 54.60it/s]
+Loading saved metrics from disk. 1% of total:  25%|██▌       | 30/120 [00:00<00:01, 54.76it/s]
+Loading saved metrics from disk. 1% of total:  30%|███       | 36/120 [00:00<00:01, 54.51it/s]
+Loading saved metrics from disk. 1% of total:  35%|███▌      | 42/120 [00:00<00:01, 54.76it/s]
+Loading saved metrics from disk. 1% of total:  40%|████      | 48/120 [00:00<00:01, 54.83it/s]
+Loading saved metrics from disk. 1% of total:  45%|████▌     | 54/120 [00:00<00:01, 54.59it/s]
+Loading saved metrics from disk. 1% of total:  50%|█████     | 60/120 [00:01<00:01, 54.84it/s]
+Loading saved metrics from disk. 1% of total:  55%|█████▌    | 66/120 [00:01<00:00, 54.79it/s]
+Loading saved metrics from disk. 1% of total:  60%|██████    | 72/120 [00:01<00:00, 54.89it/s]
+Loading saved metrics from disk. 1% of total:  65%|██████▌   | 78/120 [00:01<00:00, 54.18it/s]
+Loading saved metrics from disk. 1% of total:  70%|███████   | 84/120 [00:01<00:00, 54.36it/s]
+Loading saved metrics from disk. 1% of total:  75%|███████▌  | 90/120 [00:01<00:00, 54.51it/s]
+Loading saved metrics from disk. 1% of total:  80%|████████  | 96/120 [00:01<00:00, 54.50it/s]
+Loading saved metrics from disk. 1% of total:  85%|████████▌ | 102/120 [00:01<00:00, 54.56it/s]
+Loading saved metrics from disk. 1% of total:  90%|█████████ | 108/120 [00:01<00:00, 54.41it/s]
+Loading saved metrics from disk. 1% of total:  95%|█████████▌| 114/120 [00:02<00:00, 54.71it/s]
+Loading saved metrics from disk. 1% of total: 100%|██████████| 120/120 [00:02<00:00, 54.89it/s]
+Loading saved metrics from disk. 1% of total: 100%|██████████| 120/120 [00:02<00:00, 54.64it/s]
+Number of targets: 1. Number of designs: 120.
+Total number of designs:   120
+Duplicates found: 0. Removing duplicates. 120 designs remain.
+
+Num designs that pass the has_x filter with threshold 0 where lower is better: 120
+Remaining designs: 120
+Num designs that pass the filter_rmsd filter with threshold 2.5 where lower is better: 11
+Remaining designs: 11
+Num designs that pass the filter_rmsd_design filter with threshold 2.5 where lower is better: 54
+Remaining designs: 4
+Num designs that pass the CYS_fraction filter with threshold 0 where lower is better: 120
+Remaining designs: 4
+Num designs that pass the ALA_fraction filter with threshold 0.3 where lower is better: 117
+Remaining designs: 4
+Num designs that pass the GLY_fraction filter with threshold 0.3 where lower is better: 115
+Remaining designs: 3
+Num designs that pass the GLU_fraction filter with threshold 0.3 where lower is better: 119
+Remaining designs: 3
+Num designs that pass the LEU_fraction filter with threshold 0.3 where lower is better: 117
+Remaining designs: 2
+Num designs that pass the VAL_fraction filter with threshold 0.3 where lower is better: 118
+Remaining designs: 2
+Only 2 designs pass filters. We highly recommend relaxing the thresholds.
+
+
+
+Performing lazy greedy diversity optimization.:   0%|          | 0/29 [00:00<?, ?it/s]
+Performing lazy greedy diversity optimization.: 100%|██████████| 29/29 [00:00<00:00, 5608.13it/s]
+
+copy top design files: 0it [00:00, ?it/s]
+copy top design files: 10it [00:00, 1379.30it/s]
+
+copy diversity files:   0%|          | 0/30 [00:00<?, ?it/s]
+copy diversity files: 100%|██████████| 30/30 [00:00<00:00, 1243.59it/s]
+Files + CSV saved to /kaggle/temp/Nova/designs/design_wide_26345/final_ranked_designs
+
+Writing design files is done. Now making plots for a final summary .pdf file with statistics.
+
+Making liability plots for top 0 sequences.: 0it [00:00, ?it/s]
+Making liability plots for top 0 sequences.: 0it [00:00, ?it/s]
+A description of metrics and summarizing plots was written to: /kaggle/temp/Nova/designs/design_wide_26345/final_ranked_designs/results_overview.pdf
+**************************************************
+Pipeline step 1 of 5: design
+Running command: /kaggle/temp/bgvenv/bin/python /kaggle/temp/bgvenv/lib/python3.12/site-packages/boltzgen/resources/main.py /kaggle/temp/Nova/designs/design_wide_26345/config/design.yaml
+✓ Step design completed successfully in 2096.7s
+**************************************************
+Pipeline step 2 of 5: inverse_folding
+Running command: /kaggle/temp/bgvenv/bin/python /kaggle/temp/bgvenv/lib/python3.12/site-packages/boltzgen/resources/main.py /kaggle/temp/Nova/designs/design_wide_26345/config/inverse_folding.yaml
+✓ Step inverse_folding completed successfully in 67.1s
+**************************************************
+Pipeline step 3 of 5: folding
+Running command: /kaggle/temp/bgvenv/bin/python /kaggle/temp/bgvenv/lib/python3.12/site-packages/boltzgen/resources/main.py /kaggle/temp/Nova/designs/design_wide_26345/config/folding.yaml
+✓ Step folding completed successfully in 5466.2s
+**************************************************
+Pipeline step 4 of 5: analysis
+Running command: /kaggle/temp/bgvenv/bin/python /kaggle/temp/bgvenv/lib/python3.12/site-packages/boltzgen/resources/main.py /kaggle/temp/Nova/designs/design_wide_26345/config/analysis.yaml
+✓ Step analysis completed successfully in 83.9s
+**************************************************
+Pipeline step 5 of 5: filtering
+Running command: /kaggle/temp/bgvenv/bin/python /kaggle/temp/bgvenv/lib/python3.12/site-packages/boltzgen/resources/main.py /kaggle/temp/Nova/designs/design_wide_26345/config/filtering.yaml
+✓ Step filtering completed successfully in 18.6s
