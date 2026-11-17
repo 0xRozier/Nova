@@ -253,6 +253,47 @@ def renumber_sequentially(pdb: Path, chain: str = SCAFFOLD_CHAIN) -> int:
 FOLDER_PYTHON = Path("/home/user/venv-tnp/bin/python")
 
 
+def fold_many(jobs: list[tuple[str, Path]], log=print) -> None:
+    """Fold several frameworks in ONE process, skipping what is already on disk.
+
+    `fold` starts a fresh interpreter per sequence, so NanoBodyBuilder2's weights
+    are loaded once per framework. That is tolerable for six and not for forty:
+    loading dominates, and the §59 question -- a few designs on many scaffolds
+    rather than many designs on six -- needs forty. Skipping existing files also
+    makes a long run resumable, which matters when it is longer than the window
+    it runs in.
+    """
+    import subprocess
+    todo = [(seq, out) for seq, out in jobs if not out.exists()]
+    if not todo:
+        log(f"  {len(jobs)} structures deja sur disque, rien a replier")
+        return
+    log(f"  {len(todo)} structures a replier ({len(jobs) - len(todo)} deja la)")
+    if not FOLDER_PYTHON.exists():
+        raise SystemExit(
+            f"NanoBodyBuilder2 needs {FOLDER_PYTHON}, which is where ImmuneBuilder "
+            f"is installed. Without it there is no structure and no design spec.")
+    todo[0][1].parent.mkdir(parents=True, exist_ok=True)
+    payload = "\n".join(f"{seq}\t{out}" for seq, out in todo)
+    proc = subprocess.run(
+        [str(FOLDER_PYTHON), "-c",
+         "import sys\n"
+         "from ImmuneBuilder import NanoBodyBuilder2\n"
+         "builder = NanoBodyBuilder2()\n"
+         "for line in sys.stdin.read().splitlines():\n"
+         "    seq, out = line.split('\\t')\n"
+         "    builder.predict({'H': seq}).save(out)\n"
+         "    print(out, flush=True)\n"],
+        input=payload, capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"NanoBodyBuilder2 failed: {proc.stderr[-600:]}")
+    missing = [str(out) for _, out in todo if not out.exists()]
+    if missing:
+        raise RuntimeError(f"NanoBodyBuilder2 wrote nothing for: {missing[:3]}")
+    for _, out in todo:
+        renumber_sequentially(out)
+
+
 def fold(sequence: str, out: Path) -> Path:
     """NanoBodyBuilder2 structure for the framework, as BoltzGen's input."""
     import subprocess
@@ -352,12 +393,15 @@ def main():
     print(f"{len(donors)} compliant VHH frameworks for {allowed_v}")
 
     args.out.mkdir(parents=True, exist_ok=True)
+    sequences = list(donors["sequence"])
+    if args.fold:
+        fold_many([(seq, args.out / f"scaffold{i}.pdb")
+                   for i, seq in enumerate(sequences)])
     reports, scaffold_files = [], []
-    for i, sequence in enumerate(donors["sequence"]):
+    for i, sequence in enumerate(sequences):
         structure = args.out / f"scaffold{i}.pdb"
         spec, report = scaffold_spec(sequence, cdr3_length, structure.name, args.cdrs)
         if args.fold:
-            fold(sequence, structure)
             verify_span(structure, report)
             print(f"  scaffold{i}: structure -> {structure}, span verified against it")
         path = args.out / f"scaffold{i}.yaml"
