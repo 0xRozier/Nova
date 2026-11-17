@@ -86,3 +86,32 @@ def test_a_failing_folder_is_an_error(tmp_path, monkeypatch):
     (tmp_path / "python").write_text("")
     with pytest.raises(RuntimeError, match="out of memory"):
         mod.fold_many([("SEQ1", tmp_path / "s0.pdb")], log=lambda *a: None)
+
+
+def test_the_payload_drops_hydrogens_and_keeps_every_residue(tmp_path):
+    """Kaggle refuses a notebook over 1 MB, and forty all-atom scaffolds made
+    1284 kB. Hydrogens are 48 % of the atoms and are not what a structure model
+    reads -- BoltzGen's own reference spec points at a PDB crystal structure,
+    which has none. What must NOT change is the residues the spec names.
+    """
+    from scripts.build_design_notebook import is_hydrogen, without_hydrogens
+    pdb = (
+        "REMARK  MODELLED\n"
+        "ATOM      1  N   GLN B   1     -10.5  -5.6 -18.1  1.00  1.83           N  \n"
+        "ATOM      2  CA  GLN B   1     -10.0  -5.0 -17.0  1.00  1.83           C  \n"
+        "ATOM      3  H   GLN B   1      -9.0  -4.0 -16.0  1.00  1.83           H  \n"
+        "ATOM      4  HA2 GLN B   1      -8.0  -3.0 -15.0  1.00  1.83           H  \n"
+        "END\n"
+    )
+    out = without_hydrogens(pdb)
+    assert "  N   GLN" in out and "  CA  GLN" in out, "heavy atoms stay"
+    assert " H   GLN" not in out and "HA2" not in out
+    assert out.startswith("REMARK") and out.endswith("END\n"), "non-atom lines stay"
+    # An atom whose NAME starts with H but whose element column says otherwise:
+    # HG is mercury here, and the element column decides. PDB columns are fixed
+    # width, so the line has to be built at the right offsets -- element is 77-78.
+    line = ("ATOM      5  HG  CYS B   2".ljust(30)
+            + f"{0.0:8.3f}{0.0:8.3f}{0.0:8.3f}{1.0:6.2f}{1.0:6.2f}".ljust(46)
+            + "HG")
+    assert line[76:78] == "HG"
+    assert is_hydrogen(line) is False, "the element column decides, not the atom name"

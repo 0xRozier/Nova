@@ -47,21 +47,57 @@ MSA_URLS = [
 OUR_FILES = ["nova_lab/__init__.py", "nova_lab/config.py", "kaggle/bittensor.py"]
 
 
+def target_structure(target: str) -> str:
+    from scripts.design_nanobody import TARGET_STRUCTURE
+    return TARGET_STRUCTURE
+
+
+def is_hydrogen(line: str) -> bool:
+    element = line[76:78].strip()
+    return element == "H" if element else line[12:16].strip().startswith("H")
+
+
+def without_hydrogens(text: str) -> str:
+    """Drop hydrogens from a PDB, which halves it.
+
+    NanoBodyBuilder2 writes all-atom models refined with OpenMM, so 48 % of the
+    atoms are hydrogens -- 150 kB per scaffold, 655 kB compressed for forty.
+    Kaggle refuses a notebook over 1 MB on import, and the forty-scaffold batch
+    hit 1284 kB.
+
+    Hydrogens are not what a structure model reads: BoltzGen's own reference
+    spec, example/nanobody_scaffolds/7eow.yaml, points at a crystal structure
+    from the PDB, which has none. Stripping them makes our input the ordinary
+    case rather than the exotic one. `verify_span` re-reads every residue the
+    spec names out of the stripped file, so a parser that disagreed would be
+    caught here and not after an hour of Kaggle GPU.
+    """
+    return "".join(l for l in text.splitlines(True)
+                   if not (l.startswith(("ATOM", "HETATM")) and is_hydrogen(l)))
+
+
 def payload(spec_dir: Path, nova_dir: Path, target: str) -> str:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:xz") as tar:
         for rel in OUR_FILES:
             tar.add(REPO_ROOT / rel, arcname=rel)
-        # The spec, the scaffold yamls and their structures.
-        tar.add(spec_dir, arcname="design",
-                filter=lambda info: None if "__pycache__" in info.name else info)
-        tar.add(nova_dir / "external_tools" / "boltzgen" / "src",
-                arcname="nova/boltzgen/src",
-                filter=lambda info: None if "__pycache__" in info.name else info)
-        tar.add(nova_dir / "external_tools" / "boltzgen" / "pyproject.toml",
-                arcname="nova/boltzgen/pyproject.toml")
-        tar.add(nova_dir / "data" / "structures" / "8AOK.cif",
-                arcname="design/8AOK.cif")
+        # The spec, the scaffold yamls and their structures. The PDBs go in
+        # without their hydrogens; everything else verbatim.
+        for item in sorted(spec_dir.iterdir()):
+            if "__pycache__" in item.name or not item.is_file():
+                continue
+            if item.suffix == ".pdb":
+                data = without_hydrogens(item.read_text()).encode()
+                info = tarfile.TarInfo(f"design/{item.name}")
+                info.size = len(data)
+                tar.addfile(info, io.BytesIO(data))
+            else:
+                tar.add(item, arcname=f"design/{item.name}")
+        # The validators' BoltzGen is NOT embedded: this notebook installs the
+        # original 0.3.2 from PyPI (FINDINGS 55), so the vendored source was
+        # 219 kB of payload that nothing referenced.
+        tar.add(nova_dir / "data" / "structures" / f"{target_structure(target)}.cif",
+                arcname=f"design/{target_structure(target)}.cif")
     return base64.b64encode(buf.getvalue()).decode()
 
 

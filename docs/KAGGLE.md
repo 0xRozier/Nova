@@ -144,6 +144,22 @@ Le repliement des 40 charpentes est groupé et reprenable depuis le
 `524a3ff` : `fold_many` charge NanoBodyBuilder2 une fois et saute ce qui est
 déjà sur disque.
 
+**Le carnet pèse 571 ko**, sous la limite d'import de 1 Mo de Kaggle. À sa
+première construction il en faisait 1284 ko et Kaggle le refusait. Deux poids
+morts enlevés :
+
+- les **hydrogènes** des 40 structures. NanoBodyBuilder2 écrit des modèles
+  tous atomes affinés par OpenMM, donc 48 % des atomes sont des hydrogènes :
+  150 ko par charpente, 655 ko compressés pour quarante. Les modèles de
+  structure ne les lisent pas — la spécification de référence de BoltzGen,
+  `example/nanobody_scaffolds/7eow.yaml`, pointe vers une structure
+  cristallographique du PDB, qui n'en a aucun. Les retirer rapproche notre
+  entrée du cas ordinaire. Contrôle : `verify_span` relit dans le fichier
+  allégé chacun des résidus que la spécification nomme, **40 sur 40**, ce qui
+  attrape un désaccord de parseur ici et non après une heure de GPU ;
+- la **source de la BoltzGen des validateurs**, 219 ko que plus rien ne
+  référence depuis que ce carnet installe la 0.3.2 originale depuis PyPI.
+
 ### Étape 2 — vérifier, sur CPU, avant de dépenser du GPU de notation
 
 ```sh
