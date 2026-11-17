@@ -4511,6 +4511,12 @@ honnête lit 0,726 et le meilleur rival 0,788.
 
 ## 57. Nous perdons la moitié « confiance » et gagnons la moitié « interaction » : place 3 sur 5, 2 rivaux battus
 
+> **Nuance apportée le 17 novembre (§58).** Le « place 3 sur 5 » de cette
+> section est **un candidat sur 120** : confrontés un par un aux 4 rivaux,
+> 98 % des designs et 98 % des greffés finissent derniers. La lecture
+> métrique par métrique ci-dessous reste exacte pour ce candidat, mais ce
+> n'est pas une propriété du bras.
+
 Lot `design3arms_26345` : 178 séquences notées par le moteur des validateurs
 dans un seul run — 120 designs du §56, les 54 greffés honnêtes du §53, et les
 4 rivaux réels de l'époque. Preuves :
@@ -4583,3 +4589,61 @@ vivier de cinq séquences, le même candidat greffé passe de place 1 à **place
 sur 5**. Le rang-somme n'est pas une propriété d'une séquence, c'est une
 propriété d'une séquence **dans son vivier**, et le vivier réel comptait
 31 soumissions acceptées, pas 4 ni 178.
+
+## 58. Le mélange est pire que la conception seule, et le « place 3 sur 5 » est un candidat sur 120
+
+### D'abord : il n'y a pas de mélange à soumettre
+
+`config/config.yaml` du dépôt amont porte **`num_sequences: 1`**. Une soumission
+ne contient qu'une séquence, donc l'agrégation multi-séquences que décrit le
+guide (« moyennés puis sommés ») ne s'applique pas à la configuration actuelle.
+Mélanger ne peut donc vouloir dire qu'une chose : réunir les deux **viviers de
+candidats** et n'en soumettre que le meilleur.
+
+### Et mélanger les viviers dégrade le résultat
+
+Sélection à l'aveugle des rivaux — rang-somme calculé à l'intérieur de notre
+propre vivier, ce qu'un mineur peut faire — puis confrontation aux 4 rivaux :
+
+| vivier | candidat choisi | place |
+|---|---|---|
+| `design` seul (120) | iiptm 0,637 | **3 / 5**, bat 2 rivaux |
+| `grafted` seul (54) | iiptm 0,604 | 5 / 5, bat 0 |
+| **mélangé (174)** | iiptm 0,604 | **5 / 5, bat 0** |
+
+Le vivier mélangé choisit le même candidat que le greffage seul, et finit
+dernier. Trois critères de sélection ont été essayés — les 10 métriques, le
+bloc confiance seul, le bloc interaction+développabilité seul — et **aucun ne
+sauve le mélange** : tous choisissent un candidat greffé qui s'effondre face aux
+rivaux. Le plafond d'un oracle parfait sur le vivier mélangé est la place 3,
+exactement celui du bras `design` seul : mélanger n'ajoute aucun candidat
+meilleur, il ajoute seulement des candidats qui trompent le sélecteur.
+
+### Et la correction qui m'incombe sur le §57
+
+J'ai présenté « place 3 sur 5, 2 rivaux battus » comme le résultat du bras
+`design`. En confrontant **chacun** des 174 candidats aux 4 rivaux :
+
+| bras | place 3 ou mieux | place 4 | place 5 |
+|---|---|---|---|
+| `design` (120) | **1 (1 %)** | 2 (2 %) | 117 (**98 %**) |
+| `grafted` (54) | 0 (0 %) | 1 (2 %) | 53 (**98 %**) |
+
+**98 % de nos candidats finissent derniers.** Le « place 3 sur 5 » est un
+candidat sur 120, pas une propriété du bras. Ma formulation du §57 était
+littéralement vraie et trompeuse : elle laissait entendre qu'un lot de designs
+place un candidat à la 3ᵉ place, alors que c'est un événement à 1 %.
+
+Ce qui reste notable, et qui demande confirmation : **le sélecteur a trouvé ce
+candidat-là**, dans le bras `design`, avec deux critères différents, là où un
+tirage au hasard avait 0,8 % de chances. C'est soit un bon signe sur le
+sélecteur, soit de la chance, et un seul cas ne permet pas de trancher.
+
+### Ce que la structure des métriques dit quand même
+
+Le §57 tient sur un point : notre meilleur candidat est **dernier sur les cinq
+métriques de confiance et premier sur les cinq autres**. Comme 98 % du vivier
+finit dernier, l'avance sur le bloc interaction+développabilité ne suffit pas à
+compenser cinq derniers rangs. Le levier reste le bloc confiance — `design_iiptm`,
+`design_ptm`, `design_to_target_iptm` et les deux PAE — où les rivaux sont
+devant sur la totalité du vivier, pas seulement sur le meilleur.
