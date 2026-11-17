@@ -4647,3 +4647,82 @@ finit dernier, l'avance sur le bloc interaction+développabilité ne suffit pas 
 compenser cinq derniers rangs. Le levier reste le bloc confiance — `design_iiptm`,
 `design_ptm`, `design_to_target_iptm` et les deux PAE — où les rivaux sont
 devant sur la totalité du vivier, pas seulement sur le meilleur.
+
+## 59. Le bloc confiance est une propriété de la charpente — et le cribler par la médiane coûterait notre meilleur candidat
+
+Le §58 a désigné le bloc confiance (`design_iiptm`, `design_ptm`,
+`design_to_target_iptm`, `min_design_to_target_pae`, `interaction_pae`) comme le
+seul levier qui reste : nous y sommes derniers sur la totalité du vivier. Les
+174 candidats du lot `design3arms_26345` permettent de chercher ce qui le
+commande, sans nouveau GPU.
+
+### C'est la charpente, et l'effet est énorme
+
+Les 120 designs se répartissent sur les 6 charpentes de la spécification, qui
+ne diffèrent que par leur FR1 :
+
+| charpente | iiptm | ptm | iptm | min_pae | int_pae | n |
+|---|---|---|---|---|---|---|
+| 1 | **0,533** | 0,792 | 0,506 | 4,74 | 12,65 | 20 |
+| 3 | 0,492 | 0,786 | 0,490 | 5,12 | 13,45 | 10 |
+| 5 | 0,409 | 0,759 | 0,396 | 7,49 | 16,30 | 30 |
+| 2 | 0,398 | 0,758 | 0,348 | 9,08 | 17,50 | 10 |
+| 0 | 0,370 | 0,751 | 0,362 | 8,68 | 17,62 | 30 |
+| 4 | **0,207** | 0,742 | 0,184 | 15,54 | 22,20 | 20 |
+
+Un facteur **2,6** sur l'iiptm médian, et **le même ordre sur les cinq
+métriques** : ce n'est pas du bruit, c'est la charpente qui porte le bloc
+confiance. Dans le bras `grafted`, 20 charpentes distinctes donnent des
+médianes de 0,172 à 0,604, soit un facteur **3,5**.
+
+Le CDR3 conçu, lui, compte peu : la qualité de pose rendue par le pipeline de
+conception ne prédit presque rien (`filter_rmsd` ρ = +0,01 sur les cinq
+métriques, `filter_rmsd_design` ρ = +0,16 à +0,20). Cela confirme sur un run
+valide ce que le §14 avait observé sur un run cassé.
+
+### Mais la qualité d'une charpente ne se prédit pas à bas coût
+
+| prédicteur | ρ avec l'iiptm médian de la charpente |
+|---|---|
+| identité V | +0,41 (n = 6, non concluant) |
+| iiptm du donneur de CDR3 de la charpente | **+0,14** |
+
+La pire charpente (0,207) portait le CDR3 du **deuxième meilleur** donneur
+(0,764). Les CDR1 et CDR2 des six sont quasi identiques. Rien dans ce que nous
+savons calculer sur CPU ne distingue la charpente 1 de la charpente 4.
+
+### Le piège : cribler les charpentes par la médiane réduirait notre maximum
+
+La conclusion qui vient naturellement — « cribler les 6 charpentes sur quelques
+designs, puis concentrer le budget sur la meilleure » — est **fausse**, et c'est
+mesurable :
+
+| stratégie | max attendu sur 20 | 60 | 120 | 240 |
+|---|---|---|---|---|
+| budget concentré sur la meilleure médiane | 0,623 | 0,653 | 0,670 | 0,685 |
+| budget étalé sur les six | **0,638** | **0,687** | **0,707** | **0,722** |
+
+Et le fait brut qui l'explique : **notre meilleur design (0,741) vient de la
+charpente de rang 4 sur 6** (médiane 0,398), pas de la première. Les cinq
+meilleurs designs viennent des charpentes de rang 4, 1, 5, 5 et 1. Dans le bras
+`grafted`, les trois meilleurs viennent des rangs 1, 5 et 2 sur 20.
+
+Puisque nous ne soumettons qu'**une** séquence (`num_sequences: 1`), ce qui
+compte est le maximum, pas la médiane — et la charpente à la meilleure médiane
+a la queue la plus courte (borne 0,830 mais maximum observé 0,656, contre 0,741
+pour le vivier étalé). **La diversité de charpentes est ce qui produit le
+meilleur candidat**, et concentrer le budget l'aurait coûté.
+
+### Ce que cela dit de la marche à suivre
+
+- **Ne pas cribler les charpentes pour n'en garder qu'une.** Garder la
+  diversité, et dépenser la profondeur de notation sur un vivier large — ce qui
+  rejoint le §52 et le §53 par un troisième chemin.
+- **Écarter les charpentes franchement mauvaises reste utile** : la charpente 4
+  à 0,207 de médiane n'a donné aucun des cinq meilleurs designs. Il y a une
+  différence entre éliminer le pire et ne garder que le meilleur.
+- **Le bloc confiance reste ouvert.** Nous savons maintenant *où* il se décide
+  (la charpente) mais pas comment choisir une bonne charpente autrement qu'en la
+  mesurant. C'est la question à instruire ensuite, et elle est bon marché à
+  poser : il suffit de noter quelques designs sur beaucoup de charpentes au lieu
+  de beaucoup de designs sur six.
