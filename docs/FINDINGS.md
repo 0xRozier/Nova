@@ -5010,3 +5010,69 @@ qui les produit. Les noter toutes coûterait 23 h sur 2×T4. Le lot
    signal par charpente — de quoi diriger un second run concentré, ce que le
    §59 interdisait de faire sur la seule médiane mais qu'une mesure par
    charpente autorise.
+
+## 64. Mille designs ne valent pas mieux que cent vingt : la conception est bornée vers 0,70
+
+Lot `k1sample_26345` : échantillon stratifié de 180 designs du run à mille
+(5 par charpente sur 36) et les 4 rivaux réels, notés par le moteur des
+validateurs dans un seul run. Preuves :
+`results/scores_nanobody_k1sample_26345.csv`,
+`results/boltzgen_k1sample_26345.log`. Fidélité : écart absolu médian de
+**0,014** sur les ancrages.
+
+| | n | médiane | max |
+|---|---|---|---|
+| `design_1k` (échantillon des 992) | 180 | 0,353 | **0,692** |
+| `real` | 4 | 0,783 | 0,785 |
+
+### La queue ne s'allonge pas, et c'est une réponse définitive
+
+| | ξ | borne | max attendu sur 992 | sur 5000 |
+|---|---|---|---|---|
+| §61 — 120 designs, **9** charpentes | −0,54 | 0,707 | — | — |
+| ce run — 180 échantillonnés sur 992, **36** charpentes | **−0,61** | **0,698** | **0,692** | 0,696 |
+
+Huit fois plus de designs, quatre fois plus de charpentes, et la borne est la
+même à un centième près. Le maximum attendu sur **cinq mille** designs vaut
+0,696. La question que le §52 avait laissée ouverte — et dont j'avais retiré la
+borne parce qu'elle était ajustée sur des protéines cassées — est maintenant
+tranchée sur un run valide : **concevoir le CDR3 avec BoltzGen sur une
+charpente VHH conforme plafonne vers 0,70, et l'échelle n'y change rien.**
+
+Le « typiquement 10 000 designs » du CLI amont ne nous amènerait donc pas au
+niveau du champ. Ce n'est pas un problème de budget.
+
+### Et aucun des 180 ne bat un rival
+
+| place contre les 4 rivaux | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| designs | 0 | 0 | 0 | **1** | **179** |
+
+Un seul atteint la 4ᵉ place, 179 finissent derniers. Le rival le plus faible de
+cette époque lit 0,711 d'iiptm et notre meilleur design 0,692.
+
+### Le signal par charpente existe, mais il ne se transfère pas au maximum
+
+Les 36 charpentes mesurées à 5 designs chacune donnent des médianes de **0,142
+à 0,619** — un facteur 4,4, ce qui confirme le §59 : le bloc confiance est porté
+par la charpente. Mais la charpente qui porte notre **meilleur** design est au
+**rang 25 sur 36** par médiane, et la pire par médiane (0,142) produit un design
+à 0,587.
+
+C'est exactement le piège du §59 sous une forme plus nette : la médiane d'une
+charpente ne prédit pas son maximum, et comme nous ne soumettons qu'une
+séquence, c'est le maximum qui compte. **Concentrer sur les bonnes médianes
+reste une erreur**, même avec une mesure par charpente en main.
+
+### Ce qui reste, après ce run
+
+| voie | plafond mesuré | état |
+|---|---|---|
+| conception BoltzGen, charpente conforme | **0,698** | fermée par l'échelle (ce run) |
+| greffage depuis l'archive | 0,798 | ouverte, mais 13 384 candidats pour 0,769 (§62) |
+| le champ | 0,785-0,795 | — |
+
+Le greffage garde la seule queue qui dépasse le niveau du champ, et le §62 en a
+chiffré le prix. La conception, elle, est désormais bornée **sous** le rival le
+plus faible : elle produit des séquences soumissibles en masse (992 sur 992) et
+équilibrées sur les métriques d'interaction, mais elle ne franchira pas 0,70.
