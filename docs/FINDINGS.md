@@ -4511,6 +4511,11 @@ honnête lit 0,726 et le meilleur rival 0,788.
 
 ## 57. Nous perdons la moitié « confiance » et gagnons la moitié « interaction » : place 3 sur 5, 2 rivaux battus
 
+> **RETIRÉ le 18 novembre (§61).** Renoté dans un second run, le candidat de
+> cette section lit 0,709 au lieu de 0,741 et ne bat plus aucun rival : les
+> 170 candidats du lot `wide4arms` finissent tous derniers. Le résultat était
+> un tirage favorable de la mesure.
+>
 > **Nuance apportée le 17 novembre (§58).** Le « place 3 sur 5 » de cette
 > section est **un candidat sur 120** : confrontés un par un aux 4 rivaux,
 > 98 % des designs et 98 % des greffés finissent derniers. La lecture
@@ -4784,3 +4789,76 @@ La prédiction reste donc ouverte, et le lot `wide4arms_26345` la tranche :
 120 designs larges, les 30 meilleurs designs à 6 charpentes, les 20 meilleurs
 greffés et les 4 rivaux réels, **notés dans le même run** par le moteur des
 validateurs. 174 séquences, ~4,1 h sur 2×T4.
+
+## 61. La prédiction se résout contre la diversité, et le « place 3 sur 5 » ne se reproduit pas
+
+Lot `wide4arms_26345` : 174 séquences notées par le moteur des validateurs dans
+un seul run — 120 designs à 9 charpentes, les 30 meilleurs designs du run à
+6 charpentes, les 20 meilleurs greffés, et les 4 rivaux réels. Preuves :
+`results/scores_nanobody_wide4arms_26345.csv`,
+`results/boltzgen_wide4arms_26345.log`. Fidélité : écart absolu médian de
+**0,012** sur les ancrages.
+
+| bras | n | médiane | max | pae médian |
+|---|---|---|---|---|
+| `design_wide` (9 charpentes) | 120 | 0,393 | **0,699** | 17,64 |
+| `design_6fw` (30 meilleurs du run précédent) | 30 | 0,574 | 0,709 | 12,07 |
+| `grafted` (20 meilleurs) | 20 | 0,609 | **0,710** | 11,07 |
+| `real` | 4 | 0,788 | 0,795 | 8,84 |
+
+### La prédiction, lue comme je m'étais engagé à la lire
+
+J'avais écrit, avant la mesure : « si le maximum dépasse **0,741**, la diversité
+de charpentes est le levier et il faut en ouvrir davantage ; s'il plafonne vers
+**0,70-0,74**, la queue est une propriété du générateur et non du choix de
+charpente, et il faut revenir à la profondeur de notation du §53. »
+
+`design_wide` lit **0,699**. Les trois bras plafonnent entre 0,699 et 0,710.
+**La prédiction se résout contre la diversité de charpentes**, et la consigne
+que j'avais inscrite s'applique : revenir à la profondeur de notation.
+
+Les queues le confirment, sur l'échelle du validateur :
+
+| bras | ξ | borne | max attendu sur 256 |
+|---|---|---|---|
+| `grafted` | −0,22 | **0,798** | **0,729** |
+| `design_6fw` | −0,62 | 0,721 | 0,712 |
+| `design_wide` | −0,54 | 0,707 | 0,691 |
+
+Le greffage garde la meilleure queue, et élargir les charpentes la **raccourcit**
+au lieu de l'allonger.
+
+### Et le « place 3 sur 5 » du §57 ne se reproduit pas
+
+Les 30 meilleurs designs du run précédent ont été **renotés ici**, et parmi eux
+celui qui atteignait la place 3 sur 5 en battant 2 rivaux sur 4. Résultat :
+
+| | place 3 ou mieux | place 5 |
+|---|---|---|
+| `design_wide` (120) | **0** | 120 |
+| `design_6fw` (30, dont le candidat du §57) | **0** | 30 |
+| `grafted` (20) | **0** | 20 |
+
+**Les 170 candidats finissent derniers, sans exception.** Le candidat qui lisait
+0,741 relit **0,709**, et il ne bat plus aucun rival. Sur les 50 séquences
+notées dans les deux runs : écart absolu médian 0,015, σ d'une mesure 0,017,
+Spearman +0,88 entre les deux lectures.
+
+Donc le « meilleur résultat jamais mesuré dans ce dépôt » du §57 était **un
+tirage favorable de la mesure**, et le §58 avait déjà montré qu'il s'agissait
+d'un candidat sur 120. Il faut maintenant le retirer tout court : avec deux
+mesures, il n'existe pas. C'est la troisième fois dans cette série qu'un
+résultat annoncé sur une seule mesure ne survit pas à la seconde — après le
+« 0 victoire sur 8 » et la borne de 0,39.
+
+### Où cela laisse la compétition
+
+Rien de ce que nous produisons ne bat un seul rival de cette époque, et le
+meilleur rival lit 0,795 quand notre meilleure queue promet 0,729 sur
+256 candidats notés. L'écart n'est pas comblé par la profondeur seule.
+
+Ce qui reste acquis de tout cet arc : la conception est **légitime et
+soumissible** (§55, §56 — 120 designs sur 120 passent les portes
+déterministes), elle n'était pas réfutée mais cassée ; le bloc confiance est
+porté par la charpente (§59) ; et la profondeur de notation reste le seul
+levier qu'une mesure répétée confirme, sans suffire.

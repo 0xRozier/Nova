@@ -1,0 +1,942 @@
+[boltzgen:debug] Found 174 YAML file(s) in directory: /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/inputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Using kernels: False [device capability: (7, 5)]
+Config overrides for protocol nanobody-anything: {'analysis': ['largest_hydrophobic=false', 'largest_hydrophobic_refolded=false'], 'filtering': ['filter_cysteine=true']}
+Using 2 devices
+[1] design                   
+[2] folding                  
+[3] analysis                 
+[4] filtering                
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/3] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/3] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/87 [00:00<?, ?it/s]  
+[Step 1/3] design - Predicting DataLoader 0: :   0%|          | 0/87 [00:00<?, ?it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   1%|          | 1/87 [00:59<1:24:59,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   2%|▏         | 2/87 [02:02<1:26:26,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   3%|▎         | 3/87 [03:08<1:27:46,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   5%|▍         | 4/87 [04:13<1:27:42,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   6%|▌         | 5/87 [05:18<1:27:10,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   7%|▋         | 6/87 [06:24<1:26:30,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   8%|▊         | 7/87 [07:30<1:25:44,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :   9%|▉         | 8/87 [08:35<1:24:54,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  10%|█         | 9/87 [09:41<1:24:02,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  11%|█▏        | 10/87 [10:47<1:23:07,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  13%|█▎        | 11/87 [11:53<1:22:10,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  14%|█▍        | 12/87 [12:59<1:21:14,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  15%|█▍        | 13/87 [14:05<1:20:15,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  16%|█▌        | 14/87 [15:11<1:19:14,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  17%|█▋        | 15/87 [16:17<1:18:13,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  18%|█▊        | 16/87 [17:23<1:17:10,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  20%|█▉        | 17/87 [18:29<1:16:08,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  21%|██        | 18/87 [19:35<1:15:05,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  22%|██▏       | 19/87 [20:41<1:14:02,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  23%|██▎       | 20/87 [21:47<1:12:58,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  24%|██▍       | 21/87 [22:53<1:11:55,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  25%|██▌       | 22/87 [23:58<1:10:51,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  26%|██▋       | 23/87 [25:04<1:09:47,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  28%|██▊       | 24/87 [26:10<1:08:42,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  29%|██▊       | 25/87 [27:16<1:07:39,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  30%|██▉       | 26/87 [28:22<1:06:34,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  31%|███       | 27/87 [29:28<1:05:29,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  32%|███▏      | 28/87 [30:34<1:04:25,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  33%|███▎      | 29/87 [31:40<1:03:20,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  34%|███▍      | 30/87 [32:46<1:02:15,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  36%|███▌      | 31/87 [33:51<1:01:10,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  37%|███▋      | 32/87 [34:57<1:00:05,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  38%|███▊      | 33/87 [36:03<59:00,  0.02it/s]  
+[Step 1/3] design - Predicting DataLoader 0: :  39%|███▉      | 34/87 [37:09<57:55,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  40%|████      | 35/87 [38:15<56:50,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  41%|████▏     | 36/87 [39:21<55:45,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  43%|████▎     | 37/87 [40:27<54:40,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  44%|████▎     | 38/87 [41:33<53:35,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  45%|████▍     | 39/87 [42:39<52:30,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  46%|████▌     | 40/87 [43:45<51:24,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  47%|████▋     | 41/87 [44:51<50:19,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  48%|████▊     | 42/87 [45:57<49:14,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  49%|████▉     | 43/87 [47:03<48:08,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  51%|█████     | 44/87 [48:09<47:03,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  52%|█████▏    | 45/87 [49:15<45:58,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  53%|█████▎    | 46/87 [50:21<44:52,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  54%|█████▍    | 47/87 [51:27<43:47,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  55%|█████▌    | 48/87 [52:33<42:42,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  56%|█████▋    | 49/87 [53:39<41:36,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  57%|█████▋    | 50/87 [54:45<40:31,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  59%|█████▊    | 51/87 [55:51<39:25,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  60%|█████▉    | 52/87 [56:57<38:20,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  61%|██████    | 53/87 [58:03<37:14,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  62%|██████▏   | 54/87 [59:09<36:08,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  63%|██████▎   | 55/87 [1:00:15<35:03,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  64%|██████▍   | 56/87 [1:01:21<33:57,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  66%|██████▌   | 57/87 [1:02:27<32:52,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  67%|██████▋   | 58/87 [1:03:32<31:46,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  68%|██████▊   | 59/87 [1:04:38<30:40,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  69%|██████▉   | 60/87 [1:05:44<29:35,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  70%|███████   | 61/87 [1:06:50<28:29,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  71%|███████▏  | 62/87 [1:07:56<27:23,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  72%|███████▏  | 63/87 [1:09:02<26:18,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  74%|███████▎  | 64/87 [1:10:08<25:12,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  75%|███████▍  | 65/87 [1:11:14<24:06,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  76%|███████▌  | 66/87 [1:12:20<23:00,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  77%|███████▋  | 67/87 [1:13:26<21:55,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  78%|███████▊  | 68/87 [1:14:31<20:49,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  79%|███████▉  | 69/87 [1:15:37<19:43,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  80%|████████  | 70/87 [1:16:43<18:38,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  82%|████████▏ | 71/87 [1:17:49<17:32,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  83%|████████▎ | 72/87 [1:18:55<16:26,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  84%|████████▍ | 73/87 [1:20:01<15:20,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  85%|████████▌ | 74/87 [1:21:07<14:15,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  86%|████████▌ | 75/87 [1:22:13<13:09,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  87%|████████▋ | 76/87 [1:23:19<12:03,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  89%|████████▊ | 77/87 [1:24:24<10:57,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  90%|████████▉ | 78/87 [1:25:30<09:51,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  91%|█████████ | 79/87 [1:26:36<08:46,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  92%|█████████▏| 80/87 [1:27:42<07:40,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  93%|█████████▎| 81/87 [1:28:48<06:34,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  94%|█████████▍| 82/87 [1:29:53<05:28,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  95%|█████████▌| 83/87 [1:30:59<04:23,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  97%|█████████▋| 84/87 [1:32:05<03:17,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  98%|█████████▊| 85/87 [1:33:11<02:11,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  99%|█████████▉| 86/87 [1:34:17<01:05,  0.02it/s]
+[Step 1/3] design - Predicting DataLoader 0: : 100%|██████████| 87/87 [1:35:23<00:00,  0.02it/s]Number of failed examples: 0
+
+[Step 1/3] design - Predicting DataLoader 0: : 100%|██████████| 87/87 [1:35:23<00:00,  0.02it/s]Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Number of failed examples: 0
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 174
+Found 174 targets and 174 remaining designs that still need to be processed in this step.
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 174
+Found 174 targets and 174 remaining designs that still need to be processed in this step.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/87 [00:00<?, ?it/s]   
+[Step 2/3] folding - Predicting DataLoader 0: :   0%|          | 0/87 [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   1%|          | 1/87 [01:33<2:13:36,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   2%|▏         | 2/87 [03:10<2:14:47,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   3%|▎         | 3/87 [04:49<2:15:10,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   5%|▍         | 4/87 [06:30<2:14:57,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   6%|▌         | 5/87 [08:10<2:14:00,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   7%|▋         | 6/87 [09:50<2:12:46,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   8%|▊         | 7/87 [11:29<2:11:22,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :   9%|▉         | 8/87 [13:09<2:09:53,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  10%|█         | 9/87 [14:48<2:08:23,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  11%|█▏        | 10/87 [16:28<2:06:52,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  13%|█▎        | 11/87 [18:08<2:05:19,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  14%|█▍        | 12/87 [19:48<2:03:46,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  15%|█▍        | 13/87 [21:28<2:02:12,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  16%|█▌        | 14/87 [23:08<2:00:39,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  17%|█▋        | 15/87 [24:48<1:59:04,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  18%|█▊        | 16/87 [26:27<1:57:26,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  20%|█▉        | 17/87 [28:07<1:55:47,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  21%|██        | 18/87 [29:47<1:54:11,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  22%|██▏       | 19/87 [31:27<1:52:36,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  23%|██▎       | 20/87 [33:07<1:50:59,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  24%|██▍       | 21/87 [34:47<1:49:21,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  25%|██▌       | 22/87 [36:27<1:47:43,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  26%|██▋       | 23/87 [38:07<1:46:04,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  28%|██▊       | 24/87 [39:47<1:44:27,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  29%|██▊       | 25/87 [41:27<1:42:50,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  30%|██▉       | 26/87 [43:07<1:41:11,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  31%|███       | 27/87 [44:47<1:39:32,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  32%|███▏      | 28/87 [46:27<1:37:53,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  33%|███▎      | 29/87 [48:07<1:36:14,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  34%|███▍      | 30/87 [49:47<1:34:35,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  36%|███▌      | 31/87 [51:27<1:32:57,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  37%|███▋      | 32/87 [53:08<1:31:19,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  38%|███▊      | 33/87 [54:48<1:29:40,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  39%|███▉      | 34/87 [56:28<1:28:02,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  40%|████      | 35/87 [58:08<1:26:23,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  41%|████▏     | 36/87 [59:48<1:24:43,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  43%|████▎     | 37/87 [1:01:29<1:23:05,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  44%|████▎     | 38/87 [1:03:08<1:21:25,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  45%|████▍     | 39/87 [1:04:48<1:19:45,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  46%|████▌     | 40/87 [1:06:28<1:18:06,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  47%|████▋     | 41/87 [1:08:07<1:16:25,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  48%|████▊     | 42/87 [1:09:46<1:14:45,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  49%|████▉     | 43/87 [1:11:26<1:13:06,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  51%|█████     | 44/87 [1:13:06<1:11:26,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  52%|█████▏    | 45/87 [1:14:46<1:09:46,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  53%|█████▎    | 46/87 [1:16:25<1:08:06,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  54%|█████▍    | 47/87 [1:18:04<1:06:26,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  55%|█████▌    | 48/87 [1:19:43<1:04:46,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  56%|█████▋    | 49/87 [1:21:22<1:03:06,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  57%|█████▋    | 50/87 [1:23:02<1:01:27,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  59%|█████▊    | 51/87 [1:24:41<59:47,  0.01it/s]  
+[Step 2/3] folding - Predicting DataLoader 0: :  60%|█████▉    | 52/87 [1:26:21<58:07,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  61%|██████    | 53/87 [1:28:00<56:27,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  62%|██████▏   | 54/87 [1:29:40<54:48,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  63%|██████▎   | 55/87 [1:31:20<53:08,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  64%|██████▍   | 56/87 [1:33:00<51:29,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  66%|██████▌   | 57/87 [1:34:40<49:49,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  67%|██████▋   | 58/87 [1:36:19<48:09,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  68%|██████▊   | 59/87 [1:37:59<46:30,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  69%|██████▉   | 60/87 [1:39:39<44:50,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  70%|███████   | 61/87 [1:41:18<43:10,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  71%|███████▏  | 62/87 [1:42:58<41:31,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  72%|███████▏  | 63/87 [1:44:38<39:51,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  74%|███████▎  | 64/87 [1:46:18<38:12,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  75%|███████▍  | 65/87 [1:47:58<36:32,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  76%|███████▌  | 66/87 [1:49:37<34:52,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  77%|███████▋  | 67/87 [1:51:16<33:13,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  78%|███████▊  | 68/87 [1:52:56<31:33,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  79%|███████▉  | 69/87 [1:54:37<29:54,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  80%|████████  | 70/87 [1:56:17<28:14,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  82%|████████▏ | 71/87 [1:57:57<26:34,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  83%|████████▎ | 72/87 [1:59:37<24:55,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  84%|████████▍ | 73/87 [2:01:17<23:15,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  85%|████████▌ | 74/87 [2:02:57<21:36,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  86%|████████▌ | 75/87 [2:04:37<19:56,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  87%|████████▋ | 76/87 [2:06:17<18:16,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  89%|████████▊ | 77/87 [2:07:58<16:37,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  90%|████████▉ | 78/87 [2:09:38<14:57,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  91%|█████████ | 79/87 [2:11:18<13:17,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  92%|█████████▏| 80/87 [2:12:58<11:38,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  93%|█████████▎| 81/87 [2:14:38<09:58,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  94%|█████████▍| 82/87 [2:16:18<08:18,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  95%|█████████▌| 83/87 [2:17:58<06:38,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  97%|█████████▋| 84/87 [2:19:38<04:59,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  98%|█████████▊| 85/87 [2:21:18<03:19,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  99%|█████████▉| 86/87 [2:22:58<01:39,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: : 100%|██████████| 87/87 [2:24:38<00:00,  0.01it/s]Number of failed structure predictions: 0
+
+[Step 2/3] folding - Predicting DataLoader 0: : 100%|██████████| 87/87 [2:24:38<00:00,  0.01it/s]
+Number of failed structure predictions: 0
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 174
+Found 174 targets and 174 remaining designs that still need to be processed in this step.
+
+Processing samples:   0%|          | 0/174 [00:00<?, ?it/s]
+Processing samples:   1%|          | 1/174 [00:15<45:18, 15.72s/it]
+Processing samples:   2%|▏         | 4/174 [00:15<08:36,  3.04s/it]
+Processing samples:   3%|▎         | 6/174 [00:18<06:33,  2.34s/it]
+Processing samples:   4%|▍         | 7/174 [00:19<05:06,  1.84s/it]
+Processing samples:   5%|▌         | 9/174 [00:21<04:32,  1.65s/it]
+Processing samples:   6%|▌         | 10/174 [00:21<03:35,  1.32s/it]
+Processing samples:   6%|▋         | 11/174 [00:22<02:46,  1.02s/it]
+Processing samples:   7%|▋         | 13/174 [00:24<03:08,  1.17s/it]
+Processing samples:   8%|▊         | 14/174 [00:25<02:34,  1.04it/s]
+Processing samples:  10%|▉         | 17/174 [00:27<02:29,  1.05it/s]
+Processing samples:  10%|█         | 18/174 [00:28<02:04,  1.25it/s]
+Processing samples:  11%|█▏        | 20/174 [00:28<01:26,  1.78it/s]
+Processing samples:  12%|█▏        | 21/174 [00:30<02:29,  1.03it/s]
+Processing samples:  13%|█▎        | 22/174 [00:31<02:04,  1.22it/s]
+Processing samples:  14%|█▍        | 24/174 [00:31<01:27,  1.72it/s]
+Processing samples:  14%|█▍        | 25/174 [00:33<02:13,  1.12it/s]
+Processing samples:  15%|█▍        | 26/174 [00:34<01:58,  1.25it/s]
+Processing samples:  16%|█▌        | 28/174 [00:34<01:32,  1.57it/s]
+Processing samples:  17%|█▋        | 29/174 [00:36<01:59,  1.21it/s]
+Processing samples:  17%|█▋        | 30/174 [00:37<01:51,  1.29it/s]
+Processing samples:  18%|█▊        | 32/174 [00:37<01:31,  1.55it/s]
+Processing samples:  19%|█▉        | 33/174 [00:39<01:56,  1.21it/s]
+Processing samples:  20%|█▉        | 34/174 [00:40<01:53,  1.24it/s]
+Processing samples:  21%|██        | 36/174 [00:40<01:28,  1.55it/s]
+Processing samples:  21%|██▏       | 37/174 [00:42<01:50,  1.24it/s]
+Processing samples:  22%|██▏       | 38/174 [00:42<01:43,  1.31it/s]
+Processing samples:  23%|██▎       | 40/174 [00:43<01:25,  1.57it/s]
+Processing samples:  24%|██▎       | 41/174 [00:45<01:46,  1.25it/s]
+Processing samples:  24%|██▍       | 42/174 [00:45<01:37,  1.36it/s]
+Processing samples:  25%|██▍       | 43/174 [00:46<01:21,  1.60it/s]
+Processing samples:  25%|██▌       | 44/174 [00:46<01:25,  1.51it/s]
+Processing samples:  26%|██▌       | 45/174 [00:48<01:48,  1.19it/s]
+Processing samples:  26%|██▋       | 46/174 [00:48<01:27,  1.47it/s]
+Processing samples:  27%|██▋       | 47/174 [00:48<01:20,  1.58it/s]
+Processing samples:  28%|██▊       | 48/174 [00:49<01:29,  1.40it/s]
+Processing samples:  28%|██▊       | 49/174 [00:51<02:00,  1.04it/s]
+Processing samples:  29%|██▊       | 50/174 [00:51<01:38,  1.26it/s]
+Processing samples:  29%|██▉       | 51/174 [00:52<01:22,  1.50it/s]
+Processing samples:  30%|██▉       | 52/174 [00:53<01:29,  1.37it/s]
+Processing samples:  30%|███       | 53/174 [00:54<01:41,  1.19it/s]
+Processing samples:  31%|███       | 54/174 [00:54<01:33,  1.29it/s]
+Processing samples:  32%|███▏      | 55/174 [00:55<01:17,  1.54it/s]
+Processing samples:  32%|███▏      | 56/174 [00:55<01:19,  1.48it/s]
+Processing samples:  33%|███▎      | 57/174 [00:56<01:34,  1.24it/s]
+Processing samples:  33%|███▎      | 58/174 [00:57<01:26,  1.33it/s]
+Processing samples:  34%|███▍      | 59/174 [00:58<01:24,  1.37it/s]
+Processing samples:  34%|███▍      | 60/174 [00:58<01:10,  1.61it/s]
+Processing samples:  35%|███▌      | 61/174 [01:00<01:40,  1.13it/s]
+Processing samples:  36%|███▌      | 62/174 [01:00<01:28,  1.27it/s]
+Processing samples:  36%|███▌      | 63/174 [01:01<01:19,  1.39it/s]
+Processing samples:  37%|███▋      | 64/174 [01:01<01:10,  1.57it/s]
+Processing samples:  37%|███▋      | 65/174 [01:03<01:31,  1.19it/s]
+Processing samples:  38%|███▊      | 66/174 [01:03<01:21,  1.33it/s]
+Processing samples:  39%|███▊      | 67/174 [01:04<01:16,  1.39it/s]
+Processing samples:  39%|███▉      | 68/174 [01:04<01:06,  1.58it/s]
+Processing samples:  40%|███▉      | 69/174 [01:05<01:28,  1.19it/s]
+Processing samples:  40%|████      | 70/174 [01:06<01:13,  1.41it/s]
+Processing samples:  41%|████      | 71/174 [01:07<01:13,  1.41it/s]
+Processing samples:  41%|████▏     | 72/174 [01:07<01:05,  1.57it/s]
+Processing samples:  42%|████▏     | 73/174 [01:08<01:19,  1.27it/s]
+Processing samples:  43%|████▎     | 74/174 [01:09<01:17,  1.29it/s]
+Processing samples:  43%|████▎     | 75/174 [01:10<01:12,  1.37it/s]
+Processing samples:  44%|████▎     | 76/174 [01:10<01:03,  1.55it/s]
+Processing samples:  44%|████▍     | 77/174 [01:11<01:24,  1.14it/s]
+Processing samples:  45%|████▍     | 78/174 [01:12<01:06,  1.44it/s]
+Processing samples:  45%|████▌     | 79/174 [01:12<01:08,  1.38it/s]
+Processing samples:  46%|████▌     | 80/174 [01:13<01:01,  1.52it/s]
+Processing samples:  47%|████▋     | 81/174 [01:14<01:23,  1.11it/s]
+Processing samples:  47%|████▋     | 82/174 [01:15<01:01,  1.49it/s]
+Processing samples:  48%|████▊     | 83/174 [01:15<01:04,  1.40it/s]
+Processing samples:  48%|████▊     | 84/174 [01:16<01:00,  1.49it/s]
+Processing samples:  49%|████▉     | 85/174 [01:18<01:24,  1.05it/s]
+Processing samples:  50%|█████     | 87/174 [01:19<01:03,  1.37it/s]
+Processing samples:  51%|█████     | 88/174 [01:19<00:57,  1.50it/s]
+Processing samples:  51%|█████     | 89/174 [01:20<01:12,  1.18it/s]
+Processing samples:  52%|█████▏    | 90/174 [01:21<00:56,  1.48it/s]
+Processing samples:  52%|█████▏    | 91/174 [01:22<01:04,  1.29it/s]
+Processing samples:  53%|█████▎    | 92/174 [01:22<00:55,  1.47it/s]
+Processing samples:  53%|█████▎    | 93/174 [01:23<01:06,  1.22it/s]
+Processing samples:  54%|█████▍    | 94/174 [01:24<00:53,  1.49it/s]
+Processing samples:  55%|█████▍    | 95/174 [01:24<00:55,  1.42it/s]
+Processing samples:  55%|█████▌    | 96/174 [01:25<00:56,  1.39it/s]
+Processing samples:  56%|█████▌    | 97/174 [01:26<01:00,  1.26it/s]
+Processing samples:  56%|█████▋    | 98/174 [01:27<00:56,  1.35it/s]
+Processing samples:  57%|█████▋    | 99/174 [01:27<00:49,  1.50it/s]
+Processing samples:  57%|█████▋    | 100/174 [01:28<00:54,  1.36it/s]
+Processing samples:  58%|█████▊    | 101/174 [01:29<01:09,  1.05it/s]
+Processing samples:  59%|█████▉    | 103/174 [01:30<00:49,  1.44it/s]
+Processing samples:  60%|█████▉    | 104/174 [01:31<00:56,  1.23it/s]
+Processing samples:  60%|██████    | 105/174 [01:32<00:58,  1.19it/s]
+Processing samples:  61%|██████▏   | 107/174 [01:33<00:43,  1.55it/s]
+Processing samples:  62%|██████▏   | 108/174 [01:34<00:53,  1.24it/s]
+Processing samples:  63%|██████▎   | 109/174 [01:35<00:50,  1.29it/s]
+Processing samples:  63%|██████▎   | 110/174 [01:35<00:39,  1.63it/s]
+Processing samples:  64%|██████▍   | 111/174 [01:36<00:37,  1.67it/s]
+Processing samples:  64%|██████▍   | 112/174 [01:37<00:53,  1.16it/s]
+Processing samples:  65%|██████▍   | 113/174 [01:38<00:46,  1.31it/s]
+Processing samples:  66%|██████▌   | 114/174 [01:38<00:35,  1.69it/s]
+Processing samples:  66%|██████▌   | 115/174 [01:39<00:40,  1.45it/s]
+Processing samples:  67%|██████▋   | 116/174 [01:40<00:50,  1.15it/s]
+Processing samples:  67%|██████▋   | 117/174 [01:41<00:44,  1.27it/s]
+Processing samples:  68%|██████▊   | 119/174 [01:42<00:33,  1.65it/s]
+Processing samples:  69%|██████▉   | 120/174 [01:43<00:45,  1.20it/s]
+Processing samples:  70%|██████▉   | 121/174 [01:44<00:40,  1.31it/s]
+Processing samples:  70%|███████   | 122/174 [01:44<00:31,  1.68it/s]
+Processing samples:  71%|███████   | 123/174 [01:44<00:27,  1.86it/s]
+Processing samples:  71%|███████▏  | 124/174 [01:46<00:43,  1.15it/s]
+Processing samples:  72%|███████▏  | 125/174 [01:47<00:39,  1.24it/s]
+Processing samples:  72%|███████▏  | 126/174 [01:47<00:29,  1.61it/s]
+Processing samples:  73%|███████▎  | 127/174 [01:47<00:24,  1.95it/s]
+Processing samples:  74%|███████▎  | 128/174 [01:49<00:43,  1.07it/s]
+Processing samples:  74%|███████▍  | 129/174 [01:49<00:34,  1.30it/s]
+Processing samples:  75%|███████▍  | 130/174 [01:50<00:29,  1.49it/s]
+Processing samples:  75%|███████▌  | 131/174 [01:50<00:22,  1.87it/s]
+Processing samples:  76%|███████▌  | 132/174 [01:52<00:38,  1.10it/s]
+Processing samples:  76%|███████▋  | 133/174 [01:52<00:32,  1.28it/s]
+Processing samples:  77%|███████▋  | 134/174 [01:53<00:25,  1.58it/s]
+Processing samples:  78%|███████▊  | 135/174 [01:53<00:21,  1.83it/s]
+Processing samples:  78%|███████▊  | 136/174 [01:55<00:33,  1.14it/s]
+Processing samples:  79%|███████▊  | 137/174 [01:55<00:28,  1.32it/s]
+Processing samples:  79%|███████▉  | 138/174 [01:56<00:23,  1.55it/s]
+Processing samples:  80%|███████▉  | 139/174 [01:56<00:19,  1.80it/s]
+Processing samples:  80%|████████  | 140/174 [01:58<00:32,  1.06it/s]
+Processing samples:  81%|████████  | 141/174 [01:58<00:23,  1.40it/s]
+Processing samples:  82%|████████▏ | 142/174 [01:58<00:20,  1.58it/s]
+Processing samples:  82%|████████▏ | 143/174 [01:59<00:19,  1.63it/s]
+Processing samples:  83%|████████▎ | 144/174 [02:01<00:29,  1.00it/s]
+Processing samples:  84%|████████▍ | 146/174 [02:01<00:17,  1.62it/s]
+Processing samples:  84%|████████▍ | 147/174 [02:02<00:17,  1.54it/s]
+Processing samples:  85%|████████▌ | 148/174 [02:04<00:25,  1.03it/s]
+Processing samples:  86%|████████▌ | 149/174 [02:04<00:19,  1.30it/s]
+Processing samples:  86%|████████▌ | 150/174 [02:04<00:16,  1.47it/s]
+Processing samples:  87%|████████▋ | 152/174 [02:07<00:18,  1.16it/s]
+Processing samples:  88%|████████▊ | 153/174 [02:07<00:14,  1.43it/s]
+Processing samples:  89%|████████▊ | 154/174 [02:07<00:12,  1.56it/s]
+Processing samples:  89%|████████▉ | 155/174 [02:08<00:11,  1.59it/s]
+Processing samples:  90%|████████▉ | 156/174 [02:10<00:17,  1.04it/s]
+Processing samples:  90%|█████████ | 157/174 [02:10<00:12,  1.37it/s]
+Processing samples:  91%|█████████ | 158/174 [02:10<00:09,  1.70it/s]
+Processing samples:  91%|█████████▏| 159/174 [02:11<00:10,  1.47it/s]
+Processing samples:  92%|█████████▏| 160/174 [02:13<00:13,  1.07it/s]
+Processing samples:  93%|█████████▎| 161/174 [02:13<00:09,  1.40it/s]
+Processing samples:  93%|█████████▎| 162/174 [02:13<00:07,  1.57it/s]
+Processing samples:  94%|█████████▎| 163/174 [02:14<00:07,  1.44it/s]
+Processing samples:  94%|█████████▍| 164/174 [02:15<00:09,  1.10it/s]
+Processing samples:  95%|█████████▍| 165/174 [02:16<00:06,  1.33it/s]
+Processing samples:  95%|█████████▌| 166/174 [02:16<00:04,  1.76it/s]
+Processing samples:  96%|█████████▌| 167/174 [02:17<00:04,  1.44it/s]
+Processing samples:  97%|█████████▋| 168/174 [02:18<00:05,  1.15it/s]
+Processing samples:  97%|█████████▋| 169/174 [02:19<00:04,  1.25it/s]
+Processing samples:  98%|█████████▊| 170/174 [02:19<00:02,  1.65it/s]
+Processing samples:  98%|█████████▊| 171/174 [02:20<00:02,  1.47it/s]
+Processing samples:  99%|█████████▉| 172/174 [02:21<00:01,  1.21it/s]
+Processing samples: 100%|██████████| 174/174 [02:21<00:00,  2.03it/s]
+Processing samples: 100%|██████████| 174/174 [02:23<00:00,  1.21it/s]
+Computed metrics successfully for 174 out of 174.
+
+Loading saved metrics from disk. 1% of total:   0%|          | 0/174 [00:00<?, ?it/s]
+Loading saved metrics from disk. 1% of total:   3%|▎         | 6/174 [00:00<00:03, 52.98it/s]
+Loading saved metrics from disk. 1% of total:   7%|▋         | 12/174 [00:00<00:03, 52.84it/s]
+Loading saved metrics from disk. 1% of total:  10%|█         | 18/174 [00:00<00:02, 53.23it/s]
+Loading saved metrics from disk. 1% of total:  14%|█▍        | 24/174 [00:00<00:02, 50.87it/s]
+Loading saved metrics from disk. 1% of total:  17%|█▋        | 30/174 [00:00<00:02, 50.68it/s]
+Loading saved metrics from disk. 1% of total:  21%|██        | 36/174 [00:00<00:02, 51.58it/s]
+Loading saved metrics from disk. 1% of total:  24%|██▍       | 42/174 [00:00<00:02, 52.14it/s]
+Loading saved metrics from disk. 1% of total:  28%|██▊       | 48/174 [00:00<00:02, 52.36it/s]
+Loading saved metrics from disk. 1% of total:  31%|███       | 54/174 [00:01<00:02, 52.25it/s]
+Loading saved metrics from disk. 1% of total:  34%|███▍      | 60/174 [00:01<00:02, 52.69it/s]
+Loading saved metrics from disk. 1% of total:  38%|███▊      | 66/174 [00:01<00:02, 52.86it/s]
+Loading saved metrics from disk. 1% of total:  41%|████▏     | 72/174 [00:01<00:01, 53.21it/s]
+Loading saved metrics from disk. 1% of total:  45%|████▍     | 78/174 [00:01<00:01, 53.32it/s]
+Loading saved metrics from disk. 1% of total:  48%|████▊     | 84/174 [00:01<00:01, 53.02it/s]
+Loading saved metrics from disk. 1% of total:  52%|█████▏    | 90/174 [00:01<00:01, 53.17it/s]
+Loading saved metrics from disk. 1% of total:  55%|█████▌    | 96/174 [00:01<00:01, 53.30it/s]
+Loading saved metrics from disk. 1% of total:  59%|█████▊    | 102/174 [00:01<00:01, 52.90it/s]
+Loading saved metrics from disk. 1% of total:  62%|██████▏   | 108/174 [00:02<00:01, 52.91it/s]
+Loading saved metrics from disk. 1% of total:  66%|██████▌   | 114/174 [00:02<00:01, 52.62it/s]
+Loading saved metrics from disk. 1% of total:  69%|██████▉   | 120/174 [00:02<00:01, 52.59it/s]
+Loading saved metrics from disk. 1% of total:  72%|███████▏  | 126/174 [00:02<00:00, 52.93it/s]
+Loading saved metrics from disk. 1% of total:  76%|███████▌  | 132/174 [00:02<00:00, 52.79it/s]
+Loading saved metrics from disk. 1% of total:  79%|███████▉  | 138/174 [00:02<00:00, 53.06it/s]
+Loading saved metrics from disk. 1% of total:  83%|████████▎ | 144/174 [00:02<00:00, 52.98it/s]
+Loading saved metrics from disk. 1% of total:  86%|████████▌ | 150/174 [00:02<00:00, 53.00it/s]
+Loading saved metrics from disk. 1% of total:  90%|████████▉ | 156/174 [00:02<00:00, 52.99it/s]
+Loading saved metrics from disk. 1% of total:  93%|█████████▎| 162/174 [00:03<00:00, 52.98it/s]
+Loading saved metrics from disk. 1% of total:  97%|█████████▋| 168/174 [00:03<00:00, 53.03it/s]
+Loading saved metrics from disk. 1% of total: 100%|██████████| 174/174 [00:03<00:00, 52.66it/s]
+Loading saved metrics from disk. 1% of total: 100%|██████████| 174/174 [00:03<00:00, 52.69it/s]
+Number of targets: 174. Number of designs: 174.
+**************************************************
+Pipeline step 1 of 3: design
+✓ Step design completed successfully in 5945.7s
+**************************************************
+Pipeline step 2 of 3: folding
+✓ Step folding completed successfully in 9115.7s
+**************************************************
+Pipeline step 3 of 3: analysis
+✓ Step analysis completed successfully in 158.6s
+174 sequences to score, inputs in /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/inputs
+    group  rank_sum  true_rank_sum  predicted_rank_sum  design_iiptm  interaction_pae
+     real      43.0           53.0                 NaN       0.78383          8.95335
+candidate      79.0            NaN                 NaN       0.71015          9.53163
+     real      82.0           60.0                 NaN       0.79202          8.77470
+candidate      84.0            NaN                 NaN       0.63849         10.24489
+     real      88.0           54.0                 NaN       0.79512          8.83601
+     real      97.0           59.0                 NaN       0.76914          8.84731
+candidate     117.0            NaN                 NaN       0.68279         10.57038
+candidate     154.0            NaN                 NaN       0.70851          9.22143
+candidate     154.0            NaN                 NaN       0.60330         11.11494
+candidate     177.0            NaN                 NaN       0.63882         10.92770
+candidate     185.0            NaN                 NaN       0.60652         11.22748
+candidate     186.0            NaN                 NaN       0.64653          9.88107
+candidate     194.0            NaN                 NaN       0.61909         10.82956
+candidate     195.0            NaN                 NaN       0.65785         10.11442
+candidate     196.0            NaN                 NaN       0.59653         10.47296
+candidate     200.0            NaN                 NaN       0.69875         10.42503
+candidate     208.0            NaN                 NaN       0.64421         10.29648
+candidate     208.0            NaN                 NaN       0.62314         11.24626
+candidate     214.0            NaN                 NaN       0.61768         10.44688
+candidate     217.0            NaN                 NaN       0.61812         10.57632
+candidate     223.0            NaN                 NaN       0.62133         11.55937
+candidate     228.0            NaN                 NaN       0.64088         10.82004
+candidate     230.0            NaN                 NaN       0.62193         11.61227
+candidate     231.0            NaN                 NaN       0.61450         10.68159
+candidate     234.0            NaN                 NaN       0.66025         10.91264
+candidate     236.0            NaN                 NaN       0.58795         11.02338
+candidate     237.0            NaN                 NaN       0.62906         11.08467
+candidate     244.0            NaN                 NaN       0.64078         11.55998
+candidate     254.0            NaN                 NaN       0.57645         11.20908
+candidate     260.0            NaN                 NaN       0.64576         11.25486
+candidate     264.0            NaN                 NaN       0.61913         11.30493
+candidate     267.0            NaN                 NaN       0.56558         11.43447
+candidate     280.0            NaN                 NaN       0.60376         10.81375
+candidate     289.0            NaN                 NaN       0.61033         11.19049
+candidate     299.0            NaN                 NaN       0.57482         11.66571
+candidate     302.0            NaN                 NaN       0.56548         11.28367
+candidate     303.0            NaN                 NaN       0.61265         11.35991
+candidate     306.0            NaN                 NaN       0.59596         11.75379
+candidate     306.0            NaN                 NaN       0.59201         11.26448
+candidate     307.0            NaN                 NaN       0.55327         11.33419
+candidate     309.0            NaN                 NaN       0.58088         12.14679
+candidate     312.0            NaN                 NaN       0.61562         11.85245
+candidate     314.0            NaN                 NaN       0.56341         11.21915
+candidate     315.0            NaN                 NaN       0.56427         11.64309
+candidate     325.0            NaN                 NaN       0.59896         11.87303
+candidate     326.0            NaN                 NaN       0.57738         11.42373
+candidate     336.0            NaN                 NaN       0.59101         11.49568
+candidate     337.0            NaN                 NaN       0.62086         11.50518
+candidate     341.0            NaN                 NaN       0.57109         11.21646
+candidate     342.0            NaN                 NaN       0.59275         12.67921
+candidate     343.0            NaN                 NaN       0.60438         11.89722
+candidate     344.0            NaN                 NaN       0.56113         11.52961
+candidate     349.0            NaN                 NaN       0.56988         11.91156
+candidate     349.0            NaN                 NaN       0.60432         11.53563
+candidate     353.0            NaN                 NaN       0.58244         11.32817
+candidate     353.0            NaN                 NaN       0.53890         11.71589
+candidate     354.0            NaN                 NaN       0.53950         11.88075
+candidate     360.0            NaN                 NaN       0.62434         11.61911
+candidate     360.0            NaN                 NaN       0.57727         12.40914
+candidate     363.0            NaN                 NaN       0.60973         12.25430
+candidate     366.0            NaN                 NaN       0.63125         12.24811
+candidate     373.0            NaN                 NaN       0.57404         12.00147
+candidate     378.0            NaN                 NaN       0.60647         12.30055
+candidate     380.0            NaN                 NaN       0.55591         11.81262
+candidate     382.0            NaN                 NaN       0.61307         11.82593
+candidate     383.0            NaN                 NaN       0.60148         12.53049
+candidate     395.0            NaN                 NaN       0.63111         12.06276
+candidate     395.0            NaN                 NaN       0.57597         12.70449
+candidate     404.0            NaN                 NaN       0.57324         12.25541
+candidate     408.0            NaN                 NaN       0.54893         12.52725
+candidate     410.0            NaN                 NaN       0.54529         12.53196
+candidate     414.0            NaN                 NaN       0.54667         12.41860
+candidate     415.0            NaN                 NaN       0.57017         12.09636
+candidate     436.0            NaN                 NaN       0.57189         13.02631
+candidate     449.0            NaN                 NaN       0.60842         12.36730
+candidate     450.0            NaN                 NaN       0.54737         12.35809
+candidate     453.0            NaN                 NaN       0.52934         13.03992
+candidate     461.0            NaN                 NaN       0.57465         11.91819
+candidate     461.0            NaN                 NaN       0.59926         12.53178
+candidate     465.0            NaN                 NaN       0.53066         13.05100
+candidate     478.0            NaN                 NaN       0.56280         12.58818
+candidate     491.0            NaN                 NaN       0.54307         12.89545
+candidate     495.0            NaN                 NaN       0.58246         12.65867
+candidate     503.0            NaN                 NaN       0.58849         12.72896
+candidate     504.0            NaN                 NaN       0.58410         12.73476
+candidate     507.0            NaN                 NaN       0.51999         12.71185
+candidate     516.0            NaN                 NaN       0.51126         13.38661
+candidate     520.0            NaN                 NaN       0.51273         13.03695
+candidate     529.0            NaN                 NaN       0.53925         12.97147
+candidate     535.0            NaN                 NaN       0.51424         12.86847
+candidate     535.0            NaN                 NaN       0.46227         14.00498
+candidate     541.0            NaN                 NaN       0.54698         14.11813
+candidate     550.0            NaN                 NaN       0.53643         13.63400
+candidate     553.0            NaN                 NaN       0.53827         13.08816
+candidate     554.0            NaN                 NaN       0.50181         13.72397
+candidate     567.0            NaN                 NaN       0.53292         14.02512
+candidate     578.0            NaN                 NaN       0.48270         14.76394
+candidate     578.0            NaN                 NaN       0.53563         12.59076
+candidate     581.0            NaN                 NaN       0.54208         14.12173
+candidate     584.0            NaN                 NaN       0.51833         13.11446
+candidate     589.0            NaN                 NaN       0.50741         12.92397
+candidate     590.0            NaN                 NaN       0.47003         14.28816
+candidate     591.0            NaN                 NaN       0.54532         14.66392
+candidate     592.0            NaN                 NaN       0.53591         13.95995
+candidate     592.0            NaN                 NaN       0.46730         15.08596
+candidate     609.0            NaN                 NaN       0.44641         16.17109
+candidate     616.0            NaN                 NaN       0.52304         13.76519
+candidate     632.0            NaN                 NaN       0.52004         13.72860
+candidate     643.0            NaN                 NaN       0.53828         13.97520
+candidate     658.0            NaN                 NaN       0.49234         13.65424
+candidate     661.0            NaN                 NaN       0.44680         14.43319
+candidate     667.0            NaN                 NaN       0.31657         19.23946
+candidate     673.0            NaN                 NaN       0.38118         17.27657
+candidate     678.0            NaN                 NaN       0.39407         16.62293
+candidate     680.0            NaN                 NaN       0.36000         17.88233
+candidate     680.0            NaN                 NaN       0.41611         17.44716
+candidate     688.0            NaN                 NaN       0.40548         17.83306
+candidate     690.0            NaN                 NaN       0.28924         20.05363
+candidate     698.0            NaN                 NaN       0.39203         17.88614
+candidate     702.0            NaN                 NaN       0.28617         19.31854
+candidate     745.0            NaN                 NaN       0.31863         18.74474
+candidate     750.0            NaN                 NaN       0.18942         21.93543
+candidate     757.0            NaN                 NaN       0.17577         22.88993
+candidate     771.0            NaN                 NaN       0.36012         18.37079
+candidate     785.0            NaN                 NaN       0.32980         18.31592
+candidate     787.0            NaN                 NaN       0.19868         22.97612
+candidate     804.0            NaN                 NaN       0.25089         21.64782
+candidate     805.0            NaN                 NaN       0.18374         22.83195
+candidate     808.0            NaN                 NaN       0.24439         20.04442
+candidate     823.0            NaN                 NaN       0.25865         20.60868
+candidate     826.0            NaN                 NaN       0.24888         20.90278
+candidate     829.0            NaN                 NaN       0.23020         20.86111
+candidate     831.0            NaN                 NaN       0.28676         19.09733
+candidate     843.0            NaN                 NaN       0.21996         21.41253
+candidate     844.0            NaN                 NaN       0.22423         20.74149
+candidate     847.0            NaN                 NaN       0.13067         24.28958
+candidate     849.0            NaN                 NaN       0.26158         21.87096
+candidate     850.0            NaN                 NaN       0.16430         22.97711
+candidate     853.0            NaN                 NaN       0.30030         20.34575
+candidate     863.0            NaN                 NaN       0.22108         20.84178
+candidate     863.0            NaN                 NaN       0.19774         22.69174
+candidate     865.0            NaN                 NaN       0.23713         21.94483
+candidate     865.0            NaN                 NaN       0.23894         20.94468
+candidate     870.0            NaN                 NaN       0.20898         20.95070
+candidate     874.0            NaN                 NaN       0.21189         22.28751
+candidate     874.0            NaN                 NaN       0.22307         21.70391
+candidate     874.0            NaN                 NaN       0.16312         22.65788
+candidate     900.0            NaN                 NaN       0.17051         23.70965
+candidate     903.0            NaN                 NaN       0.20534         22.82561
+candidate     907.0            NaN                 NaN       0.15792         24.08188
+candidate     914.0            NaN                 NaN       0.20648         22.45592
+candidate     918.0            NaN                 NaN       0.19985         22.13971
+candidate     920.0            NaN                 NaN       0.20651         21.89220
+candidate     924.0            NaN                 NaN       0.16980         22.94719
+candidate     924.0            NaN                 NaN       0.15282         23.69815
+candidate     930.0            NaN                 NaN       0.18784         22.32864
+candidate     937.0            NaN                 NaN       0.17363         23.41759
+candidate     944.0            NaN                 NaN       0.15024         24.25478
+candidate     944.0            NaN                 NaN       0.14779         24.02327
+candidate     945.0            NaN                 NaN       0.17246         23.25002
+candidate     953.0            NaN                 NaN       0.13247         24.85144
+candidate     958.0            NaN                 NaN       0.13796         24.56475
+candidate     961.0            NaN                 NaN       0.15225         23.48027
+candidate     965.0            NaN                 NaN       0.13752         24.28937
+candidate     972.0            NaN                 NaN       0.18973         23.49190
+candidate     976.0            NaN                 NaN       0.14121         23.99846
+candidate     977.0            NaN                 NaN       0.13948         24.30343
+candidate     979.0            NaN                 NaN       0.14632         23.35138
+candidate     992.0            NaN                 NaN       0.14129         23.75549
+candidate    1006.0            NaN                 NaN       0.13240         24.12427
+candidate    1010.0            NaN                 NaN       0.12911         25.19765
+candidate    1012.0            NaN                 NaN       0.13820         24.63742
+candidate    1014.0            NaN                 NaN       0.13914         24.78700
+candidate    1021.0            NaN                 NaN       0.14262         24.03728
+
+174 sequences in 254.8 min (1.5 min/sequence)
+calibration: Spearman 0.40 against the validators' own ranking of these sequences
+saved to /kaggle/temp/Nova/data/boltzgen/wide4arms_26345/scores.csv
