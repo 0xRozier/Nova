@@ -160,6 +160,34 @@ morts enlevés :
 - la **source de la BoltzGen des validateurs**, 219 ko que plus rien ne
   référence depuis que ce carnet installe la 0.3.2 originale depuis PyPI.
 
+### Le lot courant (18 novembre) : 1000 designs, sans le repliement
+
+`notebooks/kaggle_design.ipynb`, `RUN = "design_1k_26345"`, **1000 designs**,
+`STEPS = ['design', 'inverse_folding']`, 576 ko.
+
+**Ce qui rend mille designs possibles** : nous notons avec la build des
+validateurs, donc le repliement et l'analyse de BoltzGen sont du coût pur.
+Mesuré sur les runs à 120 designs — `design` 2096 s et `inverse_folding` 67 s
+contre `folding` **5466 s** : les trois quarts du GPU produisaient des
+métriques que nous jetions ensuite. `--steps design inverse_folding` les
+supprime, et 1000 designs tiennent alors en ~5 h au lieu de ~21 h.
+
+**Le piège que ce changement ouvre, et le filet.** Sans l'étape de filtrage,
+BoltzGen n'écrit **aucun CSV** : les séquences ne vivent que dans les
+structures. Le carnet mourait sur « aucun CSV de resultats » après cinq heures
+de GPU. Il extrait désormais les séquences des structures lui-même (PDB et
+mmCIF, sur les CA), avec deux discriminants pour la bonne chaîne : la chaîne
+`B` que notre spécification nomme, sinon celle qui **varie** d'un fichier à
+l'autre — la cible étant identique dans tous. « La plus courte » aurait pris la
+cible, qui fait 115 résidus quand nos nanobodies en font 123-125. L'extracteur
+a été exercé sur de vraies structures locales avant d'être livré.
+
+Et la vérification habituelle avant toute lecture de scores :
+
+```sh
+python -m scripts.verify_designs --file results/designs_design_1k_26345.csv
+```
+
 ### Étape 2 — vérifier, sur CPU, avant de dépenser du GPU de notation
 
 ```sh

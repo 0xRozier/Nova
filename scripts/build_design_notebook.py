@@ -112,7 +112,7 @@ def code(text):
 
 
 def build(spec_dir: Path, nova_dir: Path, target: str, run: str,
-          num_designs: int) -> dict:
+          num_designs: int, steps: list[str] | None = None) -> dict:
     report = json.loads((spec_dir / "report.json").read_text())
     msa_path = nova_dir / "data" / "msa_files" / f"{target}.a3m"
     msa_sha = hashlib.sha256(msa_path.read_bytes()).hexdigest()
@@ -141,6 +141,7 @@ La cellule `check` s'exécute d'abord et **lève** si la spécification est mauv
 NUM_DESIGNS = {num_designs}   # designs generes au total, puis filtres par le pipeline
 RUN = "{run}"
 PROTOCOL = "nanobody-anything"
+STEPS = {steps!r}   # None = les cinq etapes
 
 import base64, io, os, pathlib, subprocess, sys, tarfile, time
 T0 = time.time()
@@ -281,8 +282,14 @@ out_dir = WORK / "designs" / RUN
 if out_dir.exists():
     raise SystemExit(f"{out_dir} existe deja : BoltzGen REPREND les resultats au lieu "
                      f"de recalculer. Changer RUN pour un nouveau tirage.")
+# Les cinq etapes du pipeline, ou un sous-ensemble. Nous notons avec la build
+# des validateurs, donc le repliement et l'analyse de BoltzGen sont du cout pur :
+# mesure sur les runs a 120 designs, design 2096 s et inverse_folding 67 s contre
+# folding 5466 s -- trois quarts du GPU pour des metriques qu'on jette ensuite.
 configure = [bg, "configure", "design_spec.yaml", "--output", str(out_dir),
              "--protocol", PROTOCOL, "--num_designs", str(NUM_DESIGNS)]
+if STEPS:
+    configure += ["--steps", *STEPS]
 step(" ".join(configure))
 sh(configure)
 
@@ -328,7 +335,83 @@ for f in sorted(glob.glob(str(out_dir / "**" / "*.csv"), recursive=True)):
         print(f"{f}  ({len(d)} lignes, colonnes : {list(d.columns)[:10]})")
         rows.append(d.assign(_source=pathlib.Path(f).name))
 if not rows:
-    raise SystemExit("aucun CSV de resultats : inspecter l arborescence ci-dessous")
+    # Avec --steps design inverse_folding il n'y a ni analyse ni filtrage, donc
+    # aucun CSV : les sequences ne vivent que dans les structures. On les en sort.
+    # Sans ce repli le carnet mourait ici apres des heures de GPU, sur un lot bon.
+    print("aucun CSV : extraction des sequences depuis les structures")
+    AA3 = dict(ALA="A", ARG="R", ASN="N", ASP="D", CYS="C", GLN="Q", GLU="E",
+               GLY="G", HIS="H", ILE="I", LEU="L", LYS="K", MET="M", PHE="F",
+               PRO="P", SER="S", THR="T", TRP="W", TYR="Y", VAL="V")
+    def chains_of(path):
+        out, seen = dict(), set()
+        text = pathlib.Path(path).read_text(errors="ignore")
+        if path.endswith(".cif"):
+            cols, atoms, inloop = dict(), [], False
+            for line in text.splitlines():
+                if line.startswith("_atom_site."):
+                    cols[line.strip().split(".")[1]] = len(cols); inloop = True
+                elif inloop and line.startswith(("ATOM", "HETATM")):
+                    atoms.append(line.split())
+                elif inloop and line.startswith("#"):
+                    inloop = False
+            need = ("label_atom_id", "label_comp_id", "label_asym_id", "label_seq_id")
+            if not all(k in cols for k in need):
+                return out
+            top = max(cols[k] for k in need)
+            for f in atoms:
+                if len(f) <= top or f[cols["label_atom_id"]].strip(chr(34)) != "CA":
+                    continue
+                ch, rid = f[cols["label_asym_id"]], f[cols["label_seq_id"]]
+                if (ch, rid) in seen:
+                    continue
+                seen.add((ch, rid))
+                out[ch] = out.get(ch, "") + AA3.get(f[cols["label_comp_id"]].upper(), "X")
+        else:
+            for line in text.splitlines():
+                if not line.startswith("ATOM") or line[12:16].strip() != "CA":
+                    continue
+                ch, rid = line[21], line[22:27]
+                if (ch, rid) in seen:
+                    continue
+                seen.add((ch, rid))
+                out[ch] = out.get(ch, "") + AA3.get(line[17:20].strip().upper(), "X")
+        return out
+    # Choisir la bonne chaine. La cible fait 115 residus et nos nanobodies
+    # 123-125, donc "la plus courte" prendrait la CIBLE. Deux discriminants,
+    # dans l'ordre : la chaine B, que notre specification nomme pour la
+    # charpente ; sinon la chaine qui VARIE d'un fichier a l'autre, la cible
+    # etant identique dans tous.
+    per_file = []
+    for pat in ("**/intermediate_designs_inverse_folded/**/*", "**/*"):
+        for f in sorted(glob.glob(str(out_dir / pat), recursive=True)):
+            if f.endswith((".cif", ".pdb")):
+                ch = chains_of(f)
+                if ch:
+                    per_file.append((f, ch))
+        if per_file:
+            break
+    counts = dict()
+    for _, ch in per_file:
+        for seq in ch.values():
+            counts[seq] = counts.get(seq, 0) + 1
+    constant = set(seq for seq, n in counts.items()
+                   if n > 1 and n >= len(per_file) * 0.5)
+    found = []
+    for f, ch in per_file:
+        seq = ch.get("B")
+        if seq is None:
+            usable = [v for v in ch.values() if v not in constant]
+            seq = max(usable, key=len) if usable else None
+        if seq and 90 <= len(seq) <= 150 and "X" not in seq:
+            found.append(dict(designed_chain_sequence=seq,
+                              id=pathlib.Path(f).stem,
+                              _source=pathlib.Path(f).name))
+    print(f"{len(per_file)} structures lues, {len(constant)} sequence(s) constante(s) "
+          f"ecartee(s) comme cible")
+    if not found:
+        raise SystemExit("aucun CSV et aucune structure exploitable")
+    rows = [pd.DataFrame(found).drop_duplicates("designed_chain_sequence")]
+    print(f"{len(rows[0])} sequences distinctes extraites des structures")
 res = pd.concat(rows, ignore_index=True)
 dest = OUT / f"designs_{RUN}.csv"
 res.to_csv(dest, index=False)
@@ -407,6 +490,12 @@ def main():
     parser.add_argument("--target", default="Q9NZQ7")
     parser.add_argument("--run", default="design1")
     parser.add_argument("--num-designs", type=int, default=20)
+    parser.add_argument("--steps", nargs="+",
+                        choices=["design", "inverse_folding", "design_folding",
+                                 "folding", "affinity", "analysis", "filtering"],
+                        help="etapes BoltzGen ; omettre pour les cinq. "
+                             "'design inverse_folding' rend les sequences seules, "
+                             "un quart du temps GPU.")
     parser.add_argument("--nova-dir", type=Path,
                         default=REPO_ROOT.parent / "nova-upstream")
     parser.add_argument("--out", default="notebooks/kaggle_design.ipynb")
@@ -422,7 +511,8 @@ def main():
         raise SystemExit(f"structures manquantes : {missing}. Relancer "
                          f"scripts.design_nanobody avec --fold")
 
-    nb = build(args.spec, args.nova_dir, args.target, args.run, args.num_designs)
+    nb = build(args.spec, args.nova_dir, args.target, args.run,
+               args.num_designs, args.steps)
     out = REPO_ROOT / args.out
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(nb))
