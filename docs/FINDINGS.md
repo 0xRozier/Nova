@@ -4862,3 +4862,91 @@ soumissible** (§55, §56 — 120 designs sur 120 passent les portes
 déterministes), elle n'était pas réfutée mais cassée ; le bloc confiance est
 porté par la charpente (§59) ; et la profondeur de notation reste le seul
 levier qu'une mesure répétée confirme, sans suffire.
+
+## 62. Reproduire la méthode du champ : les trois dernières différences testables sont éliminées, et le GPU ne suffit pas
+
+Le §61 ayant refermé la diversité de charpentes, il restait à vérifier si la
+méthode du champ diffère encore de la nôtre sur un point mesurable. Trois
+candidats, tirés de sa propre signature dans `docs/FIELD_METHOD.md`. Tous les
+trois sont éliminés **sans GPU**.
+
+### 1. La bande d'identité V : un vrai défaut de notre côté, un petit effet
+
+Notre sélection de charpentes importait `GERMLINE_MARGIN = 2.0` de
+`propose_nanobody`. Cette marge existe pour le **greffage**, qui mute CDR1,
+CDR2 et le corps du CDR3 à ~1 point d'identité V par mutation. Une conception
+garde tout cela fixe, et la mesure sur les 120 designs du §60 le confirme :
+elle coûte **0,00 point d'identité V en médiane et 1,02 au pire**.
+
+Importer 2,0 nous interdisait donc la bande que le champ occupe. Nos
+40 charpentes étaient à V 84,69-88,78 quand les soumissions acceptées sont à
+**83,7 de médiane, 56 % à moins de deux points du plancher** — et 314 charpentes
+conformes attendaient à V 82-84 sans jamais être utilisées. Corrigé :
+`DESIGN_V_MARGIN = 1.1`, et les charpentes sont désormais tirées **près du
+plancher**, ce qui place les 40 nouvelles à V 83,67, exactement la médiane du
+champ.
+
+Mais l'effet attendu est petit, et il faut le dire avant de dépenser quoi que
+ce soit. Sur les 348 soumissions acceptées, l'iiptm médian par bande V vaut
+0,698 (82-83), **0,719** (83-84), 0,680 (84-85), 0,696 (85-86), 0,682 (≥86) :
+quasi plat. L'écart entre la bande 83-84 et la bande 85-86 est de **+0,023**,
+contre **0,085** à combler. Le ρ intra-époque de −0,33 ordonne les candidats
+d'une époque, il ne déplace pas le niveau.
+
+### 2. La liberté sur le CDR3 : le champ est aussi contraint que nous
+
+Nous ne concevons que 9 résidus sur 14 — la tête `AR` et la queue (`FDV`/`FDY`)
+sont gelées. Et le gel **est respecté** par la 0.3.2 : tête conservée 60/60,
+queue 59 à 60/60 sur les deux runs valides (l'observation contraire du
+docstring de `scaffold_spec` venait du run cassé du §11).
+
+Libérer la queue semblait donc être le levier. Il ne l'est pas, pour deux
+raisons mesurées :
+
+- la fenêtre J couvre 14 positions, donc **un pas vaut 7,14 points**. Depuis
+  J = 100, **deux** écarts sur la queue suffisent à passer sous le plancher
+  de 86. La marge n'existe pas ;
+- surtout, les 348 soumissions acceptées du champ sont à J = **100** (43) ou
+  **92,86** (305), c'est-à-dire **zéro ou un seul écart au germinal sur 14**.
+  La queue de leur CDR3 est contrainte exactement comme la nôtre.
+
+### 3. Ce qui reste, et pourquoi le GPU ne referme pas l'écart
+
+Récapitulatif de ce qui a été éliminé comme explication des 0,085 :
+
+| différence supposée | verdict |
+|---|---|
+| bande d'identité V | **+0,023** au mieux ; iiptm du champ plat selon la bande |
+| diversité de charpentes | §61 : raccourcit la queue (borne 0,707 contre 0,798) |
+| liberté sur la queue du CDR3 | le champ est à 0-1 écart germinal, comme nous |
+| conception contre greffage | les deux plafonnent à 0,699-0,710 (§61) |
+| profondeur de notation | seul levier confirmé, et insuffisant — voir ci-dessous |
+
+Et le chiffrage de la profondeur, sur la queue du greffage mesurée au §61
+(ξ = −0,22, borne 0,798) — nombre de candidats à noter pour en espérer **un**
+au-dessus du seuil :
+
+| seuil | candidats | durée sur 2×T4 |
+|---|---|---|
+| 0,710 (notre maximum actuel) | 82 | 1,9 h |
+| 0,729 (max@256 prédit) | 248 | 5,8 h |
+| 0,750 (au-dessus du 4ᵉ rival) | 1 313 | **30,6 h** |
+| 0,769 (le rival le plus faible) | **13 384** | **312 h** |
+| 0,788 (médiane des rivaux) | 2 millions | — |
+| 0,795 (le meilleur rival) | 850 millions | — |
+
+Le budget d'une époque est de **47 candidats** sur 2×T4, et le quota Kaggle
+hebdomadaire d'environ 1 280. Battre le rival le **plus faible** de cette époque
+demanderait 13 000 candidats, soit 312 h — et la médiane du champ est hors
+d'atteinte par cette voie à **deux millions**.
+
+**Conclusion.** La profondeur de notation est réelle mais ne change que la
+deuxième décimale : elle nous mène de 0,710 à 0,729, pas à 0,769. Louer un GPU
+mesurerait donc un débit, pas une victoire. Ce qui manque n'est pas du calcul,
+c'est un générateur dont la **médiane** vaut 0,70 là où la nôtre vaut 0,61 — et
+les cinq différences de méthode que ce dépôt savait tester sont maintenant
+toutes éliminées. Ce qui reste n'est pas testable à notre échelle : le nombre de
+designs que le champ génère réellement (le CLI suggère « typiquement 10 000 »),
+les paramètres `--budget`, `--alpha`, `--metrics_override` du protocole, ou un
+autre outil de conception — ODesign, RFdiffusion, ProteinMPNN — que le guide
+amont cite et que nous n'avons jamais essayé.

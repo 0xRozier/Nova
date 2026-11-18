@@ -84,15 +84,37 @@ V_HEAD = 2
 J_TAIL_FIXED = 3  # the J segment covers the last three; J_TAIL=4 keeps a margin
 
 
-def framework_donors(target: str, allowed_v: str, n: int) -> pd.DataFrame:
-    """Archived sequences that already clear every germline gate for this epoch."""
+# Headroom a design scaffold needs above the V floor. It is NOT the grafting
+# margin: grafting mutates CDR1, CDR2 and the CDR3 body, which costs ~1 point of
+# V identity per mutation, so `propose_nanobody.GERMLINE_MARGIN` is 2.0. A design
+# holds the framework and both other CDRs fixed, and measurement on the 120
+# designs of FINDINGS 60 says it costs **0.00 points of V identity at the median
+# and 1.02 at worst** (J: 0.00 and 7.14). Importing 2.0 here therefore barred the
+# band the field actually occupies -- its accepted submissions sit at V 83.7
+# median with 56 % within two points of the floor, and intra-epoch
+# rho(V identity, design_iiptm) = -0.25, so less germline binds better
+# (docs/FIELD_METHOD.md). Our 40 scaffolds sat at 84.7-88.8, above all of it,
+# while 314 compliant frameworks were available at V 82-84 and never used.
+DESIGN_V_MARGIN = 1.1
+
+
+def framework_donors(target: str, allowed_v: str, n: int,
+                     v_margin: float = DESIGN_V_MARGIN,
+                     prefer_low_v: bool = True) -> pd.DataFrame:
+    """Archived sequences that already clear every germline gate for this epoch.
+
+    `prefer_low_v` orders the candidates by V identity ascending instead of by
+    archive rank, to sit where the field sits. Ranking by `true_rank_sum` picked
+    the archive's best-scoring entries, which are its most germline ones.
+    """
     df = pd.read_parquet(DATA_DIR / "dataset" / f"{target}_nanobodies.parquet")
-    from scripts.propose_nanobody import GERMLINE_MARGIN, rank_sum
+    from scripts.propose_nanobody import rank_sum
     df["true_rank_sum"] = rank_sum(df)
-    ok = df[(df["v_identity"] >= MIN_HUMAN_V_IDENTITY + GERMLINE_MARGIN)
+    ok = df[(df["v_identity"] >= MIN_HUMAN_V_IDENTITY + v_margin)
             & (df["j_identity"] >= MIN_HUMAN_J_IDENTITY)
             & df["v_genes"].str.split(",").apply(lambda g: allowed_v in g)]
-    ok = ok.nsmallest(n * 40, "true_rank_sum")
+    ok = (ok.nsmallest(n * 40, "v_identity") if prefer_low_v
+          else ok.nsmallest(n * 40, "true_rank_sum"))
     # The best-ranked archive entries are near-duplicates of each other, so
     # take one per distinct framework: four scaffolds that share a framework
     # explore one neighbourhood four times.
@@ -106,10 +128,11 @@ def framework_donors(target: str, allowed_v: str, n: int) -> pd.DataFrame:
         if signature in seen:
             continue
         seen.add(signature)
-        keep.append(row.sequence)
+        keep.append({"sequence": row.sequence, "v_identity": row.v_identity,
+                     "j_identity": row.j_identity})
         if len(keep) >= n:
             break
-    return pd.DataFrame({"sequence": keep})
+    return pd.DataFrame(keep, columns=["sequence", "v_identity", "j_identity"])
 
 
 def scaffold_spec(sequence: str, cdr3_length: int, structure_path: str,
@@ -369,6 +392,13 @@ def main():
     parser.add_argument("--cdr3", type=int, help="skip the chain and use this length")
     parser.add_argument("--target", default=NANOBODY_TARGET[0])
     parser.add_argument("--frameworks", type=int, default=4)
+    parser.add_argument("--v-margin", type=float, default=DESIGN_V_MARGIN,
+                        help="headroom above the V floor for scaffolds; the "
+                             "graft's 2.0 does not apply to a design")
+    parser.add_argument("--prefer-low-v", action=argparse.BooleanOptionalAction,
+                        default=True,
+                        help="draw scaffolds near the V floor, where the field "
+                             "sits and where binding correlates better")
     parser.add_argument("--cdrs", type=int, choices=(1, 3), default=3,
                         help="design all three CDRs (3, the default) or the "
                              "CDR3 alone (1, measured at design_iiptm 0.214)")
@@ -387,7 +417,8 @@ def main():
         allowed_v, cdr3_length = params["allowed_v"], params["allowed_cdr3_length"]
         print(f"epoch {params['epoch']}: V {allowed_v}, CDR3 {cdr3_length}")
 
-    donors = framework_donors(args.target, allowed_v, args.frameworks)
+    donors = framework_donors(args.target, allowed_v, args.frameworks,
+                              args.v_margin, args.prefer_low_v)
     if donors.empty:
         raise SystemExit(f"no compliant framework calls {allowed_v}")
     print(f"{len(donors)} compliant VHH frameworks for {allowed_v}")
