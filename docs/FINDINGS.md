@@ -4950,3 +4950,63 @@ designs que le champ génère réellement (le CLI suggère « typiquement 10 000
 les paramètres `--budget`, `--alpha`, `--metrics_override` du protocole, ou un
 autre outil de conception — ODesign, RFdiffusion, ProteinMPNN — que le guide
 amont cite et que nous n'avons jamais essayé.
+
+## 63. Mille designs : le repliement de BoltzGen était du coût pur, et l'échantillonnage couvre la liste
+
+Run `design_1k_26345` : **1000 designs** demandés sur la spécification à
+40 charpentes, avec `--steps design inverse_folding`. Preuves :
+`results/designs_design_1k_26345.csv`,
+`results/design_design_1k_26345.log`.
+
+### Ce que supprimer le repliement a rendu possible
+
+| étape | 120 designs | 1000 designs |
+|---|---|---|
+| `design` | 2096 s | **19 347 s** (5,4 h) |
+| `inverse_folding` | 67 s | 426 s |
+| `folding` | 5466 s | **supprimée** |
+| `analysis` + `filtering` | 103 s | supprimées |
+
+Le temps de conception est bien linéaire (50 lots contre 6). Et les trois
+étapes supprimées produisaient des métriques que nous jetions, puisque la
+comparaison au champ exige la build des **validateurs** (§56). Mille designs
+coûtent donc 5,5 h au lieu des ~21 h qu'aurait demandées le pipeline complet.
+
+Le repli d'extraction a servi : sans filtrage BoltzGen n'écrit aucun CSV, et
+les 992 séquences ont été sorties des structures.
+
+### L'échantillonnage couvre la liste quand on demande assez de designs
+
+Le §60 avait constaté que `--num_designs 120` n'utilisait que **9** des
+40 charpentes. À 1000 designs :
+
+| | charpentes utilisées | designs par charpente |
+|---|---|---|
+| 120 demandés | 9 / 40 | 20 à 47 |
+| **1000 demandés** | **36 / 40** | **10 à 56** |
+
+`--num_designs` échantillonne donc bien la liste, et le défaut du §60 n'était
+pas structurel : il venait d'un budget trop petit pour couvrir 40 entrées. La
+diversité de charpentes que j'avais essayé d'obtenir en élargissant la
+spécification s'obtient en demandant plus de designs.
+
+Et **992 designs sur 992 passent nos portes déterministes** — bon gène V, CDR3
+de longueur 14, planchers germinaux, marqueurs VHH, médiane de 2 cystéines,
+aucun à zéro. Mille séquences soumissibles pour 5,5 h de GPU gratuit.
+
+### Ce que cela ne dit pas encore
+
+Ces designs n'ont **aucune métrique de liaison** : nous avons supprimé l'étape
+qui les produit. Les noter toutes coûterait 23 h sur 2×T4. Le lot
+`k1_sample_26345` en prend un **échantillon stratifié** — 5 par charpente sur
+36, soit 180 designs, plus les 4 rivaux réels comme ancrages, 184 séquences et
+~4,3 h. Il répond à deux questions d'un coup :
+
+1. **la queue s'allonge-t-elle avec mille tirages ?** Le §61 l'avait mesurée
+   bornée à 0,707 sur 120 designs issus de 9 charpentes. Un échantillon de 180
+   sur 36 charpentes permet d'ajuster la queue et d'extrapoler le maximum sur
+   les 992 ;
+2. **quelles charpentes portent ?** Cinq designs par charpente donnent un
+   signal par charpente — de quoi diriger un second run concentré, ce que le
+   §59 interdisait de faire sur la seule médiane mais qu'une mesure par
+   charpente autorise.
