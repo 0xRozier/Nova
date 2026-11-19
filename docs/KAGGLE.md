@@ -314,3 +314,47 @@ Rien sur la qualité des candidats. Deux choses seulement :
 
 Donc : ce run d'abord, la carte ensuite, et le `--live` seulement si les deux
 disent oui.
+
+
+## Le carnet ODesign (19 novembre) — prêt, en attente de quota
+
+`notebooks/kaggle_odesign.ipynb`, `RUN = "odesign_cdr3_8aok"`, **112 ko**,
+40 échantillons × 2 graines.
+
+**La question qu'il tranche, et aucun autre run ne le peut.** Le §64 a mesuré le
+plafond de la conception BoltzGen à **0,698**, inchangé par l'échelle (huit fois
+plus de designs, quatre fois plus de charpentes, même borne au centième). Reste
+à savoir si 0,698 est le plafond de **BoltzGen** ou celui de la **contrainte** —
+une charpente VHH figée avec une vingtaine de résidus libres. ODesign est un
+autre modèle, d'un autre laboratoire, et son mode `partial_diff` fait exactement
+ce que fait notre spécification BoltzGen.
+
+**Ce qu'il utilise et que rien d'autre n'a utilisé** : `8AOK.cif` est un
+*complexe* (§66) — chaîne A la cible, chaîne B un VHH cristallographique lié à
+elle, CDR3 en `B/98-117`. La pose est donc **mesurée** là où BoltzGen devait
+l'inventer, et l'épitope est vérifié (21 résidus, tous à moins de 5 Å de la
+chaîne B, 91 % de l'interface réelle).
+
+### Ce qui a été levé pour que ce carnet existe
+
+| obstacle | résolution |
+|---|---|
+| `components.v20240608.cif` + pickle rdkit sur un **dossier** Google Drive | Protenix les publie en HTTP direct : 408 Mo et 120 Mo, vérifiés par requête de plage, le CIF commence bien par `data_000 / _chem_comp.id` |
+| `torch_scatter` / `torch_cluster` à compiler | roues préconstruites `pt23cu121` en cp312 sur `data.pyg.org`, donc venv en Python 3.12 et zéro compilation |
+| trois poids aux noms lus verbatim par le code | `odesign_base_prot_rigid.pt` (4,32 Go), `oinvfold_protein.ckpt`, `v_48_020.pt` de ProteinMPNN |
+| ODesign n'écrit pas de CSV | le même extracteur que le carnet BoltzGen, exercé sur `8AOK.cif` : il rend bien la chaîne B à 127 résidus et ne peut pas prendre la cible par erreur |
+
+### Et la condition pour le lancer
+
+**Ce qui en sort n'est pas soumissible tel quel** : la charpente de la chaîne B
+est à V 78,6 et J 85,7, sous les planchers du validateur. Le produit utile est
+la boucle, à greffer ensuite sur une charpente conforme.
+
+Or c'est précisément ce que le lot `xtal_26301` mesure, sur le CDR3 naturel du
+même complexe. **Ne lancer ce carnet que si `xtal_26301` dit que la greffe
+conserve la liaison** : sinon ODesign produirait de belles boucles inutilisables,
+et le §50 (« la liaison ne voyage pas avec le motif ») deviendrait une loi de ce
+problème.
+
+Deux inconnues restent, et elles ne se lèvent qu'en lançant : la mémoire d'un
+modèle de type AF3 sur 242 résidus sur un T4 de 16 Go, et la durée.
