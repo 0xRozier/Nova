@@ -5139,3 +5139,66 @@ ne peut pas le récupérer de façon fiable, et le code refuse de démarrer sans
 C'est pourquoi ce test n'est pas lancé ici : la demande portait sur le *de
 novo*, qui est fermé, et le mode qui reste suppose de résoudre d'abord un
 blocage d'approvisionnement que rien dans ce dépôt ne contrôle.
+
+## 66. 8AOK est un complexe nanobody–antigène, et nous n'avions jamais regardé la chaîne B
+
+En creusant les points de méthode avant de monter ODesign, un fait resté invisible
+depuis le début du projet : `data/structures/8AOK.cif`, que nous passons depuis
+toujours comme « la cible », porte **deux** chaînes.
+
+| chaîne | résidus | ce que c'est |
+|---|---|---|
+| A | 116 | la cible — PD-L1 (Q9NZQ7). Non numérotable IMGT, pas un anticorps |
+| **B** | **127** | **un VHH cristallographique lié à elle** : numérotable IMGT, marqueurs VHH présents, V 78,6, J 85,7, CDR3 `AAEGTLYGSGGRTHQSAYDY` de longueur **20** |
+
+Nous n'avons jamais utilisé que la chaîne A, en laissant BoltzGen inventer la
+pose du nanobody — alors que le complexe de référence était dans le dépôt.
+
+### Premier acquis : notre site de liaison est le bon
+
+Contacts calculés sur les coordonnées, résidus de la chaîne A à 5 Å ou moins du
+nanobody : **23 résidus**. Notre `BINDING_SITE`, repris de la configuration des
+validateurs, en compte 21.
+
+| | |
+|---|---|
+| de notre site, dans le vrai épitope | **21 / 21 = 100 %** |
+| du vrai épitope, dans notre site | 21 / 23 = **91 %** (manquent 93 et 103) |
+
+Les validateurs ont donc dérivé leur site du complexe lui-même, et notre
+spécification désigne le bon épitope. Un point de méthode vérifié plutôt que
+supposé — il restait possible que nous concevions depuis des mois contre la
+mauvaise face de la protéine.
+
+### Deuxième acquis : un CDR3 validé par cristallographie, et jamais soumis
+
+Le CDR3 de la chaîne B lie la cible — c'est la structure qui le prouve. Et il
+est **absent de notre vivier** : 0 occurrence sur les 474 CDR3 de longueur 20
+que porte l'archive, le plus proche à **45 %** d'identité seulement.
+
+Deux conséquences pour les portes du validateur :
+
+- l'unicité globale du Layer 1 porte sur les séquences **déjà soumises**. Celle-ci
+  vient d'une structure du PDB, pas de l'archive du concours : une greffe de ce
+  CDR3 sur une charpente conforme est donc une séquence neuve ;
+- la diversité (Jaccard k-mer < 0,9 contre le top 50, §54) est très loin de
+  mordre à 45 % d'identité au plus proche.
+
+L'époque **26301** impose justement une longueur de CDR3 de 20. Greffé sur les
+charpentes conformes `IGHV3-11` disponibles à cette époque, ce CDR3 donne
+**25 candidats qui passent toutes nos portes déterministes** (31 refusés sur
+57 charpentes essayées), à V 84,7-92,9 et J 92,9.
+
+### Ce que cela teste, et contre quoi
+
+Le §50 avait conclu que « la liaison ne voyage pas avec le motif », sur des
+donneurs d'archive déplacés d'une charpente à l'autre. Ici le motif vient du
+**complexe cristallographique de la cible** : c'est la meilleure provenance
+possible, et le test le plus favorable que cette hypothèse puisse recevoir. Si
+la liaison ne voyage pas même dans ce cas, le §50 devient une loi de ce
+problème plutôt qu'une observation.
+
+Lot `xtal_26301` : **39 séquences, ~0,9 h** — 25 greffes du CDR3
+cristallographique, 10 greffes ordinaires de la même époque comme témoin, et
+les 4 meilleures soumissions réelles de 26301 comme ancrages. Le champ y lit
+0,703 de médiane et 0,739 au mieux.
