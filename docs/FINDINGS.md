@@ -5076,3 +5076,66 @@ Le greffage garde la seule queue qui dépasse le niveau du champ, et le §62 en 
 chiffré le prix. La conception, elle, est désormais bornée **sous** le rival le
 plus faible : elle produit des séquences soumissibles en masse (992 sur 992) et
 équilibrées sur les métriques d'interaction, mais elle ne franchira pas 0,70.
+
+## 65. ODesign en *de novo* ne peut pas produire une soumission, et le mode qui pourrait est un autre test
+
+### Pourquoi le *de novo* est fermé, par nature et non par rendement
+
+Le validateur applique, **avant** toute notation, un filtre de nativité
+(`metanano/validators/nativeness_validator.py`) qui exige que la séquence soit
+numérotable en IMGT par `abnumber`, puis une nativité VHH ≥ 0,80 et une
+humanité ≥ 0,75 par IgBLAST. Un binder conçu *de novo* n'est pas un anticorps :
+il n'a ni gène V, ni gène J, ni architecture FR/CDR.
+
+Démonstration sur une protéine réelle de la bonne taille — la chaîne A de 8AOK
+elle-même, 116 résidus, dans la fenêtre 90-150 du validateur :
+
+| | résultat |
+|---|---|
+| numérotation IMGT | **échec** |
+| identité germinale V / J | **aucune** (pas de domaine à aligner) |
+| nos portes déterministes | 3 refus, dont « ANARCI did not return exactly one heavy-chain domain » |
+
+Ce n'est donc pas une question de taux de réussite qu'on pourrait compenser en
+générant beaucoup : un repliement quelconque est rejeté **avant** d'être noté.
+ODesign en *de novo* produirait des binders potentiellement excellents et
+intégralement inéligibles.
+
+### Le mode d'ODesign qui pourrait servir
+
+Ses exemples montrent un `motif_scaffolding` dont la syntaxe mélange segments
+repris d'une structure de référence et longueurs conçues :
+
+```
+"sequence": "1-80,A/1-11,25-35,B/1-11,15-25,C/1-11,20-30,D/1-10,1-80"
+```
+
+Appliqué à nous : garder les segments de charpente d'un VHH conforme et ne
+laisser conçu que le CDR3. C'est la **même classe de contrainte** que notre
+spécification BoltzGen — et c'est précisément ce qui en fait un test
+intéressant, parce qu'il discrimine deux hypothèses que le §64 ne sépare pas :
+
+- le plafond de **0,698** est celui de **BoltzGen** ; un autre modèle sous la
+  même contrainte ferait mieux ;
+- ou il est celui de la **contrainte** elle-même — une charpente VHH figée avec
+  9 à 14 résidus libres ne permet pas de dépasser 0,70, quel que soit le modèle.
+
+Aucune mesure de ce dépôt ne tranche entre les deux, et c'est la dernière
+question ouverte qui ne soit pas une question de budget.
+
+### Ce que monter ce test coûterait, mesuré
+
+| élément | état |
+|---|---|
+| poids `odesign_base_prot_rigid` ou `_flex` | **4,32 Go** chacun, sur Hugging Face — accessible |
+| `oinvfold_protein.ckpt` | sur Hugging Face — accessible |
+| `components.v20240608.cif` + `.rdkit_mol.pkl` | **Google Drive**, dossier sans identifiants de fichiers, taille inconnue — et `src/utils/data/ccd.py` les charge **sans condition**, donc obligatoires même pour une conception protéine seule |
+| pilotage | `inference_demo.sh` + hydra, et `conda install biotite` pour certains modes |
+
+Les poids sont du même ordre que les ~6 Go de BoltzGen, qui passent sur Kaggle.
+Le vrai risque est le dossier Google Drive : sans identifiant direct, un carnet
+ne peut pas le récupérer de façon fiable, et le code refuse de démarrer sans.
+
+C'est pourquoi ce test n'est pas lancé ici : la demande portait sur le *de
+novo*, qui est fermé, et le mode qui reste suppose de résoudre d'abord un
+blocage d'approvisionnement que rien dans ce dépôt ne contrôle.
