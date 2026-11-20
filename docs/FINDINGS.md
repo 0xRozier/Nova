@@ -5202,3 +5202,104 @@ Lot `xtal_26301` : **39 séquences, ~0,9 h** — 25 greffes du CDR3
 cristallographique, 10 greffes ordinaires de la même époque comme témoin, et
 les 4 meilleures soumissions réelles de 26301 comme ancrages. Le champ y lit
 0,703 de médiane et 0,739 au mieux.
+
+## 67. Nouvelle cible P05231, et deux règles que ce dépôt avait reconstruites de travers
+
+La cible nanobody a changé le 20 novembre : **Q9NZQ7 (PD-L1, structure 8AOK)**
+laisse la place à **P05231 (interleukine-6, structure 4O9H)**, avec
+`clip_interval [[27, 212]]`, chaîne A, `res_index 21..186` et un site de liaison
+de **8 résidus** au lieu de 21.
+
+`nova_lab/config.py` porte désormais ces constantes, et
+`scripts/boltzgen_score.py` comme `scripts/design_nanobody.py` les lisent au lieu
+de littéraux : la bascule a montré que `8AOK` était en dur dans six scripts.
+L'ancienne cible est gardée dans `PREVIOUS_NANOBODY`, puisque tout l'historique
+de mesure de ce dépôt porte sur elle.
+
+### Le site de liaison est juste, mais pas dans la numérotation qu'on croit
+
+Contacts calculés sur 4O9H : **19 résidus** de la chaîne A à 5 Å ou moins du
+Fab lié. Comparé naïvement, le site de la config n'en retrouve que **2 sur 8**.
+Au décalage **−2**, il en retrouve **8 sur 8** :
+
+| config | 24 | 77 | 80 | 82 | 131 | 184 | 185 | 186 |
+|---|---|---|---|---|---|---|---|---|
+| auteur | 22 | 75 | 78 | 80 | 129 | 182 | 183 | 184 |
+| contact réel | oui | oui | oui | oui | oui | oui | oui | oui |
+
+Les numéros de la config sont donc des `label_seq_id` de mmCIF — l'index
+canonique séquentiel, qui est précisément ce que BoltzGen lit — et non la
+numérotation auteur du cristal. La spécification peut les reprendre tels quels,
+comme pour 8AOK. **Ce contrôle est à refaire à chaque changement de cible** : il
+sépare « notre site est le bon » de « nous concevons contre la mauvaise face ».
+
+Et 4O9H n'est pas un complexe nanobody comme 8AOK : chaîne A l'IL-6, chaîne B
+une **chaîne lourde** d'anticorps conventionnel (200 résidus, V 88,8, CDR3
+`ANRAGWGMGDY` de longueur 11), chaîne C une chaîne légère. Pas de charpente VHH
+à réutiliser — mais le CDR3 de la chaîne B est un motif de liaison validé par
+cristallographie, exploitable comme le §66 l'a fait pour 8AOK, sur les époques
+imposant une longueur 11.
+
+### L'archive de la nouvelle cible est incomparablement plus riche
+
+| | Q9NZQ7 | **P05231** |
+|---|---|---|
+| séquences | 17 244 | **42 328** |
+| `design_iiptm` médian | ~0,22 | **0,648** |
+| à ≥ 0,72 | 5 064 | **17 489** |
+| à ≥ 0,80 | — | 12 247 |
+| maximum | 0,786 | **0,854** |
+
+### Mais 0 sur 700 passe nos planchers germinaux — et nos planchers sont faux
+
+Sur 700 lieurs à ≥ 0,72 tirés au hasard : **aucun** ne passe nos
+`MIN_HUMAN_V_IDENTITY = 82` et `MIN_HUMAN_J_IDENTITY = 86`. Identité V médiane
+**78,6**, identité J médiane **50,0**.
+
+Avant d'en conclure que l'archive est inutilisable, j'ai lu le filtre réel.
+`metanano/utils/igblast_nativeness.py` rejette durement sur :
+
+| seuil réel | valeur |
+|---|---|
+| identité V | **≥ 0,70** |
+| couverture V | ≥ 0,80 |
+| longueur de CDR3 | 6 à 35 |
+| identité J | **aucun seuil** |
+
+Puis un score composite ≥ 0,80. Nos 82 et 86 sont donc une **reconstruction**,
+plus stricte que la règle sur V (82 contre 70) et qui **invente** le plancher J.
+C'est la deuxième fois après le §54 — où notre porte de nouveauté appliquait une
+règle tirée du moteur de recherche et non du validateur — que ce dépôt s'interdit
+du terrain que le concours autorise. Et la preuve empirique est dans l'archive
+elle-même : 17 489 soumissions **notées** lient à ≥ 0,72 avec un J médian de 50.
+Si un plancher J à 86 existait, elles n'auraient jamais été notées.
+
+Réserve honnête : l'archive n'est pas datable, donc une partie peut précéder
+l'introduction du filtre, et le score composite ≥ 0,80 reste exigeant même avec
+V à 0,70. Nos planchers ne sont pas absurdes comme *approximation* de « passe la
+nativité » — ils ne sont simplement pas la règle.
+
+### Et la formule de nativité contient une contrainte que personne n'avait vue
+
+```
+nativité VHH = 0,25·A + 0,30·B + 0,20·C + 0,25·D     (seuil 0,80)
+C = exp(−((longueur_CDR3 − 18) / 8)²)
+```
+
+**C culmine à une longueur de CDR3 de 18** et s'effondre loin d'elle :
+
+| longueur | 6 | 8 | 10 | 11 | 14 | 18 | 20 | 23 |
+|---|---|---|---|---|---|---|---|---|
+| C | 0,105 | 0,210 | 0,368 | 0,465 | 0,779 | **1,000** | 0,939 | 0,677 |
+| reste à trouver sur A, B, D | 0,779 | 0,758 | 0,726 | 0,707 | 0,644 | 0,600 | 0,612 | 0,665 |
+
+Le maximum de A + B + D vaut 0,80. À une longueur de 18 il faut donc 75 % de ce
+maximum ; à une longueur de **6**, il en faut **97 %**. Sur les 12 époques
+connues, **4 imposent une longueur à C < 0,5** (6, 8, 10 et 11) : sur
+celles-là, la nativité est quasi impossible à satisfaire, quelle que soit la
+qualité de liaison.
+
+C'est une explication structurelle que nous n'avions pas : les époques à CDR3
+court ne sont pas seulement pauvres en donneurs, elles sont **pénalisées par le
+filtre lui-même**. Et cela donne une consigne nette : sur ces époques, viser la
+conformité germinale maximale (A, B, D) plutôt que la liaison.

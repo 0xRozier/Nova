@@ -72,11 +72,10 @@ from nova_lab.nanobodies import germline_identity, is_vhh, regions
 
 # The target, exactly as the validator's own scoring yaml builds it
 # (nova-upstream config/config.yaml, nanobody section).
-TARGET_STRUCTURE = "8AOK"
-TARGET_CHAIN = "A"
-TARGET_RES_INDEX = "1..115"
-TARGET_BINDING_SITE = ("37,39,41..44,46,49,51,56,59,94..96,98,100,"
-                       "104..108")
+from nova_lab.config import NANOBODY_STRUCTURE as TARGET_STRUCTURE
+from nova_lab.config import NANOBODY_STRUCTURE_CHAIN as TARGET_CHAIN
+from nova_lab.config import NANOBODY_STRUCTURE_RES_INDEX as TARGET_RES_INDEX
+from nova_lab.config import NANOBODY_BINDING_SITE as TARGET_BINDING_SITE
 
 # Residues at each end of the CDR3 that belong to a germline segment and so
 # must not be designed. Measured in FINDINGS 7ter.

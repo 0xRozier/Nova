@@ -49,7 +49,11 @@ def humanised_dir(tmp_path, per_epoch):
 def test_it_takes_every_arm_of_every_epoch(batches, tmp_path):
     out = tmp_path / "batch.csv"
     import sys
-    argv = ["x", "--depth", "2", "--out", str(out),
+    # --target explicite : la cible configuree a change le 20 novembre (Q9NZQ7
+    # vers P05231) et ce test porte sur l'assemblage, pas sur la valeur par
+    # defaut. Sans lui il cherchait des lots P05231_epoch*.csv que la fixture
+    # n'ecrit pas.
+    argv = ["x", "--depth", "2", "--target", "Q9NZQ7", "--out", str(out),
             "--humanised-dir", str(humanised_dir(tmp_path, {26300: ["H1", "H2"],
                                                             26301: ["H3"]}))]
     monkey = pytest.MonkeyPatch()
@@ -82,7 +86,7 @@ def test_duplicate_sequences_are_scored_once(batches, tmp_path):
     """BoltzGen deduplicates anyway, and a duplicate wastes 1.4 min."""
     out = tmp_path / "batch.csv"
     import sys
-    argv = ["x", "--depth", "4", "--out", str(out),
+    argv = ["x", "--depth", "4", "--target", "Q9NZQ7", "--out", str(out),
             "--humanised-dir", str(humanised_dir(tmp_path, {26300: ["C1", "H1"]}))]
     monkey = pytest.MonkeyPatch()
     monkey.setattr(sys, "argv", argv)

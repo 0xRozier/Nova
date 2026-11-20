@@ -4,7 +4,39 @@ EPOCH_LENGTH = 361  # Tempo (360) + 1
 NO_SUBMISSION_BLOCKS = 10
 
 SMALL_MOLECULE_TARGET = ["O15427"]
-NANOBODY_TARGET = ["Q9NZQ7"]
+# La cible nanobody a change le 20 novembre 2026 : Q9NZQ7 (PD-L1, structure
+# 8AOK) laisse la place a P05231 (interleukine-6, structure 4O9H). Tout ce qui
+# depend de la cible doit lire ces constantes et non des litteraux : la premiere
+# bascule a montre que `8AOK` etait en dur dans six scripts.
+NANOBODY_TARGET = ["P05231"]
+
+# L'intervalle de la sequence UniProt que le validateur soumet au repliement.
+NANOBODY_CLIP_INTERVAL = [[27, 212]]
+
+# La structure de reference, sa chaine cible, l'intervalle de residus et le site
+# de liaison -- copies de la configuration amont.
+#
+# Les numeros du site de liaison sont ceux du `label_seq_id` du mmCIF, c'est-a-dire
+# l'index canonique sequentiel que BoltzGen lit, et NON la numerotation auteur du
+# cristal, qui est inferieure de 2 sur 4O9H. Verifie en calculant les contacts :
+# au decalage -2, les 8 residus du site sont tous a moins de 5 A du Fab lie dans
+# la structure, contre 2 sur 8 si on les prend pour de la numerotation auteur.
+# Ce controle est a refaire a chaque changement de cible (FINDINGS 66 et 67).
+NANOBODY_STRUCTURE = "4O9H"
+NANOBODY_STRUCTURE_CHAIN = "A"
+NANOBODY_STRUCTURE_RES_INDEX = "21..186"
+NANOBODY_BINDING_SITE = "24,77,80,82,131,184..186"
+
+# La cible precedente, gardee parce que tout l'historique de mesure de ce depot
+# porte sur elle : les sections 1 a 66 de FINDINGS, les lots de results/, le
+# vivier de donneurs et le substitut.
+PREVIOUS_NANOBODY = {
+    "target": "Q9NZQ7",
+    "structure": "8AOK",
+    "chain": "A",
+    "res_index": "1..115",
+    "binding_site": "37,39,41..44,46,49,51,56,59,94..96,98,100,104..108",
+}
 NANOBODY_WEIGHT = 0.4
 
 NUM_MOLECULES = 20

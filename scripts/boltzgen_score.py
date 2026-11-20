@@ -28,10 +28,12 @@ from nova_lab import DATA_DIR
 
 # config/config.yaml protein_selection.nanobody + config/boltzgen_config.yaml
 TARGET = "Q9NZQ7"
-STRUCTURE = "8AOK"
-STRUCTURE_CHAIN = "A"
-STRUCTURE_RES_INDEX = "1..115"
-BINDING_SITE = "37,39,41..44,46,49,51,56,59,94..96,98,100,104..108"
+# Lus dans nova_lab.config, pas en dur : la cible a change une fois (Q9NZQ7 vers
+# P05231 le 20 novembre) et ces quatre valeurs etaient en dur dans six scripts.
+from nova_lab.config import (NANOBODY_BINDING_SITE as BINDING_SITE,
+                             NANOBODY_STRUCTURE as STRUCTURE,
+                             NANOBODY_STRUCTURE_CHAIN as STRUCTURE_CHAIN,
+                             NANOBODY_STRUCTURE_RES_INDEX as STRUCTURE_RES_INDEX)
 PROTOCOL = "nanobody-anything"
 NUM_DESIGNS = 1
 STEP_SCALE = 2.0
