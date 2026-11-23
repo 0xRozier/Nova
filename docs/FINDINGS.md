@@ -5517,3 +5517,85 @@ quelconque. Le GPU doit être dépensé **sur une époque de longueur 21** — o
 en second choix — et c'est aussi là, et seulement là, que le §68 peut être
 retesté utilement, puisque greffer depuis un donneur à 0,85 est le seul cas où
 la perte à la greffe laisserait encore quelque chose.
+
+## 71. Pourquoi nous ne gagnons pas : nous nous sommes mesurés sur les époques où le champ est le plus fort
+
+Question posée directement : sur quoi bloque-t-on ? La réponse tient en deux
+chiffres que ce dépôt n'avait jamais rapprochés.
+
+### Le champ n'est pas également fort, et l'écart entre époques dépasse notre retard
+
+| époque | L | gagnant réel | médiane du champ |
+|---|---|---|---|
+| 26348 | 6 | **0,589** | 0,458 |
+| 26300 | 8 | **0,657** | 0,562 |
+| 26305 | 10 | **0,663** | 0,699 |
+| 26347 | 19 | 0,723 | 0,687 |
+| 26301 | 20 | 0,727 | 0,703 |
+| … | | | |
+| 26346 | 13 | 0,787 | 0,734 |
+| 26345 | 14 | **0,788** | 0,715 |
+
+Le gagnant d'une époque vaut entre **0,589 et 0,788**. Cet écart de **0,199**
+est plus grand que notre retard sur la médiane du champ. Et notre meilleur
+candidat honnête jamais mesuré, 0,710, **aurait gagné 3 de ces 12 époques**.
+
+### Or nos cinq runs GPU ont tous visé des époques où le champ est fort
+
+Les lots `deep`, `design3arms`, `wide4arms`, `k1sample` et `xtal` ont porté sur
+26304 (gagnant 0,763), 26345 (**0,788**), 26347 (0,723) et 26301 (0,727).
+**Aucun** n'a porté sur 26348, 26300 ou 26305 — les trois époques où le gagnant
+est sous 0,670. Nous avons donc passé une semaine à mesurer notre distance au
+plus fort, et conclu que l'écart était structurel.
+
+### Et sur ces époques, notre plafond de donneur dépasse déjà le gagnant
+
+Avec la porte recalibrée du §70 (V ≥ 79, pas de plancher J), le meilleur donneur
+honnête de la bonne longueur contre le gagnant réel :
+
+| époque | L | donneurs | notre plafond | gagnant | écart |
+|---|---|---|---|---|---|
+| **26348** | 6 | 188 | **0,690** | 0,589 | **−0,101** |
+| **26346** | 13 | 4767 | **0,827** | 0,787 | **−0,039** |
+| **26300** | 8 | 204 | **0,675** | 0,657 | **−0,018** |
+| **26304** | 14 | 406 | **0,774** | 0,763 | **−0,011** |
+| 26345 | 14 | 438 | 0,779 | 0,788 | +0,010 |
+| 26305 | 10 | 175 | 0,630 | 0,663 | +0,033 |
+| 26347 | 19 | 122 | 0,675 | 0,723 | +0,047 |
+| 26303 | 18 | 146 | 0,555 | 0,754 | +0,199 |
+
+**Sur 4 époques des 12, notre vivier contient un donneur meilleur que le
+gagnant.** L'écart médian n'est que de +0,040 — pas les 0,211 que le §49
+annonçait, parce que ce 0,211 comparait des médianes de bras sur une époque
+difficile, avec un vivier amputé par un plancher J inventé.
+
+### Donc ce qui bloque, nommé précisément
+
+Ce n'est pas la technique, et ce n'est pas le calcul :
+
+1. **Ce n'est pas le générateur.** Le greffage a une borne de 0,798 et des
+   donneurs à 0,827 sur certaines époques — au-dessus des gagnants réels.
+2. **Ce n'est pas la conception.** Elle plafonne à 0,698 (§64) mais elle n'est
+   pas nécessaire : le vivier suffit sur les bonnes époques.
+3. **C'est la perte à la greffe.** Un donneur à 0,827 donne un candidat à 0,710
+   au mieux. Le §68 a montré que la liaison ne voyage pas avec le motif, même
+   cristallographique. **C'est le seul verrou.**
+4. **Et c'est le choix des époques.** Nous avons systématiquement mesuré sur les
+   plus dures. Sur 26348, le gagnant est à 0,589 et nous avons un donneur à
+   0,690 : il suffirait de conserver 85 % de la liaison du donneur pour gagner,
+   là où le §49 mesurait 28 % de rétention médiane sur l'humanisation.
+
+La question n'est donc plus « comment atteindre 0,79 » mais « comment conserver
+85 % d'un donneur à 0,69 », et elle se pose sur les époques à CDR3 court — que
+le §67 a montrées structurellement pénalisées pour **tout le monde** par le
+terme C du score de nativité.
+
+### Ce que cela change pour le prochain run
+
+Le §70 concluait qu'il fallait attendre une époque de longueur 21 sur la
+nouvelle cible, parce que c'est là que sont les bons donneurs. Cette section le
+corrige : il faut viser une époque où **l'écart entre notre plafond de donneur
+et le gagnant est favorable**, ce qui n'est pas la même chose. Sur l'ancienne
+cible, c'étaient les longueurs 6, 8, 13 et 14. Le critère n'est pas la qualité
+absolue du vivier mais sa qualité **relative à ce que le champ parvient à faire
+à cette longueur**.
