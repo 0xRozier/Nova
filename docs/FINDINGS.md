@@ -5303,3 +5303,74 @@ C'est une explication structurelle que nous n'avions pas : les époques à CDR3
 court ne sont pas seulement pauvres en donneurs, elles sont **pénalisées par le
 filtre lui-même**. Et cela donne une consigne nette : sur ces époques, viser la
 conformité germinale maximale (A, B, D) plutôt que la liaison.
+
+## 68. Le CDR3 cristallographique greffé est le pire bras mesuré : le §50 devient une loi
+
+Lot `xtal_26301` : 39 séquences notées dans un seul run — 25 greffes du CDR3
+de la chaîne B de 8AOK (`AAEGTLYGSGGRTHQSAYDY`, lieur prouvé par la structure),
+10 greffes ordinaires de la même époque en témoin, et les 4 meilleures
+soumissions réelles de 26301 en ancrage. Preuves :
+`results/scores_nanobody_xtal_26301.csv`,
+`results/boltzgen_xtal_26301.log`.
+
+| bras | n | min | médiane | max | pae médian |
+|---|---|---|---|---|---|
+| `real` | 4 | 0,691 | 0,700 | **0,723** | **9,19** |
+| `grafted_ordinaire` | 10 | 0,168 | 0,250 | 0,595 | 20,10 |
+| **`xtal_cdr3`** | 25 | 0,136 | **0,184** | **0,338** | 22,48 |
+
+**Le motif cristallographique est le pire des trois.** Aucune de ses 25 greffes
+n'atteint le meilleur greffage ordinaire (0,595), 3 sur 25 seulement dépassent
+la *médiane* ordinaire, et aucune n'approche le rival le plus faible (0,691).
+Au rang-somme : 93 au mieux, contre 56 pour les greffes ordinaires et 35 à 43
+pour les rivaux.
+
+### Pourquoi c'est un résultat fort et non un échec de plus
+
+Le §66 avait posé le test comme **le plus favorable que l'hypothèse du §50
+puisse recevoir** : le motif ne vient pas de l'archive mais du complexe
+cristallographique de la cible, où la structure prouve qu'il lie. Si la liaison
+voyageait avec le motif, c'était là.
+
+Elle ne voyage pas. « La liaison ne voyage pas avec le motif » cesse d'être une
+observation sur des donneurs d'archive et devient **une loi de ce problème**.
+
+Et le mécanisme se lit dans le `pae` : 22,5 de médiane pour les greffes
+cristallographiques contre 9,2 pour les rivaux. Le nanobody ne se pose pas. Le
+CDR3 de 8AOK a été sélectionné par l'évolution dans le contexte d'une charpente
+de lama à **V 78,6** ; posé sur une charpente germinale humaine conforme, il
+perd la géométrie qui le faisait fonctionner. Les CDR3 de l'archive, eux, ont
+co-évolué avec des charpentes du même vivier, ce qui explique qu'ils se
+transplantent moins mal (0,595 contre 0,338).
+
+### Ce que cela annule
+
+**Le carnet ODesign ne doit pas être lancé.** Sa condition de lancement était
+écrite au §65 et dans `docs/KAGGLE.md` : « ne lancer ce carnet que si
+`xtal_26301` dit que la greffe conserve la liaison ». Elle dit non. ODesign
+produirait des boucles conçues dans la vraie pose, donc inutilisables, puisque
+sa charpente de référence (chaîne B de 8AOK, V 78,6 / J 85,7) est elle-même non
+conforme et que transplanter la boucle détruit ce qu'elle a gagné. Une session
+de quota économisée par une mesure d'une heure.
+
+**Et la piste du motif validé sur la nouvelle cible tombe aussi.** Le §67 avait
+noté que la chaîne B de 4O9H porte un CDR3 de longueur 11 validé par
+cristallographie, exploitable « comme le §66 l'a fait ». Ce run montre que ce
+n'était pas exploitable sur l'ancienne cible, et il n'y a aucune raison que
+P05231 se comporte autrement — la charpente y est en plus une chaîne lourde
+conventionnelle, appariée à une chaîne légère, donc encore plus éloignée d'un
+VHH que ne l'était la chaîne B de 8AOK.
+
+### Ce qui reste debout
+
+| voie | plafond mesuré | état |
+|---|---|---|
+| greffage depuis l'archive | 0,798 (borne) | la seule qui dépasse le champ, au prix du §62 |
+| conception BoltzGen | 0,698 | fermée, et l'échelle n'y fait rien (§64) |
+| motif validé transplanté | **0,338** | fermée par ce run |
+| ODesign | — | sans objet tant que la greffe ne conserve rien |
+
+Reste donc, pour la nouvelle cible : une archive de 42 328 séquences dont
+17 489 lient à ≥ 0,72, non conformes à nos planchers — mais nos planchers sont
+faux (§67), et le vrai seuil est une identité V ≥ 0,70 sans plancher J. C'est
+là qu'il faut regarder maintenant, et non du côté des motifs transplantés.
