@@ -5599,3 +5599,70 @@ et le gagnant est favorable**, ce qui n'est pas la même chose. Sur l'ancienne
 cible, c'étaient les longueurs 6, 8, 13 et 14. Le critère n'est pas la qualité
 absolue du vivier mais sa qualité **relative à ce que le champ parvient à faire
 à cette longueur**.
+
+## 72. L'hypothèse conformationnelle, telle que mesurable sur CPU : réfutée
+
+Le §68 avait montré *où* la greffe casse : `pae` de 22,5 contre 9,2 pour les
+rivaux, donc le nanobody ne se pose pas. L'hypothèse qui en découlait était que
+ce n'est pas la séquence du CDR3 qui est perdue mais sa **conformation** — un
+CDR3 est tenu par les résidus de charpente qui le bordent, et changer de
+charpente le laisse flotter. Cela expliquerait aussi pourquoi aucun descripteur
+de séquence ne prédit la rétention (ρ = −0,13 sur les mutations de charpente,
++0,027 sur l'iiptm du donneur, §49).
+
+Test : 120 de nos candidats notés, échantillonnés par quantile d'iiptm pour
+couvrir toute la plage mesurée (0,129 à 0,686), repliés par NanoBodyBuilder2, et
+l'erreur prédite par résidu — que le modèle écrit dans la colonne B — moyennée
+sur le CDR3. Preuve : `results/conformational_screen_120.csv`.
+
+Seuils de lecture, écrits avant la mesure : ρ au-delà de ±0,35 sur le rapport
+CDR3/charpente rendait le crible utile ; entre 0,20 et 0,35 il devenait un
+descripteur de plus ; sous 0,20 l'hypothèse tombait.
+
+| grandeur | ρ avec l'iiptm | p |
+|---|---|---|
+| erreur prédite sur le CDR3 | **−0,011** | 0,91 |
+| erreur prédite sur la charpente (témoin) | +0,027 | 0,77 |
+| maximum sur le CDR3 | −0,041 | 0,66 |
+| **rapport CDR3 / charpente** | **−0,014** | 0,88 |
+
+Et les médianes par quartile d'iiptm sont plates :
+
+| quartile | bas | moyen− | moyen+ | haut |
+|---|---|---|---|---|
+| erreur CDR3 | 1,476 | 1,591 | 1,565 | 1,465 |
+| rapport | 4,10 | 4,33 | 4,28 | 4,23 |
+
+**Zéro signal**, très loin du seuil de 0,20. L'hypothèse est réfutée dans cette
+forme.
+
+### Ce qui a été testé, et ce qui ne l'a pas été
+
+La grandeur mesurée est la **confiance du modèle en lui-même**, pas la
+conformation. NanoBodyBuilder2 est incertain sur tout CDR3 — 1,5 Å contre
+0,35 Å sur la charpente, un rapport de 4,2 quelle que soit la qualité du
+candidat — et cette incertitude ne distingue pas un CDR3 contraint d'un CDR3
+simplement long.
+
+La version forte reste ouverte : superposer le candidat et **son donneur** sur
+la charpente, et mesurer le RMSD du CDR3 entre les deux. Elle coûte deux
+repliements par paire et l'appariement du donneur, que la mutation du CDR3
+(`MAX_CDR3_IDENTITY = 0,85`) rend approximatif. Elle n'est pas lancée ici
+parce que le témoin de ce run dit quelque chose de gênant pour elle : si
+l'erreur prédite ne varie pas du tout avec la liaison, c'est que NanoBodyBuilder2
+ne voit pas la différence entre une greffe qui marche et une qui ne marche pas —
+et c'est le même modèle qui fournirait les deux conformations à comparer.
+
+### Ce que cela laisse
+
+Quatre voies ont été fermées par mesure : la conception BoltzGen (borne 0,698,
+§64), le motif validé transplanté (0,338, §68), le ML de séquence comme
+sélecteur suffisant (ρ = 0,31 groupé, trouve 0,594 là où le vivier contient
+0,741), et le crible conformationnel accessible sur CPU (ici).
+
+Reste ce que le §71 a mis au jour et que la stratégie de ce dépôt écarte depuis
+le début : sur 4 époques des 12 connues, **notre vivier contient déjà un donneur
+meilleur que le gagnant réel**, et les validateurs notent gratuitement ce que
+nous leur soumettons. Vingt heures de quota Kaggle ont servi à approximer un
+verdict que le subnet rend sans rien demander, et `scripts.mine` n'a journalisé
+**qu'une époque, en dry-run, zéro soumission**.
