@@ -5374,3 +5374,70 @@ Reste donc, pour la nouvelle cible : une archive de 42 328 séquences dont
 17 489 lient à ≥ 0,72, non conformes à nos planchers — mais nos planchers sont
 faux (§67), et le vrai seuil est une identité V ≥ 0,70 sans plancher J. C'est
 là qu'il faut regarder maintenant, et non du côté des motifs transplantés.
+
+## 69. Le filtre de nativité, exécuté et non reproduit : le seuil de 0,80 n'est pas appliqué, celui d'humanité l'est
+
+Plutôt que de reproduire la formule du §67 — ce qui aurait été une troisième
+reconstruction après les deux fausses du §54 et du §67 — le filtre lui-même a
+été rendu exécutable ici. `scripts/nativeness.py` appelle
+`metanano.utils.igblast_nativeness.run`, sur les bases pré-construites du dépôt
+du filtre.
+
+### Ce qu'il a fallu, et le piège qui a failli produire un faux résultat
+
+| pièce | provenance |
+|---|---|
+| binaires IgBLAST 1.22.0 | NCBI, `ncbi-igblast-1.22.0-x64-linux.tar.gz` |
+| bases `camelid_V` et `human_V` | pré-construites dans NOVA-nanobody-filter, `custom_data/igblast_database/database` |
+| `internal_data/camelid` | le même dépôt |
+| **`internal_data/human`** | **l'archive NCBI** — absent du dépôt du filtre |
+
+Sans cette dernière pièce, chaque appel mourait sur « Germline annotation
+database .../internal_data/human/human_V could not be found ». Et
+`NativenessFilter.analyze` **capture toute exception et rend `None`** : le
+premier passage a donc noté les quatre soumissions **connues comme acceptées**
+en « REFUSÉ ». C'était un échec d'installation lu comme un verdict — la même
+classe d'erreur que le DSSP silencieux du §43, attrapée cette fois parce que le
+contrôle portait sur des séquences dont le verdict est connu.
+
+### Les trois seuils, mesurés contre des verdicts connus
+
+| | rejets durs | nativité ≥ 0,80 | humanité ≥ 0,75 |
+|---|---|---|---|
+| 60 soumissions **acceptées** de Q9NZQ7 | **0 / 60** | **0 / 60** (médiane 0,507, max 0,596) | **40 / 40** |
+| 60-80 lieurs de l'archive P05231 à ≥ 0,72 | **0 / 60** | 0 / 60 (médiane **0,646**) | **17 / 80 = 21 %** |
+
+Trois lectures, et la deuxième contredit ce que j'avais écrit :
+
+1. **Les rejets durs ne mordent pas** — V identité ≥ 0,70, couverture ≥ 0,80,
+   CDR3 entre 6 et 35 : aucune séquence, d'aucune des deux cibles, n'y échoue.
+2. **Le seuil de nativité de 0,80 n'est pas appliqué.** Aucune des
+   60 soumissions acceptées ne l'atteint. S'il l'était, rien ne serait jamais
+   accepté. Il est donc rapporté par `scripts/nativeness.py`, jamais enforcé.
+3. **Le seuil d'humanité de 0,75, lui, discrimine** — et j'avais écrit l'inverse
+   dans la sortie de ma première sonde, avant d'avoir le chiffre. Les 40
+   acceptées le passent toutes ; seuls 21 % des lieurs de l'archive P05231 le
+   passent. C'est le seul des trois qui sépare les deux populations.
+
+Détail qui compte : les lieurs de P05231 ont une nativité **supérieure** à celle
+des acceptées (0,646 contre 0,507) tout en échouant l'humanité. Les deux scores
+ne mesurent pas la même chose, et c'est l'humanité qui coûte.
+
+### Ce que cela change pour la nouvelle cible
+
+| | Q9NZQ7 | P05231 |
+|---|---|---|
+| lieurs à ≥ 0,72 | 5 064 | 17 489 |
+| utilisables selon **nos** planchers (§67) | 256 | **0** |
+| utilisables selon l'**humanité** du vrai filtre | — | **~3 700** (21 %) |
+
+Nos `MIN_HUMAN_V_IDENTITY = 82` et `MIN_HUMAN_J_IDENTITY = 86` rejetaient
+**100 %** des lieurs de la nouvelle cible. Le vrai filtre en rejette 79 %, et
+laisse donc de l'ordre de **3 700 donneurs** qui lient à 0,72 ou mieux — contre
+256 sur l'ancienne cible, soit **quatorze fois plus**.
+
+Réserve : « l'humanité discrimine » est une inférence sur 40 acceptées d'une
+cible et 80 entrées d'archive de l'autre, pas une lecture du code de production.
+Et le §68 vient de montrer que la liaison ne voyage pas avec le motif : disposer
+de 3 700 donneurs ne dit pas encore qu'on sait s'en servir. Mais le vivier
+cesse d'être le goulot, et c'est la première fois depuis le §48.
