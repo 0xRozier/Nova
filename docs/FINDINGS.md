@@ -5441,3 +5441,79 @@ cible et 80 entrées d'archive de l'autre, pas une lecture du code de production
 Et le §68 vient de montrer que la liaison ne voyage pas avec le motif : disposer
 de 3 700 donneurs ne dit pas encore qu'on sait s'en servir. Mais le vivier
 cesse d'être le goulot, et c'est la première fois depuis le §48.
+
+## 70. La porte germinale recalibrée, et le mur de la nouvelle cible : tout tient à la longueur 21
+
+### Le crible calibré sur le vrai filtre
+
+Le §69 a établi que la seule porte germinale qui mord est l'humanité ≥ 0,75 du
+filtre, et qu'elle coûte une seconde d'IgBLAST par séquence — douze heures pour
+les 42 328 de l'archive. Mesuré sur 190 séquences couvrant V 76,5 à 89,8,
+l'identité V d'abnumber, que ce dépôt calcule en millisecondes, suit l'humanité
+à **Spearman +0,93**. L'identité J, elle, à **−0,15** : notre plancher J n'était
+pas seulement inventé, il était sans rapport avec quoi que ce soit.
+
+| seuil V | précision | rappel | exactitude |
+|---|---|---|---|
+| 78,0 | 0,53 | 1,00 | 0,62 |
+| **79,0** | **0,88** | **0,96** | **0,93** |
+| 80,0 | 0,96 | 0,77 | 0,88 |
+| **82,0 (le nôtre)** | 0,94 | **0,57** | 0,79 |
+
+`nova_lab/nativeness_gate.py` retient **V ≥ 79**, optimisé sur le **rappel** :
+un faux positif coûte un appel IgBLAST dans `verify`, un faux négatif perd un
+donneur définitivement. Notre plancher à 82 écartait **43 %** des séquences que
+la vraie porte accepte.
+
+Sur un échantillon de 600 lieurs de P05231 à ≥ 0,72 :
+
+| | retenus |
+|---|---|
+| crible calibré (V ≥ 79) | **154 / 600 = 26 %** → ~4 500 donneurs |
+| notre ancien plancher (V ≥ 82) | **1 / 600** |
+| avec le plancher J à 86 en plus | **0 / 600** |
+
+### Mais les bons donneurs sont tous à une seule longueur de CDR3
+
+Sur 900 séquences de l'archive tirées au hasard, toutes qualités confondues :
+
+| longueur de CDR3 | n | iiptm médian | max |
+|---|---|---|---|
+| 13 | 529 | 0,618 | 0,683 |
+| **21** | 348 | **0,814** | **0,854** |
+| 10 | 6 | 0,602 | 0,639 |
+| 17 | 4 | 0,222 | 0,296 |
+| 20 | 3 | 0,205 | 0,236 |
+| 19 | 3 | 0,164 | 0,168 |
+
+**100 % des lieurs à ≥ 0,72 (340 sur 340) ont un CDR3 de longueur 21.**
+L'archive est une monoculture bimodale : un sommet à 21 et un plateau à 13.
+Toutes les autres longueurs sont rares *et* mauvaises.
+
+C'est le même mur mécanique que sur l'ancienne cible — où 4 133 des 4 134
+séquences à ≥ 0,70 avaient un CDR3 de longueur 13 — mais déplacé, et moins
+étroit : **deux** longueurs exploitables au lieu d'une, et celle du sommet
+porte des donneurs à **0,822 de médiane**, au-dessus du meilleur rival jamais
+mesuré sur Q9NZQ7 (0,795).
+
+### Et cela dit exactement quand le GPU sert
+
+Sur 20 000 hashes simulés, la dérivation impose chaque longueur de 6 à 23 avec
+une probabilité quasi uniforme de ~5,3 % :
+
+| longueur imposée | fréquence | ce que nous avons |
+|---|---|---|
+| **21** | **5,5 %** | ~4 500 donneurs, médiane 0,822, max 0,850 |
+| **13** | **5,5 %** | donneurs à 0,618 de médiane |
+| les 16 autres | 89 % | rien d'exploitable |
+
+**Une époque sur neuf** tombe sur une longueur où nous avons de quoi travailler,
+et une sur dix-huit sur celle qui porte les très bons donneurs. Le reste du
+temps, le vivier de cette cible ne vaut pas mieux que celui de l'ancienne.
+
+Conséquence opérationnelle, et c'est la réponse à « quand relancer Kaggle » :
+il ne sert à rien de noter des candidats pour une époque de longueur
+quelconque. Le GPU doit être dépensé **sur une époque de longueur 21** — ou 13
+en second choix — et c'est aussi là, et seulement là, que le §68 peut être
+retesté utilement, puisque greffer depuis un donneur à 0,85 est le seul cas où
+la perte à la greffe laisserait encore quelque chose.
