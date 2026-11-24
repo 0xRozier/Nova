@@ -6153,3 +6153,104 @@ Ce qui reste hors de portée n'est pas le score : c'est sa **prédiction** sans
 GPU. Aucun descripteur de séquence connu ne l'approche (|ρ| ≤ 0,19 sur 38
 séquences à charpente identique), et c'est ce qui rend les 1 065 requêtes déjà
 payées précieuses.
+
+## 78. Le substitut réentraîné sur ce que le score est vraiment : ρ 0,58
+
+`scripts/train_score_surrogate.py`, `tests/test_score_surrogate.py`. Le §77 a
+montré que le rang-somme est une mesure en quatre copies et qu'il ne suit pas la
+liaison. Le substitut utile ne prédit donc pas la biologie : il prédit
+`design_iiptm`, d'où le rang-somme découle à ρ −0,92. Les substituts précédents
+visaient une grandeur qu'on croyait porteuse de sens ; celui-ci vise l'oracle.
+
+### Ce qui a été corrigé avant d'entraîner
+
+**Le bruit, encore.** 248 séquences ont été notées dans plus d'un run : leur
+écart-type intra-séquence médian est **0,0121**. C'est le bruit entre runs,
+mesuré directement. Le §77 bis annonçait « ≤ 0,006 » d'après le bras `scramble`
+et concluait que le §49 était trois fois trop haut : **c'était faux**, cela
+confondait deux choses. À l'intérieur d'un run la mesure est bien plus propre
+(≤ 0,006) ; entre runs elle vaut 0,012-0,016, donc le §49 (0,017-0,028) était à
+peu près juste. Cela justifie rétroactivement la règle de
+`scripts/build_arms_batch.py` : tout ce qu'on veut comparer doit tenir dans un
+seul run.
+
+**Une seule cible à la fois.** Un score est une fonction du couple
+(séquence, cible). 1 490 de nos 1 575 requêtes sont contre `8AOK`, 85 contre
+`4O9H`, et **exactement une séquence a été notée contre les deux**. Le transfert
+entre cibles n'est donc pas mesurable avec ce que nous avons, et mutualiser les
+deux serait l'inventer. Entraîné sur l'ancienne cible, où sont les données.
+
+### La fuite que le test a attrapée
+
+Mon premier regroupement utilisait Jaccard 5-mer ≥ 0,90, la règle de diversité
+du validateur. Un test écrit pour vérifier que des jumelles tombent ensemble a
+échoué : **deux permutations d'un même CDR3 sont à 0,854**, donc distinctes pour
+le subnet et jumelles pour une validation croisée. Le seuil décide du résultat :
+
+| seuil de regroupement | grappes | plus grosse | ρ hors-pli |
+|---|---|---|---|
+| 0,95 | 1157 | 1 | +0,634 |
+| 0,90 (règle du validateur) | 1135 | 4 | +0,627 |
+| **0,80 (défaut retenu)** | 659 | 45 | **+0,580** |
+| 0,70 | 383 | 45 | +0,477 |
+
+Une charpente partagée avec des CDR3 différents tombe vers 0,81, donc 0,80 est
+le seuil qui fait d'une grappe retenue une **charpente jamais interrogée**.
+C'est le défaut, et les deux lectures sont rapportées parce qu'elles répondent à
+deux questions :
+
+- **charpente jamais vue** : ρ **+0,580** ;
+- **boucle choisie dans une charpente déjà interrogée** : ρ +0,627.
+
+### Les modèles
+
+| modèle | ρ (grappes 0,80) | sd plis |
+|---|---|---|
+| témoin (prédit la moyenne) | −0,109 | — |
+| ridge sur descripteurs | +0,420 | 0,083 |
+| gradient boosting sur descripteurs | +0,495 | 0,050 |
+| ridge sur 3-mers | +0,488 | 0,064 |
+| **gradient boosting sur descripteurs + 3-mers** | **+0,580** | 0,052 |
+
+Contre ρ = 0,31 pour le substitut précédent. Le §77 disait qu'aucun descripteur
+*isolé* ne dépasse |ρ| 0,19 : c'est toujours vrai, et un modèle qui les combine
+atteint 0,58. L'oracle n'est donc pas imprédictible, seulement non résumable en
+un descripteur.
+
+### Ce qu'il vaut là où il servira
+
+Un ρ global est flatté par l'amplitude : nos scores vont de 0,11 à 0,79 parce
+qu'ils mélangent conceptions de novo et donneurs d'archive, alors que le vivier
+d'une époque occupe un dixième de cette plage. Mesuré par bandes, sur la seule
+question opérationnelle — tirer 30 candidats, en choisir un :
+
+| bande | n | sd | ρ | hasard | substitut | oracle | part captée |
+|---|---|---|---|---|---|---|---|
+| tout le jeu | 1157 | 0,188 | 0,580 | 0,383 | 0,621 | 0,708 | **73 %** |
+| réaliste 0,15-0,45 | 549 | 0,086 | 0,243 | 0,250 | 0,291 | 0,434 | 22 % |
+| **haut du vivier 0,55-0,80** | 304 | 0,055 | 0,303 | 0,618 | **0,694** | 0,755 | **55 %** |
+
+Le haut du vivier est la bande qui décide, puisque c'est là que se trouvent les
+donneurs qui gagnent. Le substitut y récupère **55 % de l'écart hasard→oracle**,
+soit **+0,076 d'iiptm**, ou **1,38 écart-type** du vivier.
+
+### Comparaison avec du GPU, en unités comparables
+
+L'extrapolation en valeurs extrêmes donnait, pour le choix du CDR3 à charpente
+fixe : passer de 30 à 3 000 candidats interrogés vaut +0,030, soit **1,4
+écart-type**. Le substitut en vaut **1,38**, gratuitement, et les deux se
+composent — pré-classer 10 000 candidats pour n'en interroger que 300 cumule les
+deux effets.
+
+Autrement dit : **le substitut vaut à peu près un facteur 100 sur le GPU**, et
+il ne coûte rien.
+
+### Ce qui reste ouvert, et ce que ça coûte de le fermer
+
+Le transfert entre cibles est non mesuré, et c'est le trou qui compte : le
+substitut est entraîné sur `8AOK` et devra servir sur `4O9H`. Le combler est
+bon marché — il suffit d'inclure une vingtaine de séquences déjà notées contre
+l'ancienne cible dans le prochain lot de la nouvelle. Vingt séquences, 40 min de
+GPU, et on saura si 1 490 requêtes payées sont réutilisables ou perdues.
+
+196 tests passent, dont 5 nouveaux.
