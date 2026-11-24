@@ -33,6 +33,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -57,6 +58,19 @@ NATIVENESS_THRESHOLD = 0.80
 HUMANNESS_THRESHOLD = 0.75
 ACCEPTED_NATIVENESS_RANGE = (0.386, 0.596)   # observed on 60 accepted submissions
 
+# Pip-installed pieces the filter needs. This container is ephemeral: a rebuild
+# loses them, and their absence does NOT raise -- NativenessFilter.analyze
+# swallows the ImportError and the filter answers hard_reject=True with
+# reject_reason='abnumber_failed' for every sequence, including ones the
+# validators accepted. That is the same failure shape as the missing
+# internal_data/human of FINDINGS 69, so available() checks for them by name.
+PYTHON_DEPS = {
+    "Bio": "biopython, pip install biopython",
+    "abnumber": "antibody numbering, pip install abnumber",
+    "anarci": "the numbering engine abnumber calls, pip install anarci",
+}
+
+
 
 def available() -> tuple[bool, str]:
     """(usable, why). Checked before scoring so a missing piece is not a refusal."""
@@ -71,7 +85,44 @@ def available() -> tuple[bool, str]:
         if not (IGBLAST_DIR / "internal_data" / org).is_dir():
             return False, (f"internal_data/{org} absent : igblastp echoue et le "
                            f"filtre rend None, ce qui se lit comme un refus")
+    for module, why in PYTHON_DEPS.items():
+        if importlib.util.find_spec(module) is None:
+            return False, (f"module python {module!r} absent ({why}) : le filtre "
+                           f"rend hard_reject=True reject_reason='abnumber_failed' "
+                           f"pour tout, ce qui se lit comme un refus")
     return True, "ok"
+
+
+
+def _stub_bittensor() -> None:
+    r"""Let the filter import without the bittensor stack.
+
+    metanano.utils.cdr_utils does `import bittensor as bt`, which drags in the
+    whole subnet client -- and this container is ephemeral, so a rebuild loses
+    it and the filter stops importing (which is how FINDINGS 69's capability
+    was silently lost). The filter uses exactly one thing from it:
+
+        $ grep -rn 'bt\.' nanofilter/ --include=*.py
+        metanano/utils/cdr_utils.py: bt.logging
+
+    One attribute, for logging. So when the real package is absent we supply a
+    module that offers it and nothing else: any other use raises AttributeError
+    rather than returning a wrong answer quietly. Installing the real package
+    makes this a no-op.
+    """
+    import types
+    if "bittensor" in sys.modules:
+        return
+    try:
+        import bittensor  # noqa: F401
+        return
+    except ImportError:
+        pass
+    import logging as _logging
+    stub = types.ModuleType("bittensor")
+    stub.logging = _logging.getLogger("bittensor-stub")
+    stub.__stubbed_by__ = "scripts.nativeness._stub_bittensor"
+    sys.modules["bittensor"] = stub
 
 
 def score(sequences: list[str]) -> pd.DataFrame:
@@ -81,6 +132,7 @@ def score(sequences: list[str]) -> pd.DataFrame:
         raise SystemExit(f"le filtre n'est pas executable ici : {why}")
     sys.path.insert(0, str(FILTER_ROOT))
     os.environ.setdefault("IGDATA", str(IGBLAST_DIR))
+    _stub_bittensor()
     from metanano.utils import igblast_nativeness as ign
 
     rows = []
@@ -111,7 +163,10 @@ def verdict(frame: pd.DataFrame) -> pd.DataFrame:
     frame = frame.copy()
     frame["passes_hard"] = ~frame["hard_reject"]
     frame["passes_humanness"] = frame["humanness"].fillna(0) >= HUMANNESS_THRESHOLD
-    frame["in_accepted_nativeness_range"] = (
+    # A floor, not the range the old name promised: being *more* camelid than
+    # anything the validators accepted is not evidence of a refusal, and
+    # FINDINGS 69 only established that nothing accepted reaches 0.80.
+    frame["at_least_accepted_nativeness"] = (
         frame["nativeness"].fillna(-1) >= ACCEPTED_NATIVENESS_RANGE[0])
     return frame
 
@@ -156,7 +211,7 @@ def main() -> int:
         print(f"    seuil annonce {NATIVENESS_THRESHOLD} : {(ok.nativeness>=NATIVENESS_THRESHOLD).sum()}/{len(ok)}"
               f"  -- NON applique, aucune acceptee connue ne l'atteint")
         print(f"    dans la plage des acceptees (>= {ACCEPTED_NATIVENESS_RANGE[0]}) : "
-              f"{ok.in_accepted_nativeness_range.sum()}/{len(ok)}")
+              f"{ok.at_least_accepted_nativeness.sum()}/{len(ok)}")
         print(f"  humanite   : mediane {ok.humanness.median():.3f}")
         print(f"    seuil {HUMANNESS_THRESHOLD} : {ok.passes_humanness.sum()}/{len(ok)} = "
               f"{ok.passes_humanness.mean():.0%}  -- le seul qui discrimine")

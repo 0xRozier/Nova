@@ -28,7 +28,7 @@ def test_the_nativeness_threshold_is_reported_and_not_enforced():
     assert frame.loc[0, "passes_hard"]
     assert frame.loc[0, "passes_humanness"]
     assert "passes_nativeness" not in frame.columns, "ce seuil ne doit pas etre une porte"
-    assert frame.loc[0, "in_accepted_nativeness_range"]
+    assert frame.loc[0, "at_least_accepted_nativeness"]
 
 
 def test_the_humanness_gate_is_the_one_that_discriminates():

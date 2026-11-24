@@ -1,4 +1,5 @@
 bittensor==10.4.1
+bittensor-drand
 requests
 pandas
 numpy

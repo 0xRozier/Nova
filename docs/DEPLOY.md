@@ -238,3 +238,24 @@ acceptée, ce qui n'était jamais arrivé avant que la porte PSH soit réparée.
     problème de génération et aucun vivier ne le règle — il n'achète que la
     queue, où le meilleur de 100 lit 74,7. Le biais d'hydrophobicité a été
     essayé et mesuré sans effet (`results/psh_generator_ab_cdr3_18.csv`).
+
+## Remonter l'environnement après reconstruction du conteneur
+
+Le conteneur de recherche est éphémère : une reconstruction perd tous les
+paquets pip et **rien ne lève** côté filtre de nativité — il répond
+`hard_reject=True, reject_reason='abnumber_failed'` pour toute séquence, ce qui
+se lit comme un refus du validateur (FINDINGS 69, puis 73). Avant toute mesure,
+vérifier `scripts.nativeness.available()`, qui nomme désormais la pièce
+manquante.
+
+```bash
+pip install --ignore-installed wheel -r requirements.txt
+```
+
+`--ignore-installed wheel` est nécessaire : `wheel` est fourni par Debian sans
+fichier RECORD, pip ne peut pas le désinstaller et abandonne toute
+l'installation sans ce drapeau.
+
+Les binaires hors pip (IgBLAST 1.22.0 dans `/home/user/igblast`, ses bases et
+`internal_data/{camelid,human}`, TNP dans `/home/user/venv-tnp`) ne sont pas
+couverts par `requirements.txt` ; `available()` les vérifie aussi.

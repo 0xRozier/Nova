@@ -5666,3 +5666,121 @@ meilleur que le gagnant réel**, et les validateurs notent gratuitement ce que
 nous leur soumettons. Vingt heures de quota Kaggle ont servi à approximer un
 verdict que le subnet rend sans rien demander, et `scripts.mine` n'a journalisé
 **qu'une époque, en dry-run, zéro soumission**.
+
+## 73. La phase d'observation de la cible, enfin faite — et elle rend un levier
+
+Le guide amont consacre son §5 à « Study the Target » : télécharger la
+structure, **identifier le site de liaison**, chercher les liants connus. Le §66
+l'avait fait pour l'ancienne cible. Pour `P05231` / `4O9H` je ne l'avais pas
+fait : j'ai écrit la config et je suis parti tester des hypothèses de greffe.
+C'était une erreur de méthode, et c'est le seul levier qui ne coûte ni GPU ni
+TAO. Scripts : `results/{epitope,offset,label,converge,survey,vhh6}.py`.
+
+### La config est juste, et nous la lisons dans la bonne convention
+
+`4O9H` = **interleukine-6 en complexe avec le Fab camélidé 61H7** (chaînes H+L),
+pas un VHH. Chaîne A = IL-6, 152 résidus observés.
+
+La numérotation d'abord, parce qu'elle décide de tout : `label_seq_id = auth + 2`,
+sans insertion. `res_index: 21..186` est donc **exactement l'empan observé** de la
+chaîne A — rien ne tombe hors fenêtre — avec deux boucles désordonnées absentes
+(label 51-62 et 107-108, hors épitope). Et le site de liaison, lu en index
+mmcif canonique comme BoltzGen l'exige :
+
+| config | résidu | auth | distance au Fab |
+|---|---|---|---|
+| 24 | S | 22 | 2,82 Å (H+L) |
+| 77 | Q | 75 | 3,23 Å (H) |
+| 80 | F | 78 | 3,40 Å (H) |
+| 82 | E | 80 | 2,69 Å (H) |
+| 131 | K | 129 | 4,00 Å (H) |
+| 184 | R | 182 | 2,67 Å (H+L) |
+| 185 | Q | 183 | 2,73 Å (H) |
+| 186 | M | 184 | 3,00 Å (H) |
+
+**8/8 au contact.** J'ai cherché un bug de décalage et il n'y en a pas : le −2
+que j'avais d'abord vu est le passage label→auth, et `boltzgen_score.py` comme
+`design_nanobody.py` passent bien la numérotation canonique.
+
+Mieux : **la config est précisément l'empreinte de la chaîne lourde.** Six des
+huit résidus ne sont touchés que par H, deux par H+L. Les sept résidus que seule
+la chaîne légère touche (auth T20 S21 E23 D26 K27 R30 L178) sont **exclus** du
+site. Le subnet a retiré la part qu'un domaine unique ne peut pas couvrir : la
+géométrie demandée est atteignable par un VHH.
+
+### Les liants connus ne convergent pas, sauf celui qui compte
+
+17 entrées PDB contiennent IL-6, six avec un liant. Recouvrement avec les 8
+résidus de la config :
+
+| PDB | liant | épitope | recouvrement |
+|---|---|---|---|
+| 4O9H | Fab camélidé 61H7 | 19 res | **8/8** |
+| 5FUC | **VHH6, domaine unique** | 11 res | **7/8** |
+| 4ZS7 | Fab lama 68F2 | 23 res | 3/8 |
+| 8YWQ | Fab I9H | 13 res | 2/8 |
+| 8YWR | Fab 68F2 (2e cristal) | 12 res | 1/8 |
+| 4CNI | Fab Olokizumab | — | 0/8 |
+
+Le consensus à ≥4 liants sur 6 ne retient que 5 résidus (D28 R32 C75 F76 Q77),
+dont un seul dans la config : **ces anticorps visent des sites différents**. Mais
+le seul VHH authentique du PDB contre IL-6 couvre 7 des 8 résidus de la config.
+Le site n'est donc pas « un épitope de Fab » : c'est le site validé pour un
+domaine unique.
+
+Réserve honnête sur VHH6 : il est **jonctionnel**. Il touche 15 résidus du
+récepteur IL-6Rα contre 8 d'IL-6. Contre IL-6 seule — ce que le subnet demande —
+sa liaison n'est pas démontrée.
+
+### Le test décisif : les deux liants validés contre le vrai filtre
+
+| | nativité | humanité | rejet dur | gène V | V id | CDR3 | L | Cys |
+|---|---|---|---|---|---|---|---|---|
+| VHH6 (5FUC) | **0,852** | 0,414 | non | IGHV3-66 | 69,1 | AARPSIRCASFSATEYKD | 18 | 4 |
+| 61H7 VH (4O9H) | 0,577 | **0,992** | non | **IGHV3-23** | 88,8 | ANRAGWGMGDY | 11 | 2 |
+
+Les deux sont aux antipodes, et le §69 dit lequel compte : le seuil 0,80 de
+nativité **n'est pas appliqué**, l'humanité ≥0,75 **l'est**, et les soumissions
+acceptées ont une nativité de 0,386 à 0,596. Donc :
+
+- **VHH6 serait refusé** — trop camélidé, humanité 0,414. La solution de la
+  nature à cet épitope ne franchit pas le portail du subnet.
+- **61H7 VH serait accepté** — humanité 0,992, nativité 0,577, en plein dans la
+  fourchette des acceptés, aucun rejet dur.
+
+Et il franchit tout le reste : L=118 (90-150), 2 cystéines, IGHV3-23 avec
+88,8 % d'identité V (bien au-dessus du plancher dur de 70 et de notre crible
+calibré à 79), absent de l'archive, Jaccard k=5 maximal de 0,416 contre ses
+35 358 séquences (règle : < 0,90).
+
+**C'est la première séquence de ce projet qui est à la fois un liant prouvé par
+cristallographie de la cible de la semaine, à l'épitope exact de la config, par
+un seul domaine, et conforme à tous les portails que nous savons vérifier.**
+
+### Pourquoi cela ne contredit pas le §68
+
+Le §68 a mesuré **« CDR3 du donneur → notre charpente »** : 0,338, le pire bras.
+Ce qui est en jeu ici est l'inverse — garder la charpente **du liant** et ne
+redessiner que dans celle-ci. C'est la seule configuration que le §68 n'a jamais
+testée, et c'est exactement le mode de rupture qu'il avait identifié (la perte au
+transfert de charpente) que cette voie supprime.
+
+Ce n'est pas une victoire mesurée. Les contraintes restent : l'époque impose le
+gène V et la longueur du CDR3, et 61H7 est IGHV3-23 / L=11 ; l'unicité
+s'évalue chez le validateur, pas dans notre archive ; et la liaison ne se mesure
+pas sur CPU. C'est une hypothèse à tester en un lot GPU — mais c'est la
+première depuis le §53 qui parte d'un liant réel conforme au filtre.
+
+### Deux défauts de notre code, révélés en chemin
+
+1. `scripts/nativeness.py` ne s'exécutait plus : le conteneur a été reconstruit
+   et `biopython`, `abnumber`, `anarci` avaient disparu. Le filtre ne lève
+   pas — il répond `hard_reject=True, reject_reason='abnumber_failed'` pour
+   **tout**, y compris pour des soumissions acceptées. C'est la forme exacte du
+   bug du §69 (`internal_data/human` manquant), une deuxième fois. `available()`
+   vérifie désormais ces modules par leur nom, `requirements.txt` gagne
+   `bittensor-drand`, et `tests/test_known_binders.py` fige les quatre nombres
+   ci-dessus pour qu'une dérive devienne un test rouge.
+2. La colonne `in_accepted_nativeness_range` ne testait qu'un plancher. Renommée
+   `at_least_accepted_nativeness` : être **plus** camélidé que tout accepté n'est
+   pas un indice de refus, et le §69 n'a établi que la borne haute à 0,80.
