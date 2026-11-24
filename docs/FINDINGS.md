@@ -5885,3 +5885,64 @@ ils auraient embarqué l'ancienne structure et validé un carnet construit pour
 l'ancienne cible. Les deux lisent désormais `nova_lab.config`, et le builder
 lève si le `.cif` n'est pas en amont plutôt que de laisser
 `scripts.boltzgen_score` le nommer dans un yaml sans qu'il existe.
+
+## 75. L'analyse de cible en code, et deux corrections au §73
+
+`scripts/analyze_target.py` + `nova_lab/structures.py` : le §5 du guide amont
+(« Study the Target ») exécutable sur n'importe quelle cible, sans qu'un humain
+lise des colonnes de mmCIF. Le §73 l'avait fait à la main pour `P05231`/`4O9H`
+et ce n'était donc pas rejouable sur la cible suivante. Sortie :
+`results/target_P05231_4O9H.md` et `..._binders.csv`.
+
+Cinq questions, dans l'ordre : la numérotation de la config correspond-elle à
+la chaîne que la structure contient (en `label_seq_id`, l'espace du `res_index`
+de BoltzGen) ; le site de liaison est-il réellement au contact et atteignable
+par un domaine unique ; quels liants connus porte cette entrée UniProt et
+lesquels franchissent les portails du validateur ; quelle part du paratope
+chaque liant emprunte à son CDR3 ; et quelles mutations hors CDR rendraient un
+liant soumettable.
+
+Le script redérive tous les chiffres du §73 — décalage label−auth de 2, fenêtre
+21..186 couvrant exactement les 152 résidus observés, **8/8 au contact**, H
+couvre 8/8 et L seulement 2/8, paratope de 61H7 à 25 % CDR3, nativité 0,577,
+humanité 0,992, et les trois mutations G49E / L50R / FR4 Q→L qui le rendent
+conforme sans toucher un CDR.
+
+### Deux corrections
+
+**Recouvrements de 4ZS7 et 8YWR.** Le §73 donnait 3/8 et 1/8 ; le script donne
+**1/8 et 0/8**. Mon analyse à la main cherchait un décalage en numérotation
+auteur ; le script aligne les séquences d'entité et travaille en `label_seq_id`,
+qui est l'espace du `res_index`. C'est la bonne convention et elle corrige les
+deux. Aucune conclusion ne change : les deux restent des liants d'un autre site.
+
+**Deux faits neufs.** Olokizumab (4CNI, 0/8) a une humanité de **0,84** et
+franchit donc le seul seuil appliqué — un liant d'IL-6 conforme au validateur
+mais visant un autre épitope, ce qui en fait un témoin de spécificité meilleur
+que prévu. Et I9H (8YWQ) est rendu soumettable en **2 mutations** (A49E, L50R) ;
+à 1/8 de recouvrement il ne sert pas d'échafaudage, mais c'est une ancre de
+calibration conforme.
+
+### Ce que le script refuse de faire
+
+Deux pièges que mon premier jet contenait et que la version finale ferme :
+
+1. **Deviner les chaînes par préfixe de séquence.** Les premiers résidus d'une
+   chaîne lourde de Fab sont souvent désordonnés, donc le préfixe observé ne
+   correspond pas à la SEQRES. La correspondance entité→chaîne est dans le
+   fichier (`_entity_poly.pdbx_strand_id`) et c'est elle qui est lue. Sans ça,
+   4O9H sortait « aucun domaine variable lourd » et le récepteur de 5FUC était
+   compté comme liant, gonflant son épitope de 15 résidus.
+2. **Supposer que `label_seq_id` est comparable entre entrées.** IL-6 est déposée
+   en constructions de 186, 183, 171, 168 et 166 résidus : comparer un épitope
+   calculé sur 4ZS7 à un site exprimé dans la numérotation de 4O9H donnerait du
+   bruit. `best_offset` recale chaque entité sur la référence (accord 0,988 à
+   1,000 sur les six liants) avant toute comparaison.
+
+Et un garde-fou : la recherche RCSB n'autorise que quelques requêtes par minute
+et rend une limitation de débit sous la forme d'un **résultat vide**, pas d'une
+erreur — ce qui se lirait « cette protéine n'a aucun liant connu », la chose la
+plus trompeuse que ce script puisse dire. Le relevé est réessayé, et un vide
+persistant est rapporté comme un échec réseau, jamais comme une absence.
+
+188 tests passent, dont 10 nouveaux.
