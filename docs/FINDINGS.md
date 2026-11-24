@@ -6109,3 +6109,47 @@ coûteux**, pas biologie structurale. Les 1 065 séquences déjà notées sont l
 du dépôt, et le substitut (ρ = 0,31) est le seul levier qui restait — ce qui
 explique aussi pourquoi il plafonnait : il était entraîné à prédire une mesure
 qu'on croyait porteuse de sens.
+
+### 77 bis. Correction du σ du §49, et ce que « reproduire le score » veut dire
+
+Deux précisions, parce que le §77 était mal formulé.
+
+**Nous reproduisons le score des validateurs.** Exactement : leur build de
+BoltzGen (0.2.0 vendorisée), leur `design.yaml`, leur protocole
+`nanobody-anything`, leurs dix métriques, leur structure, leur MSA, leur site de
+liaison. 85 séquences sur 85, zéro échec. Les barrières amont sont également
+reproduites — la couche 1 est lue dans `config/config.yaml`, et la couche 2
+s'exécute avec le code du filtre lui-même (§69, §73). Il n'y a **aucun critère
+du validateur que nous ne sachions calculer.** Ce que le §77 a montré est autre
+chose : le score est clair, net et calculable, et il ne classe pas les liants
+réels au-dessus des non-liants. L'examen est bien défini ; il ne porte pas sur
+la biologie.
+
+**Le σ du §49 était trois fois trop grand.** Le bras `scramble` est le témoin
+qu'il nous manquait : cinq séquences à charpente identique et à composition de
+CDR3 identique, seul l'ordre intérieur changeant. Sa dispersion est un
+**majorant** du bruit de mesure.
+
+| bras | n | ce qui varie | écart-type de l'iiptm |
+|---|---|---|---|
+| `scramble` | 5 | l'ordre du CDR3 seul | **0,0062** |
+| `keep_fw` | 32 | l'identité du CDR3 | 0,0218 |
+| tout le lot | 85 | tout | 0,0301 |
+
+Le bruit d'une mesure est donc **≤ 0,006**, pas 0,017-0,028. Le §49 l'avait
+estimé entre des runs séparés, où l'état du générateur aléatoire de BoltzGen
+diffère ; à l'intérieur d'un même run il est bien plus faible. On ne peut pas le
+mesurer directement, d'ailleurs : `boltzgen_score` nomme ses entrées par
+l'empreinte de la séquence, donc une séquence ne peut pas être notée deux fois
+dans un run (§74).
+
+Conséquence, et elle est favorable : le choix du CDR3 déplace le score de
+0,0218 d'écart-type, soit **3,5 fois le bruit**, et la variance de `keep_fw` est
+12,5 fois celle de `scramble` (Bartlett p = 0,017). Le signal exploitable est
+donc réel et bien au-dessus du bruit — contrairement à ce que le §49 laissait
+croire, et contrairement à ce que le §77 a d'abord suggéré en parlant de « bruit ».
+
+Ce qui reste hors de portée n'est pas le score : c'est sa **prédiction** sans
+GPU. Aucun descripteur de séquence connu ne l'approche (|ρ| ≤ 0,19 sur 38
+séquences à charpente identique), et c'est ce qui rend les 1 065 requêtes déjà
+payées précieuses.
