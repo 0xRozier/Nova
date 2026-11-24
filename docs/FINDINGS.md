@@ -5991,3 +5991,121 @@ Le lot lui-même est inchangé — 85 séquences, les quatre lectures du §74 ti
 Carnet régénéré à 518 kB, vérificateur vert.
 
 191 tests passent, dont 3 nouveaux.
+
+## 77. L'instrument ne lit pas la liaison. Les quatre lectures du §74, telles qu'écrites.
+
+85 séquences, 167 min sur 2× T4, zéro échec. Preuve :
+`results/scores_nanobody_calibration.csv`. Les seuils étaient fixés au §74 avant
+le run ; voici leur confrontation, dans l'ordre.
+
+### Lecture 1 — l'échelle de calibration : ÉCHEC
+
+| liant | recouvrement | iiptm | rang-somme |
+|---|---|---|---|
+| 61H7 (le liant de cet épitope) | **8/8** | 0,178 | 308 |
+| VHH6 | 7/8 | 0,147 | 502 |
+| 68F2 | 3/8 | 0,231 | **139** |
+| I9H | 2/8 | 0,231 | 239 |
+| **8AOK-VHH (lie PD-L1, pas IL-6)** | **0/8** | **0,299** | 164 |
+| Olokizumab | 0/8 | 0,143 | 453 |
+
+`Spearman(recouvrement, iiptm) = −0,232` (p = 0,66). Le seuil pré-enregistré
+était **≥ +0,30**. Le signe est inversé.
+
+Et la comparaison qui ne souffre pas du petit effectif : **9 des 15 non-liants
+dépassent 61H7**, dont la médiane de rang-somme (308) est pire que la médiane
+globale (269). Le liant prouvé par cristallographie de l'épitope exact de la
+config est au-dessous du bruit de fond.
+
+Deux ancres sortent « juste » — Olokizumab (0/8) et VHH6 (jonctionnel, a besoin
+du récepteur) sont mal notés, ce qui est correct. Mais 8AOK-VHH, qui lie **une
+autre protéine**, est l'ancre la mieux notée en iiptm, et 68F2 (3/8) est la
+meilleure en rang-somme. Deux sur six dans le bon sens : le hasard.
+
+### Lecture 2 — les trois mutations : sans objet
+
+La camélisation **augmente** l'iiptm (0,178 → 0,214). Mais après la lecture 1,
+cela ne dit rien sur la liaison.
+
+### Lecture 3 — la mesure voit-elle le CDR3 ? NON, pas son ordre
+
+Charpente identique, CDR3 natif contre cinq permutations de son intérieur
+(composition conservée) :
+
+- natif 0,2136 ; permutations 0,2011 à 0,2163, **le natif tombe dans l'étendue** ;
+- écart au natif : 0,004, soit **0,65 écart-type intra-bras** et un cinquième
+  du σ d'une mesure unique (0,017-0,028, §49).
+
+Le CDR3 d'un liant prouvé est indiscernable d'un mélange de ses propres lettres.
+Et le bras `scramble` est **le meilleur des sept** en rang-somme médian (152).
+
+Mais le CDR3 n'est pas ignoré : à charpente fixe, 32 CDR3 différents étalent
+l'iiptm sur **0,104 — 6,9 fois l'étendue des permutations**. Ce qui change le
+score, c'est donc l'identité de la boucle, pas son ordre — et aucun descripteur
+ne l'explique : sur ces 38 séquences à charpente identique, longueur,
+hydrophobicité, charge, aromaticité et basicité du CDR3 donnent tous |ρ| ≤ 0,19.
+
+### Lecture 4 — §73 contre §68 : non soutenu
+
+| bras | n | rang-somme médian |
+|---|---|---|
+| scramble | 5 | **152** |
+| camelised | 3 | 208 |
+| move_cdr3 (§68) | 9 | 238 |
+| keep_fw (§73) | 32 | 267 |
+| ref_intact | 6 | 274 |
+| archive_far | 15 | 349 |
+| near_paratope | 15 | 362 |
+
+`keep_fw` contre `move_cdr3` : p = 0,84. Contre `archive_far` : p = 0,39. Le §73
+n'est pas soutenu — et le §68 n'est pas reproduit non plus, les deux bras étant
+indiscernables. Les deux mesuraient du bruit.
+
+### Le rang-somme n'est pas dix métriques
+
+C'est **une** mesure en quatre copies :
+
+| métrique | ρ avec le rang-somme |
+|---|---|
+| design_to_target_iptm | −0,941 |
+| design_iiptm | −0,921 |
+| interaction_pae | +0,919 |
+| min_design_to_target_pae | +0,903 |
+| delta_sasa_refolded | −0,294 |
+| les cinq autres | ≤ 0,19 |
+
+Les quatre premières sont mutuellement corrélées de 0,873 à 0,961, et
+`liability_score` / `liability_num_violations` à 0,980. Sept paires sur 45
+dépassent 0,60.
+
+Cela règle une énigme du §49 : on ne peut pas moyenner le bruit sur dix
+métriques quand quatre d'entre elles sont la même mesure. Le « rang-somme sur dix
+métriques » est, en pratique, un classement sur la confiance d'appariement.
+
+### Ce que cela explique rétroactivement
+
+Quatre impasses deviennent une seule :
+
+- §50 « la liaison ne voyage pas avec le motif » ;
+- §68 « la greffe cristallographique est le pire bras » (0,338) ;
+- §72 « la conformation ne prédit pas » (|ρ| ≤ 0,041) ;
+- §73 « 61H7 est un liant prouvé conforme » — et il note sous les non-liants.
+
+Elles portaient toutes sur la **liaison réelle**. La mesure ne la lit pas. Ce
+n'est pas un défaut de notre montage : l'échec de l'ipTM/pAE sur les interfaces
+anticorps-antigène est documenté dans la littérature. Vingt heures de GPU ont
+servi à poser une question que l'instrument ne pouvait pas entendre.
+
+### Ce qui reste, et c'est exploitable
+
+La mesure est une **boîte noire** : déterministe, biologiquement muette, et
+qu'aucun descripteur connu ne prédit. Mais à charpente fixe elle s'étale de
+0,104 sur le choix du CDR3, soit 4 à 6 fois le bruit. Il y a donc du signal
+réel à exploiter — seulement il ne s'obtient qu'en interrogeant l'oracle, à
+2 min la requête.
+
+Cela redéfinit le problème : **optimisation en boîte noire d'un objectif
+coûteux**, pas biologie structurale. Les 1 065 séquences déjà notées sont l'actif
+du dépôt, et le substitut (ρ = 0,31) est le seul levier qui restait — ce qui
+explique aussi pourquoi il plafonnait : il était entraîné à prédire une mesure
+qu'on croyait porteuse de sens.
