@@ -22,12 +22,13 @@ import io
 import json
 import os
 import subprocess
+import re
 import sys
 import tarfile
 import tempfile
 from pathlib import Path
 
-from nova_lab.config import NANOBODY_STRUCTURE
+from nova_lab.config import NANOBODY_STRUCTURE, NANOBODY_TARGET
 
 ROOT = Path(__file__).resolve().parent.parent
 # The structure is whichever one nova_lab.config names, because that is the one
@@ -76,6 +77,28 @@ def main() -> int:
             if need not in names:
                 raise SystemExit(f"la charge utile n embarque pas {need}")
         print(f"charge utile deballee : {len(names)} entrees")
+
+        # The failure that cost 6 GPU minutes of a 2 h run: the notebook had
+        # downloaded P05231.a3m while the embedded scorer still carried a
+        # hardcoded TARGET = "Q9NZQ7" and reopened the MSA under that name.
+        # Nothing disagreed locally, because the name is only ever used to
+        # build a path. Checked here against the embedded copy of the scorer,
+        # not against the local one, so a stale payload cannot pass.
+        embedded = (unpacked / "scripts" / "boltzgen_score.py").read_text()
+        found = re.search(r'^TARGET = (.+)$', embedded, re.M)
+        if found is None:
+            raise SystemExit("la charge utile ne definit pas TARGET dans boltzgen_score")
+        literal = re.fullmatch(r'"([A-Z0-9]+)"', found.group(1).strip())
+        scorer_target = literal.group(1) if literal else NANOBODY_TARGET[0]
+        msa = re.search(r'^MSA_NAME = "(.+?)"$', "\n".join(
+            s2 for _, s2 in code), re.M)
+        if msa is None:
+            raise SystemExit("le carnet ne definit pas MSA_NAME")
+        if msa.group(1) != f"{scorer_target}.a3m":
+            raise SystemExit(
+                f"le carnet telecharge {msa.group(1)} mais le scoreur embarque "
+                f"cherchera {scorer_target}.a3m : regenerer le carnet")
+        print(f"MSA et cible du scoreur concordent : {msa.group(1)}")
 
         if args.batch:
             rows = list(csv.DictReader((unpacked / args.batch).open()))

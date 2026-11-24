@@ -57,3 +57,34 @@ def test_no_script_still_hard_codes_the_old_structure():
         if re.search(r'=\s*"8AOK"', code):
             offenders.append(path.name)
     assert not offenders, f"structure en dur dans {offenders}"
+
+
+# --- FINDINGS 76: the hardcoded TARGET that survived the switch -------------
+# It cost 6 GPU minutes of a 2 h Kaggle run, and nothing disagreed locally
+# because the name is only ever used to build a path.
+
+def test_the_scorer_reads_its_target_from_the_config():
+    from scripts.boltzgen_score import TARGET
+    assert TARGET == config.NANOBODY_TARGET[0]
+
+
+def test_no_payload_file_pins_the_previous_target():
+    """Only the PREVIOUS_NANOBODY record and comments may still name it."""
+    from pathlib import Path
+
+    from nova_lab import REPO_ROOT
+    from scripts.build_boltzgen_notebook import OUR_FILES
+
+    previous = config.PREVIOUS_NANOBODY["target"]
+    for rel in OUR_FILES:
+        for number, line in enumerate(Path(REPO_ROOT / rel).read_text().splitlines(), 1):
+            code = line.split("#")[0]
+            if previous in code and "PREVIOUS_NANOBODY" not in code and '"target"' not in code:
+                raise AssertionError(f"{rel}:{number} fixe encore {previous} : {line.strip()}")
+
+
+def test_the_msa_the_notebook_fetches_is_the_one_the_scorer_opens():
+    from scripts.boltzgen_score import TARGET
+    from scripts.build_boltzgen_notebook import MSA_URLS
+    for url in MSA_URLS:
+        assert url.format(commit="x", target=TARGET).endswith(f"{TARGET}.a3m")

@@ -26,14 +26,19 @@ import pandas as pd
 
 from nova_lab import DATA_DIR
 
-# config/config.yaml protein_selection.nanobody + config/boltzgen_config.yaml
-TARGET = "Q9NZQ7"
-# Lus dans nova_lab.config, pas en dur : la cible a change une fois (Q9NZQ7 vers
-# P05231 le 20 novembre) et ces quatre valeurs etaient en dur dans six scripts.
+# config/config.yaml protein_selection.nanobody + config/boltzgen_config.yaml.
+# Tout vient de nova_lab.config, rien en dur : la cible a change une fois
+# (Q9NZQ7 vers P05231 le 20 novembre) et ces valeurs etaient en dur dans six
+# scripts. TARGET y avait survecu, parce qu'il ne sert qu'a nommer la MSA et
+# le yaml -- donc il ne faisait rien echouer ici, seulement sur le GPU, six
+# minutes apres le debut d'un run de deux heures (FINDINGS 76).
 from nova_lab.config import (NANOBODY_BINDING_SITE as BINDING_SITE,
                              NANOBODY_STRUCTURE as STRUCTURE,
                              NANOBODY_STRUCTURE_CHAIN as STRUCTURE_CHAIN,
-                             NANOBODY_STRUCTURE_RES_INDEX as STRUCTURE_RES_INDEX)
+                             NANOBODY_STRUCTURE_RES_INDEX as STRUCTURE_RES_INDEX,
+                             NANOBODY_TARGET)
+
+TARGET = NANOBODY_TARGET[0]
 PROTOCOL = "nanobody-anything"
 NUM_DESIGNS = 1
 STEP_SCALE = 2.0

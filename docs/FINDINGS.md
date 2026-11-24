@@ -5946,3 +5946,48 @@ plus trompeuse que ce script puisse dire. Le relevé est réessayé, et un vide
 persistant est rapporté comme un échec réseau, jamais comme une absence.
 
 188 tests passent, dont 10 nouveaux.
+
+## 76. Le run a échoué sur une constante que le changement de cible avait épargnée
+
+Premier lancement du lot de calibration : échec à 6,1 min sur
+`missing /kaggle/temp/nova/data/msa_files/Q9NZQ7.a3m`. Le carnet avait pourtant
+téléchargé la bonne MSA — `P05231.a3m`, vérifiée par empreinte, 14 s après le
+démarrage.
+
+La cause : `scripts/boltzgen_score.py` portait `TARGET = "Q9NZQ7"` **en dur**,
+et la ligne juste en dessous était un commentaire affirmant que ces valeurs sont
+lues dans `nova_lab.config`. Le commentaire était vrai pour la structure, la
+chaîne, le `res_index` et le site de liaison — les quatre que le §67 avait
+centralisés — et faux pour la cible, qui avait survécu à la bascule du
+20 novembre parce qu'elle **ne sert qu'à construire un chemin** : nommer la MSA
+et les fichiers yaml. Rien ne la contredisait en local, aucun test ne la
+touchait, et elle n'a rien cassé jusqu'au moment où BoltzGen a rouvert la MSA
+sous ce nom — après l'installation de torch et le téléchargement des poids.
+
+C'est la forme de bug la plus chère de ce dépôt : invisible hors GPU, et
+détectable en une seconde.
+
+### Ce qui est corrigé
+
+`TARGET = NANOBODY_TARGET[0]`. Et trois garde-fous, parce que corriger la
+constante ne corrige pas la classe d'erreur :
+
+1. **Dans le vérificateur local.** `verify_boltzgen_notebook` lit le `TARGET` de
+   la copie de `boltzgen_score.py` **embarquée dans la charge utile** — pas la
+   locale — et le compare au `MSA_NAME` du carnet. Reproduit sur le carnet qui
+   avait échoué, il rend en une seconde : *« le carnet télécharge P05231.a3m
+   mais le scoreur embarqué cherchera Q9NZQ7.a3m : régénérer le carnet »*.
+2. **Dans le carnet, à l'étape 1.** Après le téléchargement de la MSA et avant
+   l'installation de torch, le carnet importe le scoreur et vérifie la
+   concordance. Un carnet mal construit s'arrête à 15 s au lieu de 6 min.
+3. **Dans les tests.** `test_target_switch.py` vérifie que le scoreur lit sa
+   cible dans la config, qu'aucun fichier de la charge utile ne fixe encore
+   l'ancienne cible hors du dossier `PREVIOUS_NANOBODY` et des commentaires, et
+   que les URL de MSA pointent vers la cible du scoreur. Les deux premiers ont
+   été vérifiés en replantant la ligne : ils échouent et nomment
+   `scripts/boltzgen_score.py:41`.
+
+Le lot lui-même est inchangé — 85 séquences, les quatre lectures du §74 tiennent.
+Carnet régénéré à 518 kB, vérificateur vert.
+
+191 tests passent, dont 3 nouveaux.

@@ -162,6 +162,16 @@ for url in MSA_URLS:
     print(f"  échec depuis {url}")
 else:
     raise RuntimeError("MSA introuvable ou corrompue")
+# Le scoreur rouvre la MSA par SON propre nom de cible. Si les deux ne
+# s'accordent pas, BoltzGen echoue -- mais seulement apres l'installation de
+# torch et le telechargement des poids, soit six minutes de GPU payees pour une
+# incoherence lisible ici en une seconde (FINDINGS 76).
+sys.path.insert(0, str(WORK))
+from scripts.boltzgen_score import TARGET as SCORER_TARGET
+assert f"{SCORER_TARGET}.a3m" == MSA_NAME, (
+    f"le carnet a telecharge {MSA_NAME} mais scripts.boltzgen_score cherchera "
+    f"{SCORER_TARGET}.a3m : regenerer le carnet")
+print(f"  cible du scoreur et MSA concordent : {SCORER_TARGET}")
 sh(f"find {NOVA} -maxdepth 3 -type d | sort && ls {WORK}")
 step("étape 1 terminée")
 """),
