@@ -5784,3 +5784,104 @@ première depuis le §53 qui parte d'un liant réel conforme au filtre.
 2. La colonne `in_accepted_nativeness_range` ne testait qu'un plancher. Renommée
    `at_least_accepted_nativeness` : être **plus** camélidé que tout accepté n'est
    pas un indice de refus, et le §69 n'a établi que la borne haute à 0,80.
+
+## 74. Le lot de calibration : 61H7 rendu soumettable, et la question jamais posée
+
+Lot prêt : `inputs/kaggle_calibration.csv`, 85 séquences, `notebooks/kaggle_boltzgen.ipynb`
+(517 kB, sous la limite d'import de 1 Mo), **2,0 h sur 2× T4**. Les lectures sont
+fixées ci-dessous et dans le docstring de `scripts/build_calibration_batch.py`,
+**avant** le run.
+
+### Ce que le §73 permet, et ce qui le bloquait
+
+61H7 lie IL-6 à l'épitope exact de la config (8/8) et son paratope n'emprunte
+que **25 % au CDR3** — CDR1 31 %, CDR2 38 %, charpente 6 %. Les quatre autres
+liants sont à 40-62 % de CDR3. C'est le seul pour lequel « garder la charpente,
+redessiner le CDR3 » n'est pas absurde.
+
+Mais il n'est **pas soumettable tel quel**, et j'avais tort de le croire. La
+config en vigueur en amont pose trois règles qu'il manque :
+
+- `enforce_vhh_hallmarks: true` (E/Q en IMGT 49, R en 50) — il a G49, L50 ;
+- `min_human_v_identity: 82` — il passe à 88,8 ;
+- `min_human_j_identity: 86` — il échoue à 85,7.
+
+Ces deux planchers germinaux sont donc **réels**, lus dans `config/config.yaml` :
+le §67 avait tort de les traiter comme notre reconstruction. Et la règle des
+hallmarks est un hard gate du validateur, pas la composante D du score de
+nativité du filtre — les deux existent et ne font pas la même chose.
+
+### Trois mutations, aucune dans le paratope
+
+| | hallmarks | V | J | nativité | humanité | couche 1 |
+|---|---|---|---|---|---|---|
+| 61H7 brut | non | 88,8 | 85,7 | 0,577 | 0,992 | 2 refus |
+| + G49E, L50R | oui | 86,7 | 85,7 | 0,657 | 0,937 | 1 refus (J) |
+| + FR4 Q→L seul | non | 88,8 | 92,9 | 0,577 | 0,992 | 1 refus (hallmarks) |
+| **+ les trois** | **oui** | **86,7** | **92,9** | **0,657** | **0,937** | **OK** |
+
+```
+EVQLVESGGGLVQPGGSLRLSCAASGFTFSSYRMYWVRQPPGKEREWVSAISAGGGSTYYGDSVKGRFTISRDNAKNTVYLQMNSLKPEDTAVYYCANRAGWGMGDYWGQGTLVTVSS
+```
+
+FR1, CDR1, CDR2, FR3 et CDR3 sortent **identiques au résidu** ; seuls FR2 et FR4
+bougent, de trois positions, dont aucune n'est un contact. IGHV3-23 — le gène de
+3 époques sur 12 — et 118 résidus.
+
+### Le lot
+
+| bras | n | ce qu'il demande |
+|---|---|---|
+| `ref_intact` | 6 | les six liants cristallographiques, recouvrement 8/8 à 0/8 |
+| `camelised` | 3 | les trois mutations coûtent-elles la liaison ? |
+| `scramble` | 5 | charpente camélisée, **intérieur** du CDR3 mélangé |
+| `keep_fw` | 32 | charpente camélisée, CDR3 d'archive, L = 11/13/14/19 |
+| `move_cdr3` | 9 | le bras du §68 : CDR3 de 61H7 sur charpente étrangère |
+| `near_paratope` | 15 | archive la plus proche du paratope CDR1+CDR2 de 61H7 |
+| `archive_far` | 15 | archive ordinaire, le mode à 4-5/11 |
+
+`keep_fw` et `scramble` sont à **100 % conformes** : le filtrage sur le plancher
+J était nécessaire, car échanger un CDR3 déplace l'alignement J et faisait
+tomber les deux tiers du bras à 78,6 — un bras de séquences insoumettables
+n'aurait pas mesuré ce qu'on veut. `ref_intact` et `move_cdr3` ne passent pas,
+et c'est voulu : ce sont des ancres et des témoins, pas des soumissions.
+
+**Pas de répliques, et pas par choix** : `boltzgen_score` nomme chaque entrée par
+l'empreinte SHA-256 de la séquence, donc une séquence répétée est une seule
+mesure payée deux fois. Mon premier jet en avait 3 par ancre et aurait gâché un
+tiers de l'heure GPU ; `verify_boltzgen_notebook` l'a attrapé. La précision vient
+donc du nombre de séquences **distinctes** par bras, et le plancher de l'échelle
+est élargi par de vrais non-liants d'IL-6 : les 15 de `archive_far`, conçus
+contre PD-L1, et le VHH de 8AOK qui lie PD-L1 par cristallographie.
+
+### Lectures fixées avant le run
+
+1. **Si 61H7 ne dépasse pas le plancher des 15 non-liants**, l'iiptm calculé à
+   ce site de liaison ne lit pas la liaison, et chaque heure GPU depuis le §49
+   mesurait autre chose. C'est le résultat le plus important que ce lot puisse
+   rendre, et celui que j'attends le moins.
+2. **Si `camelised` tombe sous 61H7 brut** de plus que l'écart entre séquences
+   d'un même bras, les trois mutations qui le rendent soumettable coûtent la
+   liaison, et la séquence soumettable n'est pas le liant. Cette voie se
+   fermerait aussi nettement que le §68 a fermé la greffe. C'est le risque que
+   ce bras est là pour chiffrer : les positions 49 et 50 sont celles où un VHH
+   occupe la place qu'une chaîne légère laisse vide, et caméliser un VH apparié
+   n'est pas gratuit dans la littérature non plus.
+3. **Si `scramble` égale la charpente camélisée** dans le bruit, la mesure ignore
+   le CDR3 et `keep_fw` contre `move_cdr3` ne s'y lit pas.
+4. **Le §73 n'est soutenu que si** `keep_fw` dépasse `move_cdr3` de plus que
+   l'écart intra-bras **et** atteint le 61H7 de `ref_intact`. Battre
+   `archive_far` seul ne suffit pas : c'est la comparaison que le §59 a déjà
+   montrée confondue par le choix d'échafaudage.
+
+Ce lot ne mesure pas un classement — il n'y a aucun rival sur `P05231`, l'époque
+n'a pas eu lieu. Il mesure si notre instrument lit la liaison, ce qu'aucun des
+lots précédents n'a vérifié.
+
+### Deux généralisations au passage
+
+`build_boltzgen_notebook` et `verify_boltzgen_notebook` codaient `8AOK` en dur :
+ils auraient embarqué l'ancienne structure et validé un carnet construit pour
+l'ancienne cible. Les deux lisent désormais `nova_lab.config`, et le builder
+lève si le `.cif` n'est pas en amont plutôt que de laisser
+`scripts.boltzgen_score` le nommer dans un yaml sans qu'il existe.

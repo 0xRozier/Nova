@@ -20,6 +20,7 @@ import tarfile
 from pathlib import Path
 
 from nova_lab import REPO_ROOT, UPSTREAM_COMMIT
+from nova_lab.config import NANOBODY_STRUCTURE, NANOBODY_TARGET
 
 KAGGLE_IMPORT_LIMIT = 1_000_000
 MSA_URLS = [
@@ -35,7 +36,8 @@ OUR_FILES = [
 ]
 
 
-def payload(batch: str, nova_dir: Path, target: str) -> str:
+def payload(batch: str, nova_dir: Path, target: str,
+            structure: str = NANOBODY_STRUCTURE) -> str:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:xz") as tar:
         for rel in OUR_FILES + [batch]:
@@ -45,7 +47,12 @@ def payload(batch: str, nova_dir: Path, target: str) -> str:
                 filter=lambda info: None if "__pycache__" in info.name else info)
         tar.add(nova_dir / "external_tools" / "boltzgen" / "pyproject.toml",
                 arcname="nova/boltzgen/pyproject.toml")
-        tar.add(nova_dir / "data" / "structures" / "8AOK.cif", arcname="nova/data/structures/8AOK.cif")
+        cif = nova_dir / "data" / "structures" / f"{structure}.cif"
+        if not cif.exists():
+            raise SystemExit(f"structure {structure}.cif absente de {cif.parent} : "
+                             f"le depot amont ne la porte pas, et scripts.boltzgen_score "
+                             f"la nommera quand meme dans son yaml")
+        tar.add(cif, arcname=f"nova/data/structures/{structure}.cif")
     return base64.b64encode(buf.getvalue()).decode()
 
 
@@ -58,7 +65,8 @@ def code(text):
             "source": text.strip("\n").splitlines(True)}
 
 
-def build(batch: str, nova_dir: Path, target: str, run: str | None = None) -> dict:
+def build(batch: str, nova_dir: Path, target: str, run: str | None = None,
+          structure: str = NANOBODY_STRUCTURE) -> dict:
     # One run name per batch: BoltzGen resumes an existing run directory, so a
     # stale name silently returns the previous results instead of scoring.
     run = run or Path(batch).stem
@@ -71,7 +79,7 @@ def build(batch: str, nova_dir: Path, target: str, run: str | None = None) -> di
         md(f"""
 # NOVA SN68 — scoring BoltzGen de nanobodies sur GPU Kaggle
 
-Note des séquences avec **la version de BoltzGen embarquée par les validateurs NOVA**, avec leur structure cible ({target} / 8AOK), leur site de liaison, leur protocole et leurs échelles.
+Note des séquences avec **la version de BoltzGen embarquée par les validateurs NOVA**, avec leur structure cible ({target} / {structure}), leur site de liaison, leur protocole et leurs échelles.
 
 Notebook **autonome** : la source BoltzGen, la structure, le lot (`{batch}`) et le code de scoring sont intégrés. La MSA est téléchargée via jsDelivr et vérifiée par empreinte SHA-256 ; les poids (~6 Go) viennent de Hugging Face.
 
@@ -241,11 +249,11 @@ df
 """),
     ]
     cells.insert(2, code(
-        f"# Données intégrées : BoltzGen des validateurs, structure 8AOK, {batch}, code de scoring (tar.xz base64)\n"
+        f"# Données intégrées : BoltzGen des validateurs, structure {structure}, {batch}, code de scoring (tar.xz base64)\n"
         f"MSA_NAME = \"{target}.a3m\"\n"
         f"MSA_SHA256 = \"{msa_sha}\"\n"
         f"MSA_URLS = {json.dumps(msa_urls)}\n"
-        f"PAYLOAD = \"{payload(batch, nova_dir, target)}\""))
+        f"PAYLOAD = \"{payload(batch, nova_dir, target, structure)}\""))
     return {"cells": cells,
             "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                          "language_info": {"name": "python"}},
@@ -256,14 +264,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch", default="inputs/kaggle_nanobody_batch4.csv")
     parser.add_argument("--run", help="run name (default: the batch file's stem)")
-    parser.add_argument("--target", default="Q9NZQ7")
+    parser.add_argument("--target", default=NANOBODY_TARGET[0],
+                        help="UniProt accession; its MSA must exist upstream")
+    parser.add_argument("--structure", default=NANOBODY_STRUCTURE,
+                        help="PDB id of the target structure, as nova_lab.config names it")
     parser.add_argument("--nova-dir", type=Path, default=REPO_ROOT.parent / "nova-upstream")
     parser.add_argument("--out", default="notebooks/kaggle_boltzgen.ipynb")
     args = parser.parse_args()
     if not (args.nova_dir / "external_tools" / "boltzgen" / "src").is_dir():
         raise SystemExit(f"upstream clone not found at {args.nova_dir}; pass --nova-dir")
 
-    nb = build(args.batch, args.nova_dir, args.target, args.run)
+    nb = build(args.batch, args.nova_dir, args.target, args.run, args.structure)
     path = REPO_ROOT / args.out
     path.write_text(json.dumps(nb, indent=1, ensure_ascii=False))
     size = path.stat().st_size

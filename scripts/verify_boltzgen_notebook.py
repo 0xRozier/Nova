@@ -27,11 +27,16 @@ import tarfile
 import tempfile
 from pathlib import Path
 
+from nova_lab.config import NANOBODY_STRUCTURE
+
 ROOT = Path(__file__).resolve().parent.parent
+# The structure is whichever one nova_lab.config names, because that is the one
+# scripts.boltzgen_score writes into its yaml. Pinning a PDB id here would pass
+# a notebook built for the previous target.
 REQUIRED_IN_PAYLOAD = (
     "scripts/boltzgen_score.py",
     "nova/boltzgen/pyproject.toml",
-    "nova/data/structures/8AOK.cif",
+    f"nova/data/structures/{NANOBODY_STRUCTURE}.cif",
 )
 
 
