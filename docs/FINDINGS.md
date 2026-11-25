@@ -6385,3 +6385,33 @@ Le fichier de ce lot aurait donc été classé sous l'**ancienne** cible — et 
 du ρ ci-dessus, ce n'est pas une dégradation du modèle, c'est l'entraîner sur
 une fonction sans rapport. Remplacé par un registre explicite
 (`LIVE_TARGET_FILES`) que chaque nouveau run doit alimenter.
+
+### 80 bis. Courbe d'apprentissage : combien de requêtes par cible
+
+Le §80 ferme le transfert, donc la seule question qui reste chiffrable est :
+combien de requêtes faut-il sur une cible donnée. Mesuré en sous-échantillonnant
+l'ancienne cible **par grappes** (pas par lignes, sinon on garde les jumelles),
+trois tirages par point :
+
+| requêtes | heures GPU à 2,2 min | ρ (grappes 0,80) |
+|---|---|---|
+| 100 | 3,7 h | +0,272 ± 0,224 |
+| 200 | 7,3 h | **+0,422 ± 0,104** |
+| 400 | 14,7 h | +0,394 ± 0,018 |
+| 700 | 25,7 h | +0,474 ± 0,063 |
+| 1 000 | 36,7 h | +0,540 ± 0,011 |
+| 1 157 | 42,4 h | +0,577 |
+
+C'est bien meilleur que ce que le §80 laissait craindre. **200 requêtes — 7,3 h —
+donnent déjà ρ 0,42**, soit les trois quarts de ce que 1 157 requêtes
+atteignent. Au-delà, le rendement est faible : tripler encore (700) ne gagne que
+0,05, et il faut 1 000 requêtes pour franchir 0,54.
+
+Nous avons déjà **132 requêtes** sur la cible vivante. Environ **70 de plus,
+2,5 h de GPU**, nous placent au palier des 200.
+
+Et une précision de structure qui change le plan : le substitut prédit le score
+pour un couple (séquence, cible). La cible change chaque **semaine**, les
+contraintes d'époque — gène V, longueur du CDR3 — changent chaque **époque**
+(72 min). Le substitut est donc à racheter par semaine, pas par époque, et il
+sert à toutes les époques de la semaine.
