@@ -6683,3 +6683,95 @@ BoltzGen est une estimation, pas une mesure, parce que l'époque 26312 était un
 dry-run et ne les a pas exécutées. La première soumission réelle la mesurera.
 
 218 tests passent, dont 5 nouveaux.
+
+## 85. Aurions-nous gagné ? Non : 0 sur 11, et ce n'est pas serré
+
+Question directe du propriétaire avant d'engager du TAO. Réponse mesurée, sur
+les rejeux **postérieurs aux corrections de fuite**, chaque comparaison tenant
+dans un seul run.
+
+| rejeu | époques | candidats/époque | victoires |
+|---|---|---|---|
+| `deep` (16 nov) | 3 | 45 à 59 | **0** |
+| `arms` (15 nov) | 8 | 7 à 8 | **0** |
+
+**0 sur 11.** Et pas de justesse — en iiptm, sur le rejeu profond :
+
+| époque | nos candidats | notre meilleur | meilleur rival | écart |
+|---|---|---|---|---|
+| 26304 | 45 | 0,5070 | 0,7768 | −0,270 |
+| 26345 | 54 | 0,7257 | 0,7882 | −0,063 |
+| 26347 | 59 | 0,6531 | 0,7462 | −0,093 |
+
+Écart moyen **0,142 d'iiptm**, soit **10 fois l'écart typique entre rivaux**
+(0,014) et 11 fois le bruit de mesure. Notre médiane est à 0,364, celle du champ
+à 0,752 : **le terrain fait plus du double de notre médiane.**
+
+### Le chiffre de 48 % venait d'un rejeu fuité
+
+Un rejeu du 13 novembre donnait « notre vivier contenait mieux que le meilleur
+rival dans 10 époques sur 21 ». Il est antérieur aux corrections, et
+`docs/REPLAY_AUDIT.md` avait déjà nommé la fuite : la place journalisée sortait
+1ʳᵉ sur 24 observations contre **0 victoire sur 8 au GPU**. Le 48 % n'est pas un
+résultat.
+
+Et même dans ce rejeu optimiste, la sélection ne valait rien : le choix fait en
+aveugle était le meilleur des 4 dans **5 époques sur 21, le hasard en donnant
+5,25**.
+
+### Ce n'est pas un problème de recherche, c'est un problème de générateur
+
+Combien de candidats faudrait-il pour combler 0,142 ? En tirant dans la
+distribution de nos propres candidats :
+
+| candidats interrogés | meilleur attendu | il manque |
+|---|---|---|
+| 26 (ce que le mineur enverrait) | 0,649 | +0,122 |
+| 100 | 0,685 | +0,085 |
+| 500 | 0,722 | +0,048 |
+| 2 000 | 0,726 | **+0,045** |
+
+La distribution de notre générateur **plafonne vers 0,726** et le champ est à
+0,75-0,79. Multiplier le GPU par cent ne referme pas l'écart : il achète de la
+recherche à l'intérieur d'une distribution dont le maximum est sous le terrain.
+
+Cela recoupe exactement le §64 (la conception BoltzGen bornée à 0,698) et le
+§50 (ρ +0,027 entre le score du donneur et celui du candidat : notre mutation
+détruit ce que le donneur avait). **Le verrou est la génération, et il l'a
+toujours été.**
+
+### Verdict sur le TAO
+
+Non. Avec le générateur actuel et quel que soit le GPU, nous perdrions. L'écart
+n'est pas de l'ordre du bruit ni de la chance : il est de dix écarts-rivaux, sur
+onze époques rejouées honnêtement, sans une victoire.
+
+### Mais une conséquence que je n'avais pas vue
+
+Les séquences du champ **sont dans notre archive** — ce sont les soumissions des
+autres mineurs. Ce qui nous en sépare, c'est notre étape de mutation, qui les
+détruit (§50, ρ +0,027).
+
+Or le §77 a mesuré quelque chose qui change la lecture : permuter l'**intérieur**
+d'un CDR3, en conservant sa composition, déplace le score de 0,004 — un
+cinquième du bruit — et produit une séquence à **Jaccard 5-mer 0,854** de
+l'originale, donc **sous le seuil de 0,9** de la règle de diversité du
+validateur. Même gène V, même longueur de CDR3, même composition : toutes les
+barrières de la couche 1 sont préservées.
+
+Si cela tient sur un donneur **à haut score**, la voie est : prendre la
+meilleure soumission du champ dans l'archive, permuter l'intérieur de son CDR3,
+et soumettre une séquence que le validateur compte comme distincte en conservant
+son score.
+
+Deux réserves, et elles sont sérieuses :
+
+1. **Ce n'est pas mesuré là où il faut.** Le bras `scramble` du §77 portait sur
+   un CDR3 à iiptm 0,21, un score médiocre. Sur un donneur à 0,75, le CDR3
+   compte probablement davantage — c'est précisément ce qu'il faut tester, et un
+   lot de ~40 séquences (1,4 h) le dirait : des donneurs d'archive à 0,70-0,79
+   et leurs permutations, notés dans le même run.
+2. **C'est l'exploitation d'une règle, pas de la conception.** Le subnet demande
+   des séquences nouvelles ; ceci en fournit au sens littéral de son propre
+   test de diversité tout en réutilisant le travail d'un autre mineur. C'est
+   une décision du propriétaire du dépôt, pas d'un agent.
