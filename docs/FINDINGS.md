@@ -6775,3 +6775,57 @@ Deux réserves, et elles sont sérieuses :
    des séquences nouvelles ; ceci en fournit au sens littéral de son propre
    test de diversité tout en réutilisant le travail d'un autre mineur. C'est
    une décision du propriétaire du dépôt, pas d'un agent.
+
+## 86. L'ESM n'apporte rien : le dernier axe gratuit est fermé
+
+`scripts/esm_surrogate.py`, `tests/test_esm_surrogate.py`. Attente annoncée
+avant de lancer : faible. Elle est tenue.
+
+La question était de savoir si la limite du §83 (ρ 0,260 sur la cible vivante)
+tient aux **descripteurs** ou au **problème**. Un plongement ESM-2 sait sur la
+structure des protéines ce qu'un comptage de 3-mers ignore : si le comportement
+de l'oracle avait une base structurale qu'une séquence puisse porter, c'est là
+qu'elle se verrait.
+
+Trois représentations — moyenne sur toute la séquence, moyenne sur le **CDR3
+seul** (le §77 a montré que l'identité de la boucle déplace le score 6,9 fois
+plus que sa permutation, donc moyenner sur 120 résidus pour prédire ce que 11
+pilotent dilue le signal), et les deux concaténées — deux familles de modèles,
+et la même validation croisée par grappes que le §78.
+
+| | cible vivante (202) | ancienne cible (1 157) | bande réaliste (549) |
+|---|---|---|---|
+| référence : descripteurs + 3-mers | **+0,144** | **+0,580** | **+0,182** |
+| ridge sur ESM CDR3 | +0,124 | +0,585 | +0,175 |
+| ridge sur ESM complet | −0,105 | +0,546 | — |
+| ridge sur ESM (les deux) | +0,027 | +0,589 | +0,184 |
+| ridge sur ESM + 3-mers | +0,098 | +0,566 | +0,207 |
+| GBM sur ESM après ACP 30 | +0,030 à +0,097 | +0,460 à +0,508 | — |
+
+Écarts entre plis : 0,05 à 0,21. **Aucun écart à la référence ne dépasse le
+bruit entre plis**, sur aucune des trois configurations — ni avec 202 points ni
+avec 1 157, ni sur toute la plage ni dans la bande étroite où vit le chiffre
+opératoire.
+
+### Ce que cela dit
+
+Le plafond n'est pas dans nos descripteurs. Un modèle de langage protéique
+entraîné sur des millions de séquences ne voit rien que des comptages de 3-mers
+ne voient déjà — et c'est cohérent avec le §77 : **le score ne lit pas la
+biologie, donc il n'y a pas de biologie qu'un modèle biologique puisse
+trouver.** L'oracle reste une boîte noire déterministe qu'on ne sait
+qu'interroger.
+
+Réserve : seul `esm2_t12_35M` a été essayé, pas le 650M. Mais le motif — l'ESM
+égalant exactement des descripteurs simples à chaque régime de données — dit que
+la limite est le plafond, pas la richesse de la représentation, et un modèle
+dix-huit fois plus gros sur 202 points d'entraînement n'est pas le pari qui
+renverse ça.
+
+Un test garde le seul endroit où un défaut silencieux aurait flatté la
+comparaison : une séquence dont le CDR3 est introuvable reçoit des zéros, pas la
+moyenne de la séquence entière — sinon la colonne `cdr3` serait devenue une
+copie de la colonne `whole` et les deux représentations se seraient accordées
+parce qu'elles étaient les mêmes nombres.
+
+221 tests passent, dont 3 nouveaux.
