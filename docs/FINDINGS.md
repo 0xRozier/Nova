@@ -6480,3 +6480,63 @@ dixième et passent en 18 s. Un fichier de tests lent est une taxe sur toutes
 les exécutions futures.
 
 213 tests passent, dont 7 nouveaux.
+
+## 82. « Il suffit d'évaluer les gagnants précédents » : testé, et non
+
+Question légitime après le §77 : si le problème est une optimisation en boîte
+noire, les gagnants des époques passées devraient dire quoi viser. Elle a deux
+formes et toutes deux sont maintenant mesurées.
+
+### Forme faible : réutiliser les séquences qui ont bien noté
+
+Le lot du §80 contenait précisément cela — des séquences d'archive, dont les
+mieux notées contre l'ancienne cible, repassées contre la vivante :
+
+| | médiane sur la cible vivante | rang-somme médian |
+|---|---|---|
+| les 8 **meilleures** de l'ancienne cible (0,677 à 0,760) | 0,1753 | 229 |
+| tout le lot | 0,1865 | 194 |
+| les 8 **pires** de l'ancienne cible | 0,1702 | — |
+
+Les meilleures notent **en dessous** de la médiane du lot, et à peine au-dessus
+des pires (0,1753 contre 0,1702). Savoir qu'une séquence a été excellente la
+semaine dernière ne dit rien de cette semaine.
+
+### Forme forte : un « style » transférable
+
+C'est la version qui n'avait jamais été testée. Peut-être que les séquences qui
+notent haut partagent des traits — longueur de CDR3, charge, hydrophobicité,
+aromaticité — valables sur n'importe quelle cible. Corrélation de 21 traits avec
+le score, sur chaque cible :
+
+- **5 traits sur 21 pointent dans le même sens**, là où le hasard en donnerait
+  ~10. Il n'y a donc pas d'accord, même pas partiel ;
+- les deux profils de traits se ressemblent à **ρ = −0,021** (p = 0,93) ;
+- le seul trait nettement prédictif sur l'ancienne cible — la charge du CDR3,
+  ρ +0,287 — **change de signe** sur la vivante (−0,056).
+
+Et un modèle entraîné sur les 1 157 séquences de l'ancienne cible, appliqué aux
+132 de la vivante, rend **ρ = −0,075** (p = 0,39). Ce test est distinct du §80 :
+le §80 comparait les scores des mêmes séquences, celui-ci demande si un modèle
+emporte quoi que ce soit. Non.
+
+### Pourquoi c'était à attendre
+
+Le score est une fonction du **couple** (séquence, cible) : c'est une confiance
+d'appariement d'interface. Rien dans une séquence seule ne détermine comment
+elle se pose sur une protéine qu'elle n'a jamais vue. La surprise n'est pas que
+cela ne transfère pas — c'est que nous l'ayons espéré.
+
+### Ce qui transfère vraiment des gagnants
+
+Non pas leur score, mais les **barrières** — et c'est déjà exploité. Les
+barrières sont les mêmes d'une semaine à l'autre parce qu'elles ne regardent que
+la séquence, pas la cible. Le §69 en a tiré que la nativité des soumissions
+acceptées se situe entre 0,386 et 0,596 et que le seuil de 0,80 n'est pas
+appliqué, et le §70 en a tiré le crible calibré à V ≥ 79. Ces deux résultats
+viennent exactement de « regarder ce qui passe chez les autres », et ils
+tiennent.
+
+La ligne de démarcation est donc nette : **tout ce qui ne regarde que la
+séquence s'apprend des autres mineurs une fois pour toutes ; tout ce qui regarde
+l'interface se rachète à chaque cible.**
