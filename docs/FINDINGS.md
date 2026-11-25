@@ -6312,3 +6312,76 @@ données existent, et deux tests la font tourner sur un aller-retour synthétiqu
 comme telle. Le verdict ne pourra pas être choisi après coup.
 
 206 tests passent, dont 10 nouveaux.
+
+## 80. Zéro transfert entre cibles. Les 1 490 requêtes sont de l'histoire.
+
+56 séquences, 121 min sur 2× T4, zéro échec. Preuve :
+`results/scores_nanobody_transfer.csv`. Lecture exécutée par
+`scripts.build_transfer_batch --analyse`, écrite au §79 avant que les données
+existent.
+
+```
+48 séquences comparables
+  Spearman(ancienne cible, cible vivante) = +0,003 ± 0,15   p = 0,98
+  avec la confiance de repliement retirée  = +0,066
+  bruit de la cible vivante (8 répétitions) : 0,0133, biais de run −0,0008
+```
+
+Le seuil pré-enregistré était ρ ≥ 0,6 pour « les requêtes se transfèrent » et
+ρ < 0,3 pour « le score est propre à la cible ». **Le verdict est le troisième**,
+et il n'est pas serré : avec ±0,15 sur 48 points, même un transfert partiel à
+0,3 est exclu à deux erreurs-types.
+
+Ce n'est pas un artefact de bruit, et le bras de répétitions le prouve : le
+bruit de la cible vivante est **0,0133**, très petit devant l'étendue de 0,143
+à 0,760 couverte sur l'abscisse. Le confondant nommé au §79 est écarté aussi —
+retirer `design_ptm` ne fait pas apparaître de corrélation (+0,066).
+
+Deux acquis annexes, tous deux utiles :
+
+- **le bruit de la cible vivante est mesuré** pour la première fois : 0,0133,
+  cohérent avec les 0,0121 de l'ancienne cible, donc la valeur ne dépend pas de
+  la cible même si le score en dépend entièrement ;
+- **les runs ne sont pas biaisés**, seulement bruités : le biais entre deux runs
+  est de −0,0008 sur huit répétitions. Ce qui différait entre runs était du
+  bruit, pas un décalage.
+
+### Ce que cela coûte
+
+Le substitut du §78 atteignait ρ 0,580 sur 1 157 séquences de l'ancienne cible.
+Il ne vaut rien ici. Sur la cible vivante, avec les 132 séquences dont nous
+disposons désormais (85 du §77 + 56 de ce lot), le même modèle rend :
+
+| | ρ (grappes 0,80) | part captée sur 30 candidats |
+|---|---|---|
+| ancienne cible, 1 157 séquences | +0,580 | 73 % |
+| **cible vivante, 132 séquences** | **+0,235 ± 0,14** | 20 % |
+
+À peine distinguable de zéro. Et comme la cible change chaque semaine, **le
+compteur repart de zéro à chaque fois**.
+
+### La correction que ce résultat impose au §78
+
+Le §78 appelait les 1 490 requêtes « l'actif du dépôt » et concluait que le
+substitut valait « à peu près un facteur 100 sur le GPU ». Les deux affirmations
+sont fausses telles qu'écrites. Ce qui reste vrai :
+
+- la **méthode** est validée : un substitut atteint ρ 0,580 à partir d'environ
+  un millier de requêtes **sur une même cible** ;
+- la **valeur** mesurée (73 % de l'écart hasard→oracle, 1,38 écart-type) est
+  réelle, mais elle n'est accessible qu'après avoir payé ces requêtes sur la
+  cible en cours.
+
+Autrement dit, le substitut n'est pas un substitut *au* GPU : c'est ce qu'on
+obtient *avec* du GPU, et il faut le racheter à chaque cible. La question que
+tu posais — « est-ce qu'un GPU permanent nous ferait avancer » — a donc une
+réponse plus nette qu'au §78, et plus chère.
+
+### Un défaut de code révélé au passage
+
+`scripts/train_score_surrogate.py` reconnaissait les fichiers de la cible
+vivante par un seul nom de fichier codé en dur, celui du run de calibration.
+Le fichier de ce lot aurait donc été classé sous l'**ancienne** cible — et au vu
+du ρ ci-dessus, ce n'est pas une dégradation du modèle, c'est l'entraîner sur
+une fonction sans rapport. Remplacé par un registre explicite
+(`LIVE_TARGET_FILES`) que chaque nouveau run doit alimenter.

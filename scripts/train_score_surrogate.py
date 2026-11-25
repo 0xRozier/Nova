@@ -53,7 +53,14 @@ from nova_lab.nanobodies import regions
 CURRENT = NANOBODY_STRUCTURE
 PREVIOUS = PREVIOUS_NANOBODY["structure"]
 
-CALIBRATION = "results/scores_nanobody_calibration.csv"   # the only 4O9H run
+# Which result files were produced against the LIVE target. A registry, not a
+# guess: FINDINGS 80 measured the transfer between targets at rho +0.003, so a
+# file filed under the wrong target does not degrade the model, it trains it on
+# an unrelated function. Every new live-target run must be added here.
+LIVE_TARGET_FILES = {
+    "scores_nanobody_calibration.csv",   # FINDINGS 77, 85 sequences
+    "scores_nanobody_transfer.csv",      # FINDINGS 80, 56 sequences
+}
 # Two defensible severities, and they answer different questions.
 #
 #   0.80  groups sequences that share a framework and differ by one loop
@@ -80,8 +87,8 @@ def load(target: str) -> pd.DataFrame:
     """One row per distinct sequence, label = mean iiptm over its runs."""
     frames = []
     for path in sorted(glob.glob("results/*.csv")):
-        is_cal = CALIBRATION.endswith(Path(path).name)
-        if (target == CURRENT) != is_cal:
+        is_live = Path(path).name in LIVE_TARGET_FILES
+        if (target == CURRENT) != is_live:
             continue
         try:
             f = pd.read_csv(path)
