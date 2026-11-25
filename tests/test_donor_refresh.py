@@ -124,3 +124,38 @@ def test_it_decrypts_the_span_the_holes_cover(monkeypatch):
     mine.refresh_donor_pool("Q9NZQ7", [26308, 26304, 26303], 10_000,
                             log=lambda *a: None)
     assert spans == [("26303", "26308")]
+
+
+# --- FINDINGS 83/84: the shortlist read off the clock ----------------------
+
+def test_the_shortlist_uses_the_room_the_cpu_stages_leave():
+    """Epoch 26312's journal: 755 s for everything but BoltzGen, 68 min window."""
+    from scripts.mine import shortlist_for_budget
+    assert shortlist_for_budget(68 * 60, 755) == 26
+    # the old fixed default left two thirds of the dominant lever unused
+    assert shortlist_for_budget(68 * 60, 755) > 3 * 8
+
+
+def test_the_shortlist_never_reaches_zero():
+    """A badly scored candidate still beats abstaining, which scores zero."""
+    from scripts.mine import shortlist_for_budget
+    for seconds_left, elapsed in ((60, 0), (600, 900), (0, 0), (-100, 50)):
+        assert shortlist_for_budget(seconds_left, elapsed) == 1
+
+
+def test_the_shortlist_is_capped():
+    from scripts.mine import SHORTLIST_CAP, shortlist_for_budget
+    assert shortlist_for_budget(100 * 3600, 0) == SHORTLIST_CAP
+
+
+def test_the_shortlist_shrinks_as_the_epoch_runs_out():
+    from scripts.mine import shortlist_for_budget
+    sizes = [shortlist_for_budget(68 * 60, e) for e in (0, 600, 1800, 3000)]
+    assert sizes == sorted(sizes, reverse=True)
+
+
+def test_the_throughput_matches_what_the_runs_measured():
+    """211 sequences, three runs: 167.0 + 121.1 + 143.6 min."""
+    from scripts.mine import BOLTZGEN_SECONDS_PER_SEQUENCE
+    measured = (167.0 + 121.1 + 143.6) * 60 / (85 + 56 + 70)
+    assert abs(BOLTZGEN_SECONDS_PER_SEQUENCE - measured) < 2.0

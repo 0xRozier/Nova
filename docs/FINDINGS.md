@@ -6628,3 +6628,58 @@ se compose avec le GPU. Mais c'est un appoint, pas un levier — et il ne grandi
 presque pas avec les requêtes (0,235 à 132, 0,260 à 202). La limite n'est pas la
 quantité de données : c'est que nos descripteurs ne captent pas ce que fait
 l'oracle à l'intérieur d'une bande étroite.
+
+## 84. Le mineur laissait le levier dominant inutilisé
+
+Le §83 a montré que le nombre de candidats envoyés à BoltzGen est **le** levier :
+sur la distribution de la cible vivante, passer de 8 à 19 vaut +0,87 écart-type,
+soit 2,5 écarts-rivaux — plus que tout ce que le substitut apporte (+0,55).
+`scripts/mine.py` l'avait figé à **8**.
+
+### Le débit documenté était 28 % trop optimiste
+
+| run | séquences | durée | min/séquence |
+|---|---|---|---|
+| calibration (§77) | 85 | 167,0 min | 1,96 |
+| transfert (§80) | 56 | 121,1 min | 2,16 |
+| apprentissage (§83) | 70 | 143,6 min | 2,05 |
+| **total** | **211** | **431,7 min** | **2,05** |
+
+`mine.py` documentait 1,6 min/séquence, et c'est ce chiffre qui dimensionnait le
+shortlist. `BOLTZGEN_SECONDS_PER_SEQUENCE = 123.0` désormais, avec sa provenance.
+
+### Et la place était là
+
+Le journal de l'unique époque jouée (26312) donne le coût des étapes CPU :
+
+| étape | durée |
+|---|---|
+| crible PSH | 426,4 s |
+| génération | 242,3 s |
+| archive | 43,5 s |
+| développabilité | 41,9 s |
+| **tout sauf BoltzGen** | **755,3 s = 12,6 min** |
+
+Sur une fenêtre de 68 min (361 blocs, moins 10 de fermeture et 12 de sécurité),
+il reste donc **~55 min, soit 26 candidats** au débit mesuré. Le mineur en
+envoyait 8.
+
+### Pourquoi un nombre fixe était le mauvais choix
+
+Pas seulement parce que 8 est trop petit : parce que la place disponible **n'est
+pas connaissable d'avance**. Le coût du crible PSH suit la longueur du CDR3 de
+l'époque — le vivier va de ~13 candidats à CDR3 8 à ~67 à CDR3 18 — donc ce qui
+reste pour BoltzGen varie d'une époque à l'autre. `shortlist_for_budget` le lit
+sur l'horloge : ce que le temps restant permet, au débit mesuré, moins une
+réserve pour le timelock, le PUT GitHub et l'extrinsic, plafonné à 40.
+
+Deux garde-fous : le résultat **ne descend jamais à 0** — un candidat mal noté
+bat l'abstention, qui vaut zéro à coup sûr — et `--shortlist` reste disponible
+pour forcer une valeur. Le journal enregistre les deux nombres, celui retenu et
+celui que le budget permettait, pour qu'un écart se voie après coup.
+
+Ce que cela ne corrige pas : la réserve de 120 s pour les étapes d'après
+BoltzGen est une estimation, pas une mesure, parce que l'époque 26312 était un
+dry-run et ne les a pas exécutées. La première soumission réelle la mesurera.
+
+218 tests passent, dont 5 nouveaux.

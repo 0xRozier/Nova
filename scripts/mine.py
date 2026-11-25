@@ -60,9 +60,16 @@ from nova_lab.psh_calibration import (SIGMA as PSH_SIGMA, THRESHOLD as PSH_THRES
 
 JOURNAL = DATA_DIR / "mining" / "journal.jsonl"
 BLOCK_SECONDS = 12
-# Leave room for encryption, the GitHub PUT and the extrinsic. Measured: BoltzGen
-# runs at ~1.6 min/sequence on 2x T4, so the candidate budget follows from this.
+# Leave room for encryption, the GitHub PUT and the extrinsic.
 SAFETY_BLOCKS = 12
+# BoltzGen's throughput, measured over 211 sequences in three runs on 2x T4:
+# 85 in 167.0 min, 56 in 121.1, 70 in 143.6. The figure this replaces was 1.6
+# min/sequence, 28% optimistic, and it sized the shortlist.
+BOLTZGEN_SECONDS_PER_SEQUENCE = 123.0
+# What the stages after BoltzGen need: the timelock round, the GitHub PUT and
+# the extrinsic. Not in the journal (epoch 26312 was a dry run), so this is a
+# guess on the generous side, on top of SAFETY_BLOCKS.
+SUBMIT_RESERVE_SECONDS = 120.0
 # Share of FRESH generator candidates reading at or under each PSH, measured on
 # the install the validator runs: 100 candidates per length, one fold each,
 # results/psh_fresh_candidates_by_length.csv.
@@ -83,9 +90,12 @@ SAFETY_BLOCKS = 12
 # fixes it; it only buys the tail.
 PSH_PASS_RATE = {8: 0.75, 11: 0.50, 18: 0.15}
 # Candidates wanted under the validator's threshold before BoltzGen: the
-# shortlist of 8, plus slack for the developability screen, which rejected
+# shortlist, plus slack for the developability screen, which rejected
 # 1 of 8 on epoch 26238.
 WANT_UNDER_THRESHOLD = 10
+# A ceiling on the shortlist, not a target: the number actually sent is
+# whatever the remaining budget affords (see shortlist_for_budget).
+SHORTLIST_CAP = 40
 
 
 def psh_pass_rate(cdr3_length: int, table: dict) -> float:
@@ -517,6 +527,34 @@ def boltzgen_rank(sequences: list[str], run_name: str, nova_dir: Path,
     return df.sort_values("rank_sum")
 
 
+
+def shortlist_for_budget(seconds_left: float, elapsed: float, cap: int = SHORTLIST_CAP,
+                         per_sequence: float = BOLTZGEN_SECONDS_PER_SEQUENCE,
+                         reserve: float = SUBMIT_RESERVE_SECONDS) -> int:
+    """How many candidates BoltzGen can still score before the deadline.
+
+    FINDINGS 83 measured that the number of candidates scored is the dominant
+    lever: on the live target's distribution, going from 8 to 19 is worth 0.87
+    of a standard deviation, or 2.5 times the typical gap between rivals --
+    more than the surrogate contributes in total. And the stages before it are
+    cheap: epoch 26312's journal has 755 s for everything but BoltzGen (PSH
+    screen 426, generation 242, archive 44, developability 42), which on a
+    68-minute window leaves about 55 minutes, or 26 candidates at the measured
+    2.05 min each.
+
+    The shortlist was fixed at 8, sized against a throughput figure that was
+    28% optimistic. Fixing it at a number is the mistake: the CPU stages scale
+    with the epoch's CDR3 length (the PSH pool runs from ~13 candidates at
+    CDR3 8 to ~67 at 18), so the room left for BoltzGen is not knowable in
+    advance. This reads it off the clock instead.
+
+    Never returns 0: one candidate scored badly still beats abstaining, which
+    scores zero for certain.
+    """
+    usable = seconds_left - elapsed - reserve
+    return max(1, min(cap, int(usable // per_sequence)))
+
+
 def donor_pool_lag(target: str, epoch: int) -> int | None:
     """How many epochs behind the generator's donor pool is, or None if unknown.
 
@@ -717,7 +755,7 @@ def mine_epoch(st, args, params: dict) -> dict:
     with timed("propose", timings):
         result = propose(params, args.target, candidates=args.candidates,
                          n_donors=args.donors, n_cdr3=args.cdr3_pool,
-                         shortlist=max(psh_pool, args.shortlist),
+                         shortlist=max(psh_pool, args.shortlist or SHORTLIST_CAP),
                          seed=args.seed + epoch,
                          generator_name=args.generator, skip_surrogate=True,
                          skip_archive=True, log=log)
@@ -737,7 +775,15 @@ def mine_epoch(st, args, params: dict) -> dict:
     with timed("psh_screen", timings):
         ordered, psh, folds = select_by_expected_value(
             sequences, quality, psh_pool, work / "psh", args.psh_replicates)
-    sequences = ordered[:args.shortlist]
+    budgeted = shortlist_for_budget(left, time.monotonic() - t0)
+    want = budgeted if args.shortlist is None else args.shortlist
+    log(f"shortlist: {want} candidates to BoltzGen "
+        f"({'from the clock' if args.shortlist is None else 'forced by --shortlist'}; "
+        f"the budget affords {budgeted} at "
+        f"{BOLTZGEN_SECONDS_PER_SEQUENCE / 60:.2f} min each)")
+    entry["shortlist_size"] = want
+    entry["shortlist_budgeted"] = budgeted
+    sequences = ordered[:want]
     if psh:
         best_sequence = ordered[0]
         best = psh.get(best_sequence, float("nan"))
@@ -866,9 +912,14 @@ def main():
     parser.add_argument("--candidates", type=int, default=5000)
     parser.add_argument("--donors", type=int, default=40)
     parser.add_argument("--cdr3-pool", type=int, default=60)
-    parser.add_argument("--shortlist", type=int, default=8,
-                        help="candidates sent to BoltzGen after the PSH cut; "
-                             "~1.6 min each on 2x T4")
+    parser.add_argument("--shortlist", type=int, default=None,
+                        help="candidates sent to BoltzGen after the PSH cut. "
+                             "Left out, it is read off the clock: what the "
+                             "remaining budget affords at 2.05 min each, the "
+                             "measured throughput on 2x T4, capped at "
+                             f"{SHORTLIST_CAP}. It used to default to 8, sized "
+                             "against a throughput 28% too optimistic, which "
+                             "left the dominant lever of FINDINGS 83 unused")
     parser.add_argument("--psh-pool", type=int,
                         help="override the measured pool sizing (candidates to "
                              "profile with TNP before selecting, 3.5 s each on 4 "

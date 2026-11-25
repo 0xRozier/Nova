@@ -93,35 +93,46 @@ comparer tienne dans un seul run. Ne pas contourner cette règle.
 découle à ρ −0,92. Validation croisée **par grappes** (Jaccard 5-mer ≥ 0,80,
 union-find) : une charpente entière est toujours d'un seul côté du pli.
 
-| | requêtes | ρ | part de l'écart hasard→oracle captée sur 30 candidats |
+**Le chiffre opératoire est ρ ≈ 0,25, pas 0,58.** Le §78 annonçait 0,580 sur
+l'ancienne cible ; le §83 a montré que c'était de l'**amplitude**, pas de la
+prédiction. Cette cible mélangeait des conceptions de novo (mauvaises) et des
+donneurs d'archive (bons), d'où un rapport signal/bruit de 15,6 ; restreinte à
+la bande réaliste elle donne ρ 0,243, et la cible vivante donne 0,260. Les deux
+concordent.
+
+| | requêtes | ρ (bande réaliste) | part de l'écart hasard→oracle captée sur 30 candidats |
 |---|---|---|---|
-| ancienne cible `8AOK` | 1 490 | +0,580 | 73 % (et 55 % dans le haut du vivier) |
-| **cible vivante `4O9H`** | **141** | **+0,235 ± 0,14** | 20 % |
+| ancienne cible | 1 490 | 0,243 | — |
+| cible vivante | 273 | **0,260** | **18 %**, soit +0,55 écart-type |
 
-**Le transfert entre cibles est nul** (§80), donc les 1 490 requêtes de
-l'ancienne cible sont de l'histoire, pas un actif. La méthode reste validée : le
-ρ 0,580 dit qu'un substitut *peut* atteindre ce niveau à partir d'un millier de
-requêtes **sur une même cible**.
+Et il **ne grandit presque pas** avec les requêtes : 0,235 à 132, 0,260 à 202.
+La limite n'est pas la quantité de données, c'est que nos descripteurs ne
+captent pas ce que fait l'oracle à l'intérieur d'une bande étroite. La « courbe
+d'apprentissage » du §80 bis (200 requêtes → 0,42) est **invalidée** par le même
+artefact d'amplitude.
 
-Courbe d'apprentissage, mesurée en sous-échantillonnant par grappes (§80 bis) :
-
-| requêtes | heures GPU | ρ |
-|---|---|---|
-| 100 | 3,7 h | +0,27 ± 0,22 |
-| **200** | **7,3 h** | **+0,42 ± 0,10** |
-| 700 | 25,7 h | +0,47 ± 0,06 |
-| 1 000 | 36,7 h | +0,54 ± 0,01 |
-
-**200 requêtes donnent les trois quarts de ce que 1 157 atteignent.** Nous en
-avons 141 sur la cible vivante ; environ 70 de plus (2,5 h) atteignent le palier.
+Un **test prospectif** a été fait (§83) et il est négatif : 25 séquences choisies
+par le substitut contre 45 choisies pour la couverture, p = 0,209, et
+ρ(prédit, obtenu) = +0,145 sur 70 séquences réellement nouvelles. Les deux
+meilleures du lot venaient du bras couverture. **Une validation croisée à 0,25
+ne se traduit pas en choix fiables.**
 
 Structure à retenir : le substitut prédit le couple (séquence, cible). La cible
-change chaque **semaine**, les contraintes d'époque (gène V, longueur de CDR3)
-chaque **époque**. Le substitut se rachète donc **par semaine** et sert à toutes
-les époques de la semaine. Le guide amont prévoit ~24 h de préavis sur la
-nouvelle cible : c'est la fenêtre pour le construire.
+change chaque **semaine** (§80 : transfert ρ +0,003), les contraintes d'époque
+chaque **époque**. Il se rachète donc par semaine.
 
----
+### Le levier dominant est le GPU, pas le substitut
+
+Comparaison sur la distribution de la cible vivante, où l'écart typique entre
+rivaux (0,014) vaut 0,35 écart-type :
+
+| | gain |
+|---|---|
+| passer de 30 à 100 candidats interrogés | **+1,19 écart-type** (3,4 écarts-rivaux) |
+| le substitut, 1 choisi parmi 30 | +0,55 écart-type (1,6 écart-rival) |
+
+Le GPU vaut **environ deux fois** le substitut. Le §78 affirmait l'inverse (« un
+facteur 100 ») : c'est faux, et c'était fondé sur le ρ gonflé.
 
 ## 5. La cible vivante
 
@@ -216,13 +227,15 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 
 ## 9. La suite, par ordre de rapport
 
-1. **Compléter le substitut de la cible vivante — ~70 requêtes, 2,5 h de GPU.**
-   Les choisir pour l'information apportée (étaler l'espace que le modèle
-   connaît mal), pas au hasard. C'est le palier des 200 et ρ ≈ 0,42.
-2. **Brancher la génération sur ce substitut — gratuit.** `propose_nanobody`
-   propose, un substitut obsolète classe. Le remplacer par celui du §78,
-   réentraîné sur la cible vivante, et générer beaucoup pour n'interroger que
-   le haut du classement.
+1. **Fait, et négatif.** Les 70 requêtes du §81 ont été dépensées (§83) : le
+   palier n'existe pas, le test prospectif est négatif, et le ρ 0,58 était de
+   l'amplitude. Ne pas racheter de requêtes en espérant un meilleur substitut
+   sans changer de représentation.
+2. **La seule piste gratuite qui reste sur la prédiction** : une représentation
+   de séquence plus riche que descripteurs + 3-mers (plongements type ESM,
+   calculables sur CPU pour quelques centaines de séquences). Faible
+   probabilité avec 273 points d'entraînement, mais c'est le dernier axe non
+   essayé et il ne coûte pas de GPU.
 3. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
    soumis. Les validateurs notent gratuitement et exactement ce qu'on leur
    envoie, là où Kaggle ne donne que des approximations payantes — mais soumettre
