@@ -4,6 +4,12 @@ Outils de recherche **sans GPU** pour préparer une participation au subnet 68
 de Bittensor ([metanova-labs/nova](https://github.com/metanova-labs/nova)) avant
 d'engager du matériel ou des TAO.
 
+> **Si vous reprenez le projet, lisez `docs/ETAT.md` d'abord.** Il dit où nous
+> en sommes, quels chiffres ne pas réestimer, quelles voies la mesure a déjà
+> fermées, et quels pièges ont déjà coûté des heures de GPU. Ce README décrit
+> l'outillage ; `docs/ETAT.md` décrit la situation. Le journal complet est
+> `docs/FINDINGS.md`, chronologique.
+
 ## Idée
 
 Le concours de petites molécules (60 % des récompenses, un seul gagnant par
