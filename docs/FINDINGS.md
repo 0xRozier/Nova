@@ -6415,3 +6415,68 @@ pour un couple (séquence, cible). La cible change chaque **semaine**, les
 contraintes d'époque — gène V, longueur du CDR3 — changent chaque **époque**
 (72 min). Le substitut est donc à racheter par semaine, pas par époque, et il
 sert à toutes les époques de la semaine.
+
+## 81. Le lot d'apprentissage : 70 requêtes pour atteindre le palier
+
+`scripts/build_learning_batch.py`, `inputs/kaggle_learning.csv`,
+`tests/test_learning_batch.py`. Carnet régénéré (519 kB), vérificateur vert,
+run `learning`. **70 séquences, 2,6 h sur 2× T4.**
+
+Le §80 bis a montré que 200 requêtes sur une même cible donnent ρ 0,42, les
+trois quarts de ce que 1 157 atteignent. La cible vivante en a 141 et plafonne à
+ρ 0,235 ± 0,14. Ces 70 l'amènent à 202.
+
+### Pourquoi ces 70 et pas 70 au hasard
+
+Le jeu de la cible vivante est déséquilibré : **39 de ses 132 séquences — 30 % —
+partagent la seule charpente camélisée de 61H7**, parce que le lot de
+calibration avait été construit pour répondre à une question sur cette
+charpente (§74). Un substitut entraîné là-dessus extrapole partout ailleurs. Un
+tirage au hasard, lui, reproduirait la forme de l'archive au lieu de corriger la
+nôtre.
+
+| bras | n | rôle | prédiction |
+|---|---|---|---|
+| `cover` | 45 | couverture par échantillonnage du point le plus éloigné | 0,149 à 0,315 (médiane 0,194) |
+| `exploit` | 25 | les mieux notées par le substitut actuel | 0,294 à 0,320 (médiane 0,302) |
+
+`cover` est choisi par max-min glouton dans un espace de 40 composantes
+principales, amorcé par les 132 déjà interrogées : chaque pick est la séquence
+du vivier la plus éloignée de tout ce qui est déjà tenu. Un test mesure que ces
+picks sont **plus de 1,5 fois plus loin** du jeu connu qu'un tirage au hasard —
+la couverture est vérifiée, pas supposée.
+
+`exploit` sert deux fois : il peuple le haut de la plage, où se prennent toutes
+les décisions, et c'est un **test prospectif** du substitut, le seul genre
+qu'une validation croisée ne peut pas simuler.
+
+Vivier : les 17 634 séquences d'archive jamais interrogées contre `4O9H`. C'est
+le bon vivier de toute façon — c'est ce dans quoi notre générateur puise, donc
+le substitut doit être entraîné sur la distribution qu'on lui demandera de
+classer. 44 des 70 passent la couche 1 ; les 26 autres sont conservées, parce
+que ce lot mesure l'oracle et qu'une séquence refusée par le validateur reste
+une donnée valide. Un test vérifie d'ailleurs qu'elles n'ont **pas** été
+filtrées, sans quoi le lot ne couvrirait plus l'espace voulu.
+
+### Lectures fixées avant le run
+
+1. **Réentraîné sur 202 requêtes, ρ doit approcher le palier** que l'ancienne
+   cible montrait à 200 (+0,42 ± 0,10). S'il reste vers 0,235, la cible vivante
+   est plus dure que l'ancienne et **la courbe d'apprentissage ne se transfère
+   pas non plus** — ce qui vaudrait d'être su avant d'acheter du GPU.
+2. **Les 25 `exploit` doivent noter au-dessus de la médiane des 45 `cover`.** À
+   ρ 0,235 l'écart attendu est petit mais mesurable. Si le bras `exploit` ne
+   bat pas `cover`, le ρ validé croisé ne se traduit pas en choix, et tout le
+   plan du §80 bis est à revoir.
+3. **Surveiller l'étendue.** Si les 70 reviennent dans 0,12-0,39 comme les 132
+   existantes, la plage de score de la cible vivante est vraiment aussi étroite,
+   et les 0,0133 de bruit en sont alors un cinquième utile et non un trentième.
+
+### Un détail de coût
+
+Le premier jet des tests mettait 6 min 49 : la passe max-min est quadratique.
+La taille du vivier est désormais un paramètre, les tests travaillent sur un
+dixième et passent en 18 s. Un fichier de tests lent est une taxe sur toutes
+les exécutions futures.
+
+213 tests passent, dont 7 nouveaux.
