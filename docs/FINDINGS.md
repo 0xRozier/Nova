@@ -6254,3 +6254,61 @@ l'ancienne cible dans le prochain lot de la nouvelle. Vingt séquences, 40 min d
 GPU, et on saura si 1 490 requêtes payées sont réutilisables ou perdues.
 
 196 tests passent, dont 5 nouveaux.
+
+## 79. Le lot de transfert : 1,9 h pour savoir si 1 490 requêtes sont un actif
+
+`scripts/build_transfer_batch.py`, `inputs/kaggle_transfer.csv`,
+`tests/test_transfer_batch.py`. Carnet régénéré, vérificateur vert.
+
+Le §78 a entraîné le substitut sur l'ancienne cible — 1 490 requêtes contre
+`8AOK`, ρ 0,580 sur charpente jamais vue. Il devra servir sur `4O9H`, et
+**exactement une séquence du dépôt a été notée contre les deux**. Le transfert
+n'est donc pas mesuré, et mutualiser les deux jeux serait inventer ce qui donne
+sa valeur au substitut. Ce lot mesure cela, et rien d'autre.
+
+| bras | n | ce qu'il mesure |
+|---|---|---|
+| `transfer` | 48 | des séquences déjà notées contre `8AOK`, notées contre `4O9H` |
+| `repeat` | 8 | des séquences du run de calibration, notées une seconde fois |
+
+**56 séquences, 1,9 h sur 2× T4.** Erreur-type attendue du Spearman : ±0,15.
+
+### Deux choix qui décident du résultat
+
+**La stratification.** Les 48 couvrent `0,143 à 0,760` contre l'ancienne cible,
+six par bande sur huit bandes. Ce n'est pas une élégance : le substitut a été
+évalué dans une bande d'écart-type 0,055, et un échantillon tiré d'une seule
+bande atténuerait par restriction d'étendue un transfert pourtant réel — et nous
+dissuaderait de réutiliser les requêtes. Un test vérifie que l'étendue couverte
+dépasse 85 % de celle du vivier et qu'aucune des huit bandes n'est vide.
+
+**Les répétitions.** Nous n'avons **jamais** mesuré le bruit entre runs sur la
+cible vivante. Sans lui, un ρ faible est ambigu : le transfert échoue, ou les
+étiquettes sont bruitées. Huit séquences du run de calibration, étalées sur sa
+plage, tranchent.
+
+Les 48 sont tirées uniquement parmi les 248 séquences notées **plusieurs fois**,
+donc l'abscisse de la comparaison porte moins de bruit que l'ordonnée — le bon
+sens pour une corrélation sur laquelle on va agir.
+
+### Lectures fixées avant le run
+
+- **ρ ≥ 0,6** : les requêtes se transfèrent. Le substitut est utilisable sur la
+  cible vivante dès maintenant, et le GPU dépensé sur l'ancienne n'est pas perdu.
+- **0,3 ≤ ρ < 0,6** : transfert partiel. Utilisable comme a priori, à
+  réentraîner au fur et à mesure.
+- **ρ < 0,3** : le score est propre à la cible. Le substitut doit être
+  reconstruit par cible, et les 1 490 requêtes sont de l'histoire, pas un actif.
+
+Et un confondant à écarter sur les mêmes données, sans une séquence de plus :
+`design_ptm` est la confiance de repliement du nanobody seul et n'implique pas
+la cible. Si la corrélation survit au retrait de `design_ptm`, elle porte bien
+sur l'interface ; sinon nous ne redécouvrons que « certaines séquences se
+replient bien partout », ce qui n'aide pas à choisir un gagnant pour une époque.
+
+La lecture est écrite dans le module (`analyse`, `verdict`) **avant** que les
+données existent, et deux tests la font tourner sur un aller-retour synthétique
+— une corrélation plantée doit être retrouvée, une absence doit être rapportée
+comme telle. Le verdict ne pourra pas être choisi après coup.
+
+206 tests passent, dont 10 nouveaux.
