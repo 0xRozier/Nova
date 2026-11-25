@@ -6540,3 +6540,91 @@ tiennent.
 La ligne de démarcation est donc nette : **tout ce qui ne regarde que la
 séquence s'apprend des autres mineurs une fois pour toutes ; tout ce qui regarde
 l'interface se rachète à chaque cible.**
+
+## 83. Le lot d'apprentissage : les trois lectures, et le ρ 0,58 était de l'amplitude
+
+70 séquences, 143,6 min sur 2× T4, zéro échec.
+`results/scores_nanobody_learning.csv`. Seuils fixés au §81 avant le run.
+
+### Lecture 1 — le palier : ÉCHEC
+
+202 requêtes sur la cible vivante donnent **ρ 0,260 ± 0,138**, pas les 0,42 ±
+0,10 que l'ancienne cible montrait à 200. Le gain sur les 132 précédentes
+(0,235) est dans le bruit.
+
+### Lecture 2 — le test prospectif : la lettre, pas la substance
+
+| bras | n | médiane iiptm | moyenne | max |
+|---|---|---|---|---|
+| `cover` | 45 | 0,1662 | 0,1758 | **0,3011** |
+| `exploit` | 25 | **0,1785** | 0,1803 | 0,2680 |
+
+Le seuil que j'avais écrit — « `exploit` doit noter au-dessus de la médiane de
+`cover` » — est **tenu**. Mais il était mal choisi : une pièce de monnaie le
+franchit une fois sur deux. Ce qui compte :
+
+- Mann-Whitney p = **0,209** ;
+- `ρ(prédit, obtenu)` sur les 70 séquences réellement nouvelles : **+0,145**
+  (p = 0,23), et **−0,044** à l'intérieur du bras `exploit` ;
+- les **deux meilleures du lot viennent de `cover`**, dont `cover09` prédite à
+  0,181, parmi les prédictions les plus basses, et sortie première à 0,3011.
+
+Le test prospectif est donc **négatif**, et c'est la mesure qui compte : une
+validation croisée à 0,235 ne s'est pas traduite en choix.
+
+### Lecture 3 — l'étendue : confirmée étroite
+
+Les 70 reviennent dans 0,1335 à 0,3011, écart-type 0,0361, contre 0,123 à 0,387
+et 0,0414 pour les 132 précédentes. La plage de la cible vivante est bien
+aussi resserrée.
+
+### L'explication, et elle corrige le §78 et le §80 bis
+
+| | n | écart-type du label | bruit | rapport |
+|---|---|---|---|---|
+| ancienne cible | 1 157 | 0,1883 | 0,0121 | **15,6** |
+| cible vivante | 202 | 0,0403 | 0,0133 | **3,0** |
+
+L'ancienne cible mélangeait des conceptions de novo (mauvaises) et des donneurs
+d'archive (bons) : son amplitude venait du **mélange de types d'expériences**,
+pas d'un signal plus riche. Restreinte à la bande réaliste 0,15-0,45 elle donne
+ρ 0,243 (§78, n = 549) — et la cible vivante donne 0,260 à 202 requêtes. **Les
+deux concordent.**
+
+Donc **le ρ 0,58 n'a jamais été le chiffre opératoire.** Le §78 l'avait d'ailleurs
+mesuré lui-même dans la bande réaliste (0,217 puis 0,243) et je l'ai
+sous-pondéré en mettant le 0,58 en avant. Le §80 bis a hérité du même artefact :
+sa courbe d'apprentissage (200 requêtes → 0,42) mesurait la vitesse à laquelle
+un modèle apprend à distinguer deux types d'expériences, pas à classer des
+candidats comparables.
+
+**Ce qui tombe avec ça** : « le substitut vaut à peu près un facteur 100 sur le
+GPU » (§78) et « 200 requêtes suffisent » (§80 bis). Les deux étaient fondées
+sur un ρ gonflé par l'amplitude.
+
+### La comparaison refaite proprement
+
+Sur la distribution de la cible vivante (écart-type 0,0403 ; l'écart typique
+entre rivaux, 0,014, y vaut 0,35 écart-type) :
+
+| | meilleur attendu | gain |
+|---|---|---|
+| interroger 30 candidats | 0,3074 | +2,97 sd |
+| interroger 100 candidats | 0,3551 | **+4,16 sd** |
+| **le substitut, 1 choisi parmi 30** | — | **+0,55 sd** |
+
+Passer de 30 à 100 candidats interrogés vaut **+1,19 écart-type**, soit 3,4
+écarts-rivaux. Le substitut en vaut **0,55**, soit 1,6 écart-rival. **Le GPU vaut
+donc environ deux fois le substitut, et non le centième** — l'inverse de ce que
+j'ai écrit au §78.
+
+(Les valeurs au-delà de ~100 candidats sont bornées par le maximum observé sur
+202 points et ne sont donc pas exploitables ; je m'arrête à 100.)
+
+### Ce qui reste du substitut
+
+Pas rien : 18 % de l'écart hasard→oracle, 0,55 écart-type, gratuitement, et il
+se compose avec le GPU. Mais c'est un appoint, pas un levier — et il ne grandit
+presque pas avec les requêtes (0,235 à 132, 0,260 à 202). La limite n'est pas la
+quantité de données : c'est que nos descripteurs ne captent pas ce que fait
+l'oracle à l'intérieur d'une bande étroite.

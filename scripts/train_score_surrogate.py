@@ -60,6 +60,7 @@ PREVIOUS = PREVIOUS_NANOBODY["structure"]
 LIVE_TARGET_FILES = {
     "scores_nanobody_calibration.csv",   # FINDINGS 77, 85 sequences
     "scores_nanobody_transfer.csv",      # FINDINGS 80, 56 sequences
+    "scores_nanobody_learning.csv",      # FINDINGS 83, 70 sequences
 }
 # Two defensible severities, and they answer different questions.
 #
