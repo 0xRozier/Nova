@@ -6829,3 +6829,103 @@ copie de la colonne `whole` et les deux représentations se seraient accordées
 parce qu'elles étaient les mêmes nombres.
 
 221 tests passent, dont 3 nouveaux.
+
+## 87. `design_ptm` : la métrique qui transfère, se prédit, et porte un seuil
+
+Trouvé en répondant à une objection du propriétaire : si les dix métriques sont
+documentées et mesurables, qu'ont marqué les gagnants sur chacune ? Je ne
+l'avais jamais décomposé, et mon mot « boîte noire » masquait cette question.
+**Il était mal choisi** : ce qui est opaque est la carte séquence → valeur sans
+lancer BoltzGen, pas ce qui est noté.
+
+### Décomposition de l'écart au champ, métrique par métrique
+
+Rejeu honnête, 158 de nos candidats contre 12 vraies soumissions, même run,
+rangs calculés dans le run (1 = meilleur sur 170) :
+
+| métrique | notre rang médian | le champ | rangs perdus |
+|---|---|---|---|
+| `design_iiptm` | 92 | 6 | +85 |
+| **`design_ptm`** | 92 | 6 | **+85** |
+| `design_to_target_iptm` | 92 | 6 | +85 |
+| `min_design_to_target_pae` | 92 | 6 | +85 |
+| `interaction_pae` | 92 | 6 | +85 |
+| `plip_hbonds_refolded` | 84 | 39 | +44 |
+| `liability_score` | 91 | 58 | +33 |
+| `liability_num_violations` | 80 | 54 | +26 |
+| `delta_sasa_refolded` | 90 | 72 | +17 |
+| `plip_saltbridge_refolded` | 94 | 94 | 0 |
+| **total** | | | **+546** |
+
+Les quatre métriques d'interface font 62 % de l'écart, `design_ptm` 16 %. Le
+champ est au rang 6 sur **cinq** métriques à la fois : ses soumissions ne sont
+pas bonnes à une chose, elles sont bonnes à tout ce qui découle d'un complexe
+bien replié et bien posé.
+
+### Et `design_ptm` est différent des autres sur trois points
+
+**1. Elle transfère entre cibles.** Sur les 50 séquences notées contre les deux :
+
+| | Spearman entre les deux cibles |
+|---|---|
+| `design_ptm` | **+0,487** (p = 0,0003) |
+| `design_iiptm` | +0,043 (p = 0,77) |
+
+Le §80 concluait « le score est propre à la cible ». C'est vrai de la métrique
+d'**interface**. Ce ne l'est pas du repliement du monomère, qui n'implique pas
+la cible — et j'avais généralisé à tort.
+
+**2. Elle se prédit.** Mutualisée sur les deux cibles (1 309 séquences,
+1 701 requêtes, rapport signal/bruit **9,4** contre 3,0 pour l'iiptm), avec la
+même validation croisée par grappes :
+
+| modèle | ρ |
+|---|---|
+| ridge sur descripteurs + 3-mers | +0,567 |
+| **gradient boosting sur tout** | **+0,661 ± 0,052** |
+
+Contre +0,260 pour l'iiptm. Et comme elle transfère, elle s'apprend **une fois**
+sur tout l'historique, pas chaque semaine sur la cible du moment.
+
+**3. Elle porte un seuil, et nous sommes posés dessus.** À l'intérieur de
+tranches étroites de `ptm` — ce qui casse l'effet « deux populations » qui avait
+gonflé le §78 :
+
+| tranche de ptm | n | ρ(ptm, iiptm) | iiptm médian |
+|---|---|---|---|
+| 0,649-0,731 | 298 | −0,022 | 0,207 |
+| 0,731-**0,749** | 298 | +0,142 | 0,204 |
+| 0,749-0,774 | 298 | **+0,537** | 0,434 |
+| 0,774-0,794 | 298 | +0,343 | 0,548 |
+| 0,794-0,840 | 297 | **+0,740** | 0,643 |
+
+Sous 0,749 l'iiptm est plat à ~0,205 quoi qu'il arrive. Au-dessus, il grimpe.
+**Notre médiane est à 0,748. Celle du champ à 0,830**, dans la tranche haute où
+l'iiptm médian vaut 0,643.
+
+### Ce que ça ouvre, et ce que ça ne prouve pas
+
+La chaîne est : prédiction → `ptm` réel (ρ 0,66) → `iiptm` (ρ 0,34 à 0,74 selon
+la tranche). Soit ρ ≈ 0,33 en bout de chaîne contre 0,26 pour la prédiction
+directe de l'iiptm — un gain modeste en soi, mais avec deux avantages décisifs :
+elle s'entraîne sur **six fois plus de données** et elle **ne se rachète pas à
+chaque cible**.
+
+Surtout, cela se formule comme une **contrainte de génération** et pas seulement
+comme un tri : générer beaucoup et ne garder que ce qui est prédit au-dessus de
+`ptm` 0,78 ne coûte aucun GPU. Le §85 a montré que notre distribution plafonne à
+0,726 d'iiptm quand celle du champ est à 0,75-0,79 ; si le seuil de `ptm`
+explique ce plafond, c'est le premier levier qui agisse sur la **distribution**
+et non sur la recherche à l'intérieur.
+
+Ce n'est pas prouvé : la relation est corrélationnelle, et rien ne dit que
+forcer le `ptm` par sélection produise l'iiptm qui l'accompagne d'habitude. Le
+test est un lot où l'on compare des candidats sélectionnés sur `ptm` prédit à
+des candidats appariés qui ne le sont pas — et il faut le pré-enregistrer comme
+les précédents, parce que c'est exactement le genre de corrélation dont le §78
+m'a montré qu'elle se retourne.
+
+Et une correction de vocabulaire, à retenir : **les dix métriques sont connues,
+nommées et calculables.** Ce que nous ne savons pas faire, c'est prédire leurs
+valeurs sans lancer l'oracle — et pour `design_ptm`, il s'avère que nous savons
+en partie.
