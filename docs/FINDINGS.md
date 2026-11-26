@@ -6929,3 +6929,64 @@ Et une correction de vocabulaire, à retenir : **les dix métriques sont connues
 nommées et calculables.** Ce que nous ne savons pas faire, c'est prédire leurs
 valeurs sans lancer l'oracle — et pour `design_ptm`, il s'avère que nous savons
 en partie.
+
+## 88. Le lot `design_ptm` : 2,2 h pour savoir si le levier du §87 est réel
+
+`scripts/build_ptm_batch.py`, `inputs/kaggle_ptm.csv`,
+`tests/test_ptm_batch.py`. Carnet régénéré (520 kB), vérificateur vert, run
+`ptm`. **60 séquences, 2,2 h sur 2× T4.**
+
+### Dose-réponse, pas deux bras
+
+Quatre bandes de `ptm` **prédit**, 15 séquences chacune, tirées des 17 634
+séquences d'archive jamais interrogées contre la cible vivante :
+
+| bande | n | ptm prédit | CDR3 médian | V id médian | couche 1 ok |
+|---|---|---|---|---|---|
+| sous le seuil | 15 | 0,7265-0,7500 | 13 | 85,7 | 9 |
+| juste au-dessus | 15 | 0,7554-0,7716 | 13 | 82,7 | 7 |
+| milieu | 15 | 0,7723-0,7891 | 13 | 82,7 | 8 |
+| bande du champ | 15 | 0,7928-0,8075 | 13 | 83,7 | 14 |
+
+Deux bras ne sauraient pas distinguer « la sélection marche » de « la bande du
+haut est particulière pour une autre raison ». Une échelle monotone le peut, et
+elle chiffre le seuil au lieu de le supposer. Les bandes traversent le seuil de
+0,749 du §87 et atteignent la bande du champ (0,830).
+
+### Le confondant est contrôlé, pas invoqué
+
+Un candidat à haut `ptm` peut différer d'un candidat à bas `ptm` d'une façon qui
+pilote l'iiptm toute seule — la longueur du CDR3 avant tout. Les bandes sont
+donc appariées sur cette longueur : **médiane 13 dans les quatre**, et un test
+échoue si l'écart entre bandes dépasse 2. L'identité V et la couche 1 sont
+enregistrées par bande pour la même raison, et les 26 séquences que le validateur
+refuserait sont **gardées** : ce lot mesure l'oracle, pas une soumission. Un test
+vérifie qu'elles n'ont pas été filtrées, sans quoi les bandes ne couvriraient
+plus ce qu'elles doivent couvrir.
+
+### Les quatre lectures, fixées avant le run
+
+1. **Le prédicteur généralise.** `ρ(ptm prédit, ptm mesuré)` sur les 60 doit
+   atteindre **0,40**. Le 0,661 du §87 était de la validation croisée ; ceci est
+   prospectif, et c'est le prospectif qui a échoué au §83 (ρ +0,145 là où la
+   validation croisée disait 0,235). **Sous 0,30 le levier se ferme ici**, et
+   rien de ce qui suit ne compte.
+2. **Le seuil tient sur la cible vivante.** L'iiptm médian de la bande haute
+   doit dépasser celui de la bande basse de plus de **deux fois le bruit**
+   (0,0133), donc de plus de 0,027. C'est la revendication opérationnelle :
+   pousser le `ptm` pousse le score.
+3. **Dose-réponse.** `ρ(ptm mesuré, iiptm)` sur les 60 doit atteindre **0,30**.
+   Nos données actuelles sur la cible vivante donnent −0,066, mais sur une plage
+   de `ptm` d'écart-type 0,0148 — trop étroite pour voir quoi que ce soit.
+   Étaler la plage tranche si ce zéro était l'absence de relation ou l'absence
+   de plage.
+4. **Le négatif propre.** Si 1 passe et que 2 et 3 échouent, `design_ptm` est
+   prédictible et **inutile comme procuration** : le levier du §87 se ferme pour
+   2,2 h de GPU au lieu d'une saison de travail de génération bâtie dessus.
+
+`analyse` et `verdict` sont écrits dans le module avant que les données
+existent, et quatre tests les font tourner sur des allers-retours synthétiques :
+un seuil planté doit être retrouvé, et le négatif propre doit être rapporté
+comme tel. Le verdict ne pourra pas être choisi après coup.
+
+231 tests passent, dont 10 nouveaux.
