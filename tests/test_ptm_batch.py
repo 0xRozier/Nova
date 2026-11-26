@@ -39,9 +39,21 @@ def test_the_bands_are_ordered_and_span_the_threshold(batch):
         "le lot doit traverser le seuil du §87, sinon il ne teste rien")
 
 
-def test_cdr3_length_is_matched_across_bands(batch):
-    """The confound: unmatched, a rise in iiptm could be the loop's length."""
-    medians = batch.groupby("band").cdr3_length.median()
+def test_cdr3_length_is_matched_across_bands():
+    """The confound: unmatched, a rise in iiptm could be the loop's length.
+
+    This one needs a real pool, and that is part of the guarantee rather than a
+    concession. The matching fills each band with the CDR3 lengths in the
+    proportions the whole pool shows; with the 5-per-band configuration the
+    other tests use, the low band has too few sequences of each length to fill
+    the quota and falls back to the band at large, which lands its median at 18
+    against 13 elsewhere. Measured: the gap between band medians is 6 at a pool
+    of 3 000, 2 at 6 000 with 10 per band, and 0 at the shipped 6 000 with 15.
+    So this asserts the SHIPPED configuration -- the only one whose matching is
+    a claim about the batch that actually ran -- and pays the minute it costs.
+    """
+    matched = build()
+    medians = matched.groupby("band").cdr3_length.median()
     assert medians.max() - medians.min() <= 2, medians.to_dict()
 
 

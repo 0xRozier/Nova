@@ -87,6 +87,14 @@ décomposition qui a trouvé le levier du §87.
 | transfert entre cibles, `design_ptm` (repliement du monomère) | **ρ = +0,487** | §87 |
 | coût d'une requête | 2,0 à 2,2 min sur 2× T4 | §77, §80 |
 
+**Tous les ρ de validation croisée de ce dépôt sont des majorants, pas des
+estimations** (§89). Deux fois le prospectif a démenti la validation croisée, et
+deux fois il a donné **le même 0,145** : §83 (croisée 0,260) et §89 (croisée
+0,661). Le regroupement par Jaccard empêche les quasi-jumelles de traverser un
+pli, mais pas la distribution d'entraînement de différer de celle du
+déploiement — notre jeu est dominé par nos propres familles de candidats. **Ne
+jamais agir sur un ρ croisé sans l'avoir confirmé en prospectif.**
+
 **Comparer entre runs est beaucoup moins fiable qu'à l'intérieur d'un run.**
 C'est pourquoi `scripts/build_arms_batch.py` impose que tout ce qu'on veut
 comparer tienne dans un seul run. Ne pas contourner cette règle.
@@ -99,7 +107,7 @@ comparer tienne dans un seul run. Ne pas contourner cette règle.
 découle à ρ −0,92. Validation croisée **par grappes** (Jaccard 5-mer ≥ 0,80,
 union-find) : une charpente entière est toujours d'un seul côté du pli.
 
-**Le chiffre opératoire est ρ ≈ 0,25, pas 0,58.** Le §78 annonçait 0,580 sur
+**Le chiffre opératoire est ρ ≈ 0,145 en prospectif** — pas 0,25, et pas 0,58. Le §78 annonçait 0,580 sur
 l'ancienne cible ; le §83 a montré que c'était de l'**amplitude**, pas de la
 prédiction. Cette cible mélangeait des conceptions de novo (mauvaises) et des
 donneurs d'archive (bons), d'où un rapport signal/bruit de 15,6 ; restreinte à
@@ -231,6 +239,7 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 | descripteur unique prédisant le score | tous \|ρ\| ≤ 0,19 | §77 |
 | réutiliser les requêtes d'une cible sur une autre, pour l'interface | ρ = +0,003 | §80, §82 |
 | une représentation de séquence plus riche (ESM-2) | égale les 3-mers partout | §86 |
+| `design_ptm` comme cible de substitution | prospectif ρ +0,145, iiptm en baisse | §89 |
 
 ---
 
@@ -240,26 +249,13 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
    palier n'existe pas, le test prospectif est négatif, et le ρ 0,58 était de
    l'amplitude. Ne pas racheter de requêtes en espérant un meilleur substitut
    sans changer de représentation.
-2. **Le levier ouvert, et le seul qui agisse sur la distribution : `design_ptm`**
-   (§87). C'est le repliement du nanobody seul, donc elle n'implique pas la
-   cible. Trois propriétés qu'aucune autre métrique n'a : elle **transfère**
-   entre cibles (ρ +0,487 contre +0,043 pour l'interface), elle **se prédit**
-   (ρ +0,661 sur 1 701 requêtes mutualisées, contre 0,260 pour l'iiptm), et elle
-   **porte un seuil** — sous `ptm` 0,749 l'iiptm est plat à 0,205, au-dessus il
-   grimpe, et notre médiane est posée dessus à 0,748 quand le champ est à 0,830.
-
-   Cela se formule comme une **contrainte de génération** et pas un tri :
-   générer beaucoup et ne garder que ce qui est prédit au-dessus de 0,78 ne
-   coûte aucun GPU. Le §85 a montré que notre distribution plafonne à 0,726
-   d'iiptm quand le champ est à 0,75-0,79 ; si le seuil de `ptm` explique ce
-   plafond, c'est le premier levier depuis longtemps qui agisse sur la
-   distribution et non sur la recherche à l'intérieur.
-
-   **Non prouvé.** La relation est corrélationnelle. Le test est un lot
-   comparant des candidats sélectionnés sur `ptm` prédit à des candidats
-   appariés qui ne le sont pas, avec les seuils de lecture écrits avant le run
-   — le §78 a montré ce que valent ces corrélations quand on les pousse sans
-   pré-enregistrement.
+2. **Fermé par le §89.** Le levier `design_ptm` du §87 a été testé (lot de 60,
+   dose-réponse sur quatre bandes) et il tombe au premier critère : le
+   prédicteur ne généralise pas, ρ(prédit, mesuré) = **+0,145** là où il
+   fallait 0,40. Le `ptm` réel est **plat** à 0,778 dans les quatre bandes
+   alors que la prédiction s'étalait sur 0,058, et l'iiptm **baisse** quand le
+   `ptm` prédit monte. La restriction d'étendue est écartée : le `ptm` mesuré a
+   un écart-type de 0,0150, soit 4,4 fois le bruit.
 
 3. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
    soumis. Les validateurs notent gratuitement et exactement ce qu'on leur

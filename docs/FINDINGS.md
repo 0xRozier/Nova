@@ -6990,3 +6990,88 @@ un seuil planté doit être retrouvé, et le négatif propre doit être rapport�
 comme tel. Le verdict ne pourra pas être choisi après coup.
 
 231 tests passent, dont 10 nouveaux.
+
+## 89. Le levier `design_ptm` est fermé, et la validation croisée a menti deux fois
+
+60 séquences, 127,4 min sur 2× T4, zéro échec.
+`results/scores_nanobody_ptm.csv`. Lecture exécutée par
+`scripts.build_ptm_batch --analyse`, écrite au §88 avant que les données
+existent.
+
+### Critère 1 : échec, et rien d'autre ne compte
+
+`ρ(ptm prédit, ptm mesuré) = +0,145`. Le seuil était 0,40, et **sous 0,30 le
+levier se ferme**. Le ρ 0,661 du §87 était de la validation croisée ; le
+prospectif donne 0,145.
+
+Le tableau par bande dit exactement ce qui s'est passé :
+
+| bande | ptm **prédit** | ptm **mesuré** | iiptm |
+|---|---|---|---|
+| sous le seuil | 0,7401 | 0,7784 | **0,1936** |
+| juste au-dessus | 0,7637 | 0,7787 | 0,1688 |
+| milieu | 0,7815 | 0,7782 | 0,1890 |
+| bande du champ | 0,7986 | 0,7849 | 0,1730 |
+
+Le prédicteur produit une échelle propre sur **0,058** d'étendue. La réalité
+répond **0,007**, soit plat : les quatre bandes ont le même `ptm` réel.
+
+### La restriction d'étendue n'explique pas l'échec
+
+C'était l'échappatoire à écarter : si le `ptm` réel de ces 60 était constant, un
+ρ nul serait inévitable et le prédicteur hors de cause.
+
+| | valeur |
+|---|---|
+| écart-type du `ptm` mesuré dans le lot | **0,0150** |
+| bruit de mesure du `ptm` (§87, 258 répétitions) | 0,0034 |
+| rapport | **4,4** |
+| part de la dispersion d'entraînement couverte | 46 % |
+
+Il y avait donc de la variance à prédire — quatre fois le bruit — et le
+prédicteur en a capté 2 % (ρ² = 0,021). Il **étale 1,5 fois plus que la
+réalité** : il invente de la dispersion là où il n'y en a pas.
+
+### Les critères 2 et 3 échouent aussi, et dans le mauvais sens
+
+- **Seuil** : l'iiptm médian va de 0,1936 (bande basse) à 0,1730 (bande haute),
+  soit **−0,0206** là où il fallait **+0,0266**. Il baisse.
+- **Dose-réponse** : `ρ(ptm mesuré, iiptm) = −0,135`, seuil 0,30.
+- Les **deux meilleurs iiptm du lot** (0,4048 et 0,3017) viennent des bandes
+  basse et moyenne, le premier d'une séquence prédite à 0,7406 — parmi les
+  prédictions les plus basses.
+
+**Le levier du §87 est fermé**, pour 2,2 h de GPU au lieu d'une saison de
+travail de génération bâtie dessus. C'était exactement l'objet du critère 4.
+
+### La leçon de méthode, et elle vaut plus que le résultat
+
+C'est la **deuxième fois** que la validation croisée par grappes surestime le
+prospectif, et les deux fois elle atterrit sur le **même** nombre :
+
+| | validation croisée | prospectif |
+|---|---|---|
+| §83, substitut iiptm | 0,235 | **0,145** |
+| §89, prédicteur ptm | 0,661 | **0,145** |
+
+Le regroupement à Jaccard 5-mer ≥ 0,80 empêche les quasi-jumelles de passer d'un
+côté à l'autre d'un pli. Il n'empêche **pas** que la distribution
+d'entraînement diffère de celle du déploiement : le jeu d'entraînement est
+dominé par nos propres candidats, qui viennent en familles partageant leurs
+charpentes, et le vivier testé ici est un tirage neuf dans l'archive. La
+validation croisée mesurait donc de l'**interpolation à l'intérieur de nos
+familles** ; le lot mesure de l'**extrapolation vers l'archive entière**.
+
+**Conséquence à porter désormais :** tous les ρ de validation croisée de ce
+dépôt sont des **majorants**, pas des estimations. Cela concerne le §78 (0,580),
+le §83 (0,260) et le §87 (0,661). Le seul chiffre auquel se fier est le
+prospectif, et il vaut 0,145 les deux fois qu'on l'a mesuré.
+
+### Ce que cela laisse
+
+Rien d'ouvert sur l'axe prédiction. Le §86 avait fermé la représentation (l'ESM
+n'ajoute rien aux 3-mers), le §89 ferme la cible de substitution
+(`design_ptm` ne se prédit pas hors de nos familles), et le §85 avait déjà
+montré que le verrou est le générateur : notre distribution plafonne à 0,726
+d'iiptm quand le champ est à 0,75-0,79, et 2 000 candidats interrogés ne
+referment pas l'écart.
