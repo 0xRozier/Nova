@@ -64,8 +64,13 @@ Deux conséquences à garder en tête en permanence :
   0,87 à 0,96 entre elles ; les six autres sont sous 0,30. On ne peut donc pas
   moyenner le bruit sur dix métriques.
 
-Le problème est **une optimisation en boîte noire d'un objectif coûteux**
-(2,2 min la requête GPU), pas de la biologie structurale.
+Le problème est **une optimisation d'un objectif coûteux à évaluer** (2,2 min
+la requête GPU), pas de la biologie structurale. Attention au vocabulaire : les
+dix métriques sont **documentées, nommées et calculables**, et le §87 les
+décompose une par une. Ce qui est opaque, c'est la carte séquence → valeur
+**sans lancer BoltzGen** — et pour `design_ptm` nous savons en partie la faire.
+J'ai écrit « boîte noire » dans un sens trop large et cela a retardé la
+décomposition qui a trouvé le levier du §87.
 
 ---
 
@@ -78,7 +83,8 @@ Le problème est **une optimisation en boîte noire d'un objectif coûteux**
 | bruit **à l'intérieur** d'un run | ≤ 0,006 | §77 bis |
 | écart typique entre rivaux dans une époque | 0,014 | §49 |
 | effet du choix du CDR3 à charpente fixe | écart-type 0,0218 | §77 |
-| transfert entre cibles | **ρ = +0,003 ± 0,15** | §80 |
+| transfert entre cibles, métrique d'**interface** | **ρ = +0,003 ± 0,15** | §80 |
+| transfert entre cibles, `design_ptm` (repliement du monomère) | **ρ = +0,487** | §87 |
 | coût d'une requête | 2,0 à 2,2 min sur 2× T4 | §77, §80 |
 
 **Comparer entre runs est beaucoup moins fiable qu'à l'intérieur d'un run.**
@@ -118,7 +124,9 @@ meilleures du lot venaient du bras couverture. **Une validation croisée à 0,25
 ne se traduit pas en choix fiables.**
 
 Structure à retenir : le substitut prédit le couple (séquence, cible). La cible
-change chaque **semaine** (§80 : transfert ρ +0,003), les contraintes d'époque
+change chaque **semaine** (§80 : transfert ρ +0,003 pour l'interface ; mais
+§87 : ρ +0,487 pour `design_ptm`, qui n'implique pas la cible et se mutualise),
+les contraintes d'époque
 chaque **époque**. Il se rachète donc par semaine.
 
 ### Le levier dominant est le GPU, pas le substitut
@@ -221,7 +229,8 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 | crible conformationnel sur CPU | tous les \|ρ\| ≤ 0,041 | §72 |
 | garder la charpente du liant, redessiner le CDR3 | non soutenu, p = 0,84 | §77 |
 | descripteur unique prédisant le score | tous \|ρ\| ≤ 0,19 | §77 |
-| réutiliser les requêtes d'une cible sur une autre | ρ = +0,003 | §80 |
+| réutiliser les requêtes d'une cible sur une autre, pour l'interface | ρ = +0,003 | §80, §82 |
+| une représentation de séquence plus riche (ESM-2) | égale les 3-mers partout | §86 |
 
 ---
 
@@ -231,11 +240,27 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
    palier n'existe pas, le test prospectif est négatif, et le ρ 0,58 était de
    l'amplitude. Ne pas racheter de requêtes en espérant un meilleur substitut
    sans changer de représentation.
-2. **La seule piste gratuite qui reste sur la prédiction** : une représentation
-   de séquence plus riche que descripteurs + 3-mers (plongements type ESM,
-   calculables sur CPU pour quelques centaines de séquences). Faible
-   probabilité avec 273 points d'entraînement, mais c'est le dernier axe non
-   essayé et il ne coûte pas de GPU.
+2. **Le levier ouvert, et le seul qui agisse sur la distribution : `design_ptm`**
+   (§87). C'est le repliement du nanobody seul, donc elle n'implique pas la
+   cible. Trois propriétés qu'aucune autre métrique n'a : elle **transfère**
+   entre cibles (ρ +0,487 contre +0,043 pour l'interface), elle **se prédit**
+   (ρ +0,661 sur 1 701 requêtes mutualisées, contre 0,260 pour l'iiptm), et elle
+   **porte un seuil** — sous `ptm` 0,749 l'iiptm est plat à 0,205, au-dessus il
+   grimpe, et notre médiane est posée dessus à 0,748 quand le champ est à 0,830.
+
+   Cela se formule comme une **contrainte de génération** et pas un tri :
+   générer beaucoup et ne garder que ce qui est prédit au-dessus de 0,78 ne
+   coûte aucun GPU. Le §85 a montré que notre distribution plafonne à 0,726
+   d'iiptm quand le champ est à 0,75-0,79 ; si le seuil de `ptm` explique ce
+   plafond, c'est le premier levier depuis longtemps qui agisse sur la
+   distribution et non sur la recherche à l'intérieur.
+
+   **Non prouvé.** La relation est corrélationnelle. Le test est un lot
+   comparant des candidats sélectionnés sur `ptm` prédit à des candidats
+   appariés qui ne le sont pas, avec les seuils de lecture écrits avant le run
+   — le §78 a montré ce que valent ces corrélations quand on les pousse sans
+   pré-enregistrement.
+
 3. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
    soumis. Les validateurs notent gratuitement et exactement ce qu'on leur
    envoie, là où Kaggle ne donne que des approximations payantes — mais soumettre
