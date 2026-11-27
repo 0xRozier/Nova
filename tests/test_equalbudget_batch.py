@@ -223,11 +223,63 @@ def batch():
     return pd.read_csv(BATCH_PATH)
 
 
-def test_the_budget_is_equal_between_the_two_arms(batch):
-    counts = batch["arm"].value_counts()
+@pytest.fixture(scope="module")
+def slots(batch):
+    """Le lot sans le bras d'etalonnage.
+
+    Les sequences `calib` ne sont dans aucun creneau (slot = -1) : elles n'ont
+    ni gene V ni longueur de CDR3 imposes, et la moitie est volontairement hors
+    des planchers germinaux. Les tests de structure appariee ne les concernent
+    donc pas, et leurs proprietes a elles sont verifiees plus bas.
+    """
+    out = batch[batch["arm"] != "calib"]
+    if out.empty:
+        pytest.skip("lot d'etalonnage seul : pas de creneaux a verifier")
+    return out
+
+
+# ---------------------------------------------------------------------------
+# le bras d'etalonnage
+# ---------------------------------------------------------------------------
+def test_the_calibration_arm_spans_every_band_of_the_validator(batch):
+    calib = batch[batch["arm"] == "calib"]
+    if calib.empty:
+        pytest.skip("pas de bras d'etalonnage dans ce lot")
+    assert len(calib) == len(CALIB_BANDS) * 2
+    for lo, hi in CALIB_BANDS:
+        band = calib[(calib["band_low"] == lo) & (calib["band_high"] == hi)]
+        assert len(band) == 2, f"bande {lo}-{hi} : {len(band)} sequences"
+        assert (band["archive_iiptm"] >= lo).all() and (band["archive_iiptm"] < hi).all()
+
+
+def test_each_band_carries_a_submittable_sequence(batch):
+    """Sinon la lecture 0 s'ecarte en disant qu'elle compare des molecules interdites."""
+    calib = batch[batch["arm"] == "calib"]
+    if calib.empty:
+        pytest.skip("pas de bras d'etalonnage dans ce lot")
+    for lo, hi in CALIB_BANDS:
+        band = calib[(calib["band_low"] == lo) & (calib["band_high"] == hi)]
+        assert band["archive_compliant"].any(), \
+            f"bande {lo}-{hi} : aucune sequence conforme aux planchers"
+    compliant = calib[calib["archive_compliant"].astype(bool)]
+    assert (compliant["layer1"] == "ok").all(), \
+        "une sequence marquee conforme ne passe pas check_sequence"
+
+
+def test_the_calibration_arm_carries_the_validator_score(batch):
+    calib = batch[batch["arm"] == "calib"]
+    if calib.empty:
+        pytest.skip("pas de bras d'etalonnage dans ce lot")
+    assert calib["archive_iiptm"].notna().all()
+    assert calib["archive_pae"].notna().all()
+    assert (calib["previous_run"] == "archive_validateurs").all()
+
+
+def test_the_budget_is_equal_between_the_two_arms(slots):
+    counts = slots["arm"].value_counts()
     assert counts["permut"] == counts["neuf"], "budget inegal : la comparaison serait truquee"
-    assert counts["donneur"] == batch["slot"].nunique()
-    for slot, sub in batch.groupby("slot"):
+    assert counts["donneur"] == slots["slot"].nunique()
+    for slot, sub in slots.groupby("slot"):
         assert (sub["arm"] == "permut").sum() == (sub["arm"] == "neuf").sum() == K, \
             f"creneau {slot} desequilibre"
 
@@ -237,23 +289,27 @@ def test_no_sequence_is_queried_twice(batch):
     assert batch["sequence"].is_unique
 
 
-def test_each_slot_is_matched_on_v_gene_and_cdr3_length(batch):
+def test_each_slot_is_matched_on_v_gene_and_cdr3_length(slots):
     """Le bras neuf doit tomber dans le meme creneau, sinon V ou L explique tout."""
-    for slot, sub in batch.groupby("slot"):
+    for slot, sub in slots.groupby("slot"):
         assert sub["v_gene"].nunique() == 1, f"creneau {slot} : plusieurs genes V"
         assert sub["cdr3_length"].nunique() == 1, f"creneau {slot} : plusieurs longueurs"
         assert (sub["cdr3_now"].str.len() == sub["cdr3_length"]).all(), \
             f"creneau {slot} : une sequence n'a pas la longueur de CDR3 du creneau"
 
 
-def test_every_sequence_is_submittable(batch):
-    """Un bras dont rien ne peut etre soumis ne mesure rien d'operationnel."""
-    bad = batch[batch["layer1"] != "ok"]
+def test_every_sequence_is_submittable(slots):
+    """Un bras dont rien ne peut etre soumis ne mesure rien d'operationnel.
+
+    Le bras d'etalonnage est exclu : sa moitie hors planchers est voulue, et son
+    role est de porter un score du validateur, pas d'etre soumettable.
+    """
+    bad = slots[slots["layer1"] != "ok"]
     assert bad.empty, f"{len(bad)} sequences ne passent pas la couche 1 : {list(bad['label'])}"
 
 
-def test_the_donors_cdr3_are_long_enough_to_permute(batch):
-    donors = batch[batch["arm"] == "donneur"]
+def test_the_donors_cdr3_are_long_enough_to_permute(slots):
+    donors = slots[slots["arm"] == "donneur"]
     assert (donors["cdr3_length"] >= MIN_CDR3).all()
 
 
@@ -261,34 +317,40 @@ def test_diversity_stays_under_the_validator_ceiling(batch):
     assert batch["jaccard_max_batch"].max() < JACCARD_CEILING
 
 
-def test_permutations_keep_the_donor_cdr3_composition(batch):
+def test_permutations_keep_the_donor_cdr3_composition(slots):
     """Une permutation est un reordonnancement : meme multiset de residus."""
-    for slot, sub in batch.groupby("slot"):
+    for slot, sub in slots.groupby("slot"):
         donor = sub[sub["arm"] == "donneur"].iloc[0]
         for p in sub[sub["arm"] == "permut"].itertuples():
             assert sorted(p.cdr3_now) == sorted(donor["cdr3_original"]), \
                 f"{p.label} n'est pas une permutation du CDR3 du donneur"
 
 
-def test_fresh_candidates_are_not_near_twins_of_the_donor(batch):
+def test_fresh_candidates_are_not_near_twins_of_the_donor(slots):
     """Sinon le bras neuf serait une permutation deguisee."""
-    for slot, sub in batch.groupby("slot"):
+    for slot, sub in slots.groupby("slot"):
         donor = sub[sub["arm"] == "donneur"].iloc[0]["sequence"]
         for n in sub[sub["arm"] == "neuf"].itertuples():
             j = jaccard_5mer(n.sequence, donor)
             assert j < JACCARD_CEILING, f"{n.label} est a Jaccard {j:.3f} de son donneur"
 
 
-def test_the_arms_are_interleaved(batch):
-    """Un run interrompu a mi-chemin doit garder les deux bras equilibres."""
+def test_the_csv_order_mixes_the_arms(batch):
+    """L'ordre du CSV melange les bras, pour la lecture humaine.
+
+    Il ne protege pas un run interrompu : BoltzGen nomme chaque entree par
+    l'empreinte de la sequence et parcourt le repertoire, donc l'ordre
+    d'execution est celui des empreintes. Un run coupe rend un sous-echantillon
+    aleatoire — equilibre en esperance, ce qui vaut mieux qu'un entrelacement.
+    """
     half = batch.iloc[: len(batch) // 2]["arm"].value_counts()
     assert abs(half.get("permut", 0) - half.get("neuf", 0)) <= 2
 
 
-def test_the_donors_were_scored_on_the_live_target(batch):
+def test_the_donors_were_scored_on_the_live_target(slots):
     from nova_lab.provenance import runs_on_current_target
     live = set(runs_on_current_target())
-    donors = batch[batch["arm"] == "donneur"]
+    donors = slots[slots["arm"] == "donneur"]
     assert donors["previous_iiptm"].notna().all(), "un donneur sans valeur precedente"
     assert set(donors["previous_run"]) <= live, \
         f"donneurs venant d'un run hors cible vivante : {set(donors['previous_run']) - live}"
