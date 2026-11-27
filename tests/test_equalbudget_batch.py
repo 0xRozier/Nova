@@ -11,6 +11,10 @@ import pytest
 
 from nova_lab import REPO_ROOT
 from scripts.build_equalbudget_batch import (
+    CALIB_BANDS,
+    CALIB_OFFSET_DEPRESSED,
+    CALIB_OFFSET_OK,
+    CALIB_RHO,
     INCUMBENT,
     JACCARD_CEILING,
     K,
@@ -35,6 +39,68 @@ def test_thresholds_are_the_ones_written_in_the_docstring():
     assert (RIVAL_GAP, SIGMA_2, INCUMBENT) == (0.014, 0.027, 0.3869)
     assert (N_SLOTS, K, MIN_CDR3) == (8, 3, 12)
     assert (WINS_FOR_PERMUT, WINS_FOR_FRESH, JACCARD_CEILING) == (5, 3, 0.90)
+    assert (CALIB_RHO, CALIB_OFFSET_OK, CALIB_OFFSET_DEPRESSED) == (0.80, 0.05, -0.10)
+    assert len(CALIB_BANDS) == 7 and CALIB_BANDS[0][0] == 0.15 and CALIB_BANDS[-1][1] == 0.90
+
+
+# ---------------------------------------------------------------------------
+# lecture 0 : l'instrument. Les trois etats doivent etre retrouves.
+# ---------------------------------------------------------------------------
+def _calib(tmp_path, offset: float, scramble: bool = False):
+    """14 sequences d'archive, notees chez nous a `offset` de leur valeur.
+
+    `scramble` casse la correlation : notre valeur devient independante de la
+    leur, ce qui est le cas « l'instrument ne reproduit pas ».
+    """
+    rng = np.random.default_rng(1)
+    rows, scores = [], []
+    arch_values = np.linspace(0.16, 0.86, 14)
+    for i, a in enumerate(arch_values):
+        s = f"CALIB{i:02d}" + "A" * 100
+        rows.append(dict(sequence=s, arm="calib", slot=-1, label=f"calib#{i}",
+                         group="calibration", previous_iiptm=a, previous_run="archive",
+                         archive_iiptm=a, archive_pae=12.0, band_low=0.15, band_high=0.90,
+                         v_gene=None, cdr3_length=np.nan, cdr3_original="", cdr3_now="",
+                         v_identity=85.0, j_identity=92.0, layer1="ok",
+                         jaccard_max_batch=0.5))
+        ours = (0.2 + 0.1 * rng.random()) if scramble else a + offset
+        scores.append(dict(sequence=s, design_iiptm=ours, design_ptm=0.80))
+    bp, sp = tmp_path / "cbatch.csv", tmp_path / "cscores.csv"
+    pd.DataFrame(rows).to_csv(bp, index=False)
+    pd.DataFrame(scores).to_csv(sp, index=False)
+    return str(sp), str(bp)
+
+
+def test_reading0_calls_a_faithful_instrument_faithful(tmp_path):
+    sp, bp = _calib(tmp_path, offset=0.001)
+    res = analyse(sp, bp, log=lambda *a, **kw: None)
+    assert res["reading0_state"] == "fidele"
+    assert res["reading0_rho"] > 0.99
+    assert any("INSTRUMENT FIDELE" in line for line in verdict(res))
+
+
+def test_reading0_catches_a_depressed_instrument(tmp_path):
+    """Le cas qui nous pend au nez : monotone, mais 0,45 trop bas."""
+    sp, bp = _calib(tmp_path, offset=-0.45)
+    res = analyse(sp, bp, log=lambda *a, **kw: None)
+    assert res["reading0_state"] == "monotone mais deprime"
+    assert res["reading0_rho"] > 0.99
+    assert any("DEPRIME" in line for line in verdict(res))
+
+
+def test_reading0_catches_an_instrument_that_does_not_reproduce(tmp_path):
+    sp, bp = _calib(tmp_path, offset=0.0, scramble=True)
+    res = analyse(sp, bp, log=lambda *a, **kw: None)
+    assert res["reading0_state"] == "ne reproduit pas"
+    assert any("NE REPRODUIT PAS" in line for line in verdict(res))
+
+
+def test_reading0_does_not_hide_an_intermediate_offset(tmp_path):
+    """Entre -0,10 et -0,05 : ni fidele ni deprime, et il faut le dire."""
+    sp, bp = _calib(tmp_path, offset=-0.08)
+    res = analyse(sp, bp, log=lambda *a, **kw: None)
+    assert res["reading0_state"] == "monotone, decalage intermediaire"
+    assert any("decalage intermediaire" in line for line in verdict(res))
 
 
 # ---------------------------------------------------------------------------

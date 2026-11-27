@@ -17,13 +17,20 @@ mon meilleur donneur ou je genere ? ». Huit creneaux (V, L), chacun tire d'un
 donneur deja note sur la cible vivante, et dans chaque creneau les deux bras
 recoivent **le meme nombre de requetes** :
 
+  calib   (14) — des sequences de l'archive P05231 dont le validateur a publie
+                 le score : l'etalonnage de l'instrument (lecture 0)
   donneur (8)  — le donneur lui-meme, re-note : c'est le temoin inter-runs,
                  et il rend la lecture 1 immune au biais de selection
   permut  (24) — 3 permutations de l'interieur de son CDR3 (meme V, meme L)
   neuf    (24) — 3 candidats neufs de `scripts.propose_nanobody` pour ce
                  meme (V, L), generateur `pssm`, `skip_surrogate=True`
 
-56 sequences, soit ~112 min sur 2x T4 au tarif mesure de 2,0 min/sequence.
+70 sequences, soit ~140 min sur 2x T4 au tarif mesure de 2,0 min/sequence.
+
+L'ordre d'execution n'est pas celui du CSV : BoltzGen nomme chaque entree par
+l'empreinte SHA-256 de la sequence et parcourt le repertoire, donc un run
+interrompu rend un sous-echantillon aleatoire — equilibre entre bras en
+esperance, ce qui vaut mieux qu'un entrelacement.
 
 Choix des donneurs, et pourquoi la conformite d'abord. Le record de la cible
 (0,4457, §90) porte une identite V de 79,6 pour un plancher a 82 : il n'est pas
@@ -41,9 +48,74 @@ prochaine requete aujourd'hui. Generateur `pssm` et `skip_surrogate=True` parce
 que c'est le chemin du mineur (`scripts/mine.py`), et parce que le substitut
 vaut 0,145 en prospectif (§83) : il ne doit pas choisir a la place du GPU.
 
+LE BRAS D'ETALONNAGE, ET POURQUOI IL EST DEVENU LA LECTURE PRINCIPALE.
+
+En construisant ce lot, le vivier du generateur a rendu un fait que le depot
+n'avait jamais regarde : l'archive publique de P05231 porte 46 118 sequences
+notees par les validateurs, de mediane 0,654, dont 92,9 % au-dessus de 0,45 et
+43,9 % au-dessus de 0,70. Nos 327 requetes sur la meme cible ont une mediane de
+0,181 et un maximum de 0,446 — zero au-dessus de 0,45.
+
+Sur l'ANCIENNE cible, notre reproduction du score etait exacte : 84 sequences
+d'archive re-notees chez nous donnent rho = +0,984 et un decalage median de
++0,0012. Mais sur la cible vivante, **aucun run n'a jamais note une sequence
+dont on connait le score du validateur** : les six `ref_intact` du §77 n'y sont
+pas, ni aucune des 327. L'instrument n'a donc jamais ete etalonne depuis la
+bascule du 20 novembre.
+
+Les indices libres ne tranchent pas, et il faut le dire :
+
+  - nos mesures tombent SUR la courbe (iiptm, pae) de l'archive — a iiptm egal,
+    notre pae colle a 0,3-0,6 pres dans chaque bande. Mais une cible mal posee
+    produit de vrais mauvais complexes, qui se rangent eux aussi au mauvais bout
+    de cette courbe : l'accord est donc compatible avec les deux hypotheses ;
+  - l'amont est identique au notre, caractere par caractere : meme moteur
+    (external_tools/boltzgen inchange entre db9bf19 et HEAD), meme MSA, meme
+    yaml, memes constantes de config (verifie contre le HEAD amont) ;
+  - mais le §77 a mesure 61H7 — le liant cristallographique de 4O9H, la
+    structure que la config elle-meme nomme, 8/8 de recouvrement d'epitope — a
+    **0,178**, soit la mediane de tout ce que nous mesurons, et sous 92,9 % des
+    soumissions ordinaires de l'archive. Un liant natif qui s'amarre a son
+    propre epitope ne note pas sous le tout-venant si le montage est correct.
+
+Deux hypotheses restent, et elles ont la meme consequence pratique :
+**(a)** notre montage P05231 deprime tout d'environ 0,45, ou **(b)** les scores
+de l'archive P05231 ont ete produits sous une autre configuration que celle
+d'aujourd'hui — l'archive ne porte aucune date, le depot le sait depuis le §48.
+Dans les deux cas, toute comparaison de nos valeurs absolues a celles du champ
+est nulle tant que ce n'est pas tranche, et 14 requetes le tranchent.
+
+(Note pour qui cherchera le bug si (a) gagne : `parse_range` de BoltzGen est
+positionnel et 1-indexe dans la chaine parsee (`c_start + start`), pas en
+`label_seq_id`. La chaine A de 4O9H compte 279 residus et son premier porte
+`label_seq_id` 21, donc `res_index: 21..186` ne selectionne pas les residus 21
+a 186 de la sequence canonique. L'ancienne cible disait `1..115`, ou les deux
+conventions coincident — c'est pourquoi le probleme ne pouvait pas se voir
+avant la bascule. Ce n'est PAS une explication de notre ecart avec les
+validateurs, qui font tourner le meme code sur les memes fichiers ; c'est une
+piste pour (b), et un fait a connaitre dans tous les cas.)
+
 LECTURES PRE-ENREGISTREES (ecrites avant le run, seuils compris).
 
-  1. PRINCIPALE — meilleur-de-k, appariee. Pour chacun des 8 creneaux,
+  0. PRINCIPALE — l'instrument. 14 sequences de l'archive P05231, deux par
+     bande de 0,15-0,30 / 0,30-0,45 / 0,45-0,55 / 0,55-0,65 / 0,65-0,72 /
+     0,72-0,78 / 0,78-0,90, notees par nous dans ce run.
+     rho(notre iiptm, iiptm de l'archive) et decalage median.
+     - rho >= 0,80 et |decalage median| <= 0,05 : l'instrument reproduit le
+       validateur sur cette cible. Alors nos candidats sont vraiment dans le
+       dernier decile du champ, et le §85 est bien plus severe qu'ecrit.
+     - rho >= 0,80 et decalage median <= -0,10 : monotone mais deprime. Les
+       rangs restent utilisables, mais tout seuil absolu et toute comparaison
+       au champ sont a refaire.
+     - rho < 0,80 : l'instrument ne reproduit pas le validateur sur cette
+       cible. Les lectures absolues des §77, §87, §89 et §90 doivent etre
+       relues, et les lectures 1 a 3 ci-dessous ne valent plus que comme
+       comparaisons internes au run.
+     Repere : 84 sequences sur l'ancienne cible donnaient rho +0,984 et un
+     decalage de +0,0012. Avec 14 sequences etalees sur 0,15-0,85, rho >= 0,80
+     est une barre basse qu'un instrument fidele franchit sans effort.
+
+  1. meilleur-de-k, appariee. Pour chacun des 8 creneaux,
      delta = max(3 permutations) - max(3 neufs). On rapporte la moyenne des
      delta, leur mediane, et le nombre de creneaux gagnes par la permutation.
      Verdict : la permutation gagne si moyenne(delta) > +0,014 ET au moins 5
@@ -80,15 +152,18 @@ import argparse
 
 import numpy as np
 import pandas as pd
-from scipy.stats import mannwhitneyu
+from scipy.stats import mannwhitneyu, spearmanr
 
-from nova_lab import REPO_ROOT
+from nova_lab import DATA_DIR, REPO_ROOT
 from nova_lab.nanobodies import check_sequence, germline_identity, regions
-from nova_lab.provenance import assert_current_target, runs_on_current_target
+from nova_lab.provenance import CURRENT, assert_current_target, runs_on_current_target
 from scripts.build_scramble_batch import jaccard_5mer, permute_cdr3, score_path
 
 N_SLOTS = 8
 K = 3                      # requetes par bras et par creneau
+N_CALIB_PER_BAND = 2
+CALIB_BANDS = [(0.15, 0.30), (0.30, 0.45), (0.45, 0.55), (0.55, 0.65),
+               (0.65, 0.72), (0.72, 0.78), (0.78, 0.90)]
 MIN_CDR3 = 12              # §90 : sous 12, la permutation frole le plafond 0,90
 DONOR_DISTINCT = 0.80      # Jaccard 5-mer maximal entre deux donneurs
 GENERATOR = "pssm"         # le defaut du mineur
@@ -100,6 +175,9 @@ SIGMA_2 = 0.027            # §78, 2x le bruit entre runs
 WINS_FOR_PERMUT = 5        # creneaux sur 8
 WINS_FOR_FRESH = 3
 INCUMBENT = 0.3869         # meilleur iiptm soumettable mesure sur P05231
+CALIB_RHO = 0.80           # lecture 0 : l'instrument reproduit-il le validateur
+CALIB_OFFSET_OK = 0.05
+CALIB_OFFSET_DEPRESSED = -0.10
 JACCARD_CEILING = 0.90     # la regle du validateur
 MWU_ALPHA = 0.05
 
@@ -173,6 +251,55 @@ def select_donors(pool: pd.DataFrame, n: int = N_SLOTS, log=print) -> pd.DataFra
 
 
 # ---------------------------------------------------------------------------
+# le bras d'etalonnage : des sequences dont le validateur a publie le score
+# ---------------------------------------------------------------------------
+def calibration_arm(per_band: int = N_CALIB_PER_BAND, seed: int = SEED,
+                    log=print) -> pd.DataFrame:
+    """Des sequences de l'archive, etalees sur les bandes de score du validateur.
+
+    Elles n'ont jamais ete notees chez nous (aucune des 327 n'est dans
+    l'archive), donc chacune est une comparaison directe entre notre instrument
+    et le leur, sur la cible vivante, dans ce run.
+    """
+    path = DATA_DIR / "archive" / f"{CURRENT}_nanobodies.csv"
+    if not path.exists():
+        raise RuntimeError(
+            f"archive absente : {path}. La telecharger avec "
+            f"NanobodyArchive('{CURRENT}', with_regions=False).")
+    arch = pd.read_csv(path)
+    arch = arch[arch["sequence"].str.len().between(90, 150)]
+    rng = np.random.default_rng(seed)
+    picked: list[dict] = []
+    for lo, hi in CALIB_BANDS:
+        band = arch[(arch["design_iiptm"] >= lo) & (arch["design_iiptm"] < hi)]
+        if band.empty:
+            raise RuntimeError(f"bande d'etalonnage {lo}-{hi} vide dans l'archive")
+        taken = 0
+        for idx in rng.permutation(len(band)):
+            row = band.iloc[int(idx)]
+            if any(jaccard_5mer(row["sequence"], p["sequence"]) >= DONOR_DISTINCT
+                   for p in picked):
+                continue
+            picked.append({"sequence": row["sequence"], "arm": "calib",
+                           "slot": -1, "label": f"calib#{lo:.2f}-{hi:.2f}.{taken}",
+                           "group": "calibration",
+                           "previous_iiptm": float(row["design_iiptm"]),
+                           "previous_run": "archive_validateurs",
+                           "archive_iiptm": float(row["design_iiptm"]),
+                           "archive_pae": float(row["interaction_pae"]),
+                           "band_low": lo, "band_high": hi})
+            taken += 1
+            if taken >= per_band:
+                break
+        if taken < per_band:
+            raise RuntimeError(f"bande {lo}-{hi} : {taken} sequences distinctes sur {per_band}")
+    out = pd.DataFrame(picked)
+    log(f"  etalonnage : {len(out)} sequences d'archive, iiptm validateur "
+        f"{out['archive_iiptm'].min():.3f}-{out['archive_iiptm'].max():.3f}")
+    return out
+
+
+# ---------------------------------------------------------------------------
 # le bras neuf : le generateur du mineur, pour le meme creneau
 # ---------------------------------------------------------------------------
 def fresh_for_slot(v_gene: str, cdr3_length: int, k: int = K, seed: int = SEED,
@@ -206,10 +333,11 @@ def fresh_for_slot(v_gene: str, cdr3_length: int, k: int = K, seed: int = SEED,
 # ---------------------------------------------------------------------------
 def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
           log=print) -> pd.DataFrame:
+    calib = calibration_arm(seed=seed, log=log)
     pool = annotate(live_pool(log=log), log=log)
     donors = select_donors(pool, n=n_slots, log=log)
 
-    rows: list[dict] = []
+    rows: list[dict] = list(calib.to_dict("records"))
     slot = 0
     for d in donors.itertuples():
         if slot >= n_slots:
@@ -255,7 +383,12 @@ def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
     for r in batch.itertuples():
         reg = regions(r.sequence)
         g = germline_identity(r.sequence)
-        problems = check_sequence(r.sequence, r.v_gene, r.cdr3_length)
+        # Le bras d'etalonnage n'appartient a aucun creneau : sa couche 1 est
+        # lue sans contrainte de gene ni de longueur, qui sont celles de
+        # l'epoque ou il a ete soumis et que nous ne connaissons pas.
+        v_gene = None if r.arm == "calib" else r.v_gene
+        cdr3_len = None if r.arm == "calib" else r.cdr3_length
+        problems = check_sequence(r.sequence, v_gene, cdr3_len)
         others = [o for o in batch["sequence"] if o != r.sequence]
         extra.append({
             "cdr3_now": reg["CDR3"] if reg else "",
@@ -268,7 +401,8 @@ def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
     batch = pd.concat([batch, pd.DataFrame(extra)], axis=1)
 
     assert batch["sequence"].is_unique, "une sequence est repetee : BoltzGen la paierait deux fois"
-    assert len(batch) == n_slots * (1 + 2 * k), f"{len(batch)} sequences, attendu {n_slots * (1 + 2 * k)}"
+    expected = len(calib) + n_slots * (1 + 2 * k)
+    assert len(batch) == expected, f"{len(batch)} sequences, attendu {expected}"
 
     # Entrelacer : un run interrompu garde les deux bras equilibres.
     order = {"donneur": 0, "permut": 1, "neuf": 2}
@@ -277,7 +411,7 @@ def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
              .drop(columns="_r").reset_index(drop=True))
 
     log(f"\n{len(batch)} sequences : {n_slots} creneaux x (1 donneur + {k} permut + {k} neuf)")
-    for arm in ("donneur", "permut", "neuf"):
+    for arm in ("calib", "donneur", "permut", "neuf"):
         sub = batch[batch["arm"] == arm]
         log(f"  {arm:8s} n={len(sub):2d}  couche 1 ok : {(sub['layer1'] == 'ok').sum()}/{len(sub)}"
             f"  Jaccard max {sub['jaccard_max_batch'].max():.3f}")
@@ -298,6 +432,30 @@ def analyse(scores_path: str, batch_path: str, log=print) -> dict:
     res: dict = {"n_scored": int(len(scored))}
 
     permut, neuf = scored[scored["arm"] == "permut"], scored[scored["arm"] == "neuf"]
+
+    # --- 0. l'instrument : nous contre le validateur, sur la cible vivante ---
+    calib = scored[scored["arm"] == "calib"]
+    if len(calib) >= 6 and "archive_iiptm" in calib.columns:
+        rho = float(spearmanr(calib["design_iiptm"], calib["archive_iiptm"]).statistic)
+        off = calib["design_iiptm"] - calib["archive_iiptm"]
+        res.update(reading0_rho=rho, reading0_offset_median=float(off.median()),
+                   reading0_offset_mean=float(off.mean()), reading0_n=int(len(calib)))
+        if rho >= CALIB_RHO and abs(off.median()) <= CALIB_OFFSET_OK:
+            res["reading0_state"] = "fidele"
+        elif rho >= CALIB_RHO and off.median() <= CALIB_OFFSET_DEPRESSED:
+            res["reading0_state"] = "monotone mais deprime"
+        elif rho >= CALIB_RHO:
+            res["reading0_state"] = "monotone, decalage intermediaire"
+        else:
+            res["reading0_state"] = "ne reproduit pas"
+        log(f"\n0. L'INSTRUMENT sur {len(calib)} sequences d'archive : "
+            f"rho = {rho:+.3f} (seuil {CALIB_RHO}), decalage median "
+            f"{off.median():+.4f} -> {res['reading0_state']}")
+        for r in calib.sort_values("archive_iiptm").itertuples():
+            log(f"   validateur {r.archive_iiptm:.4f} -> nous {r.design_iiptm:.4f} "
+                f"({r.design_iiptm - r.archive_iiptm:+.4f})")
+    else:
+        res["reading0_state"] = None
 
     # --- 1. meilleur-de-k, appariee par creneau ---
     deltas = []
@@ -333,14 +491,15 @@ def analyse(scores_path: str, batch_path: str, log=print) -> dict:
             f"(ecart {res['reading2_median_diff']:+.4f}), Mann-Whitney p = {u.pvalue:.3f}")
 
     # --- 3. la queue haute ---
-    res.update(reading3_permut_above=int((permut["design_iiptm"] >= INCUMBENT).sum()),
-               reading3_neuf_above=int((neuf["design_iiptm"] >= INCUMBENT).sum()),
-               reading3_permut_max=float(permut["design_iiptm"].max()) if len(permut) else None,
-               reading3_neuf_max=float(neuf["design_iiptm"].max()) if len(neuf) else None)
-    log(f"\n3. QUEUE HAUTE (seuil {INCUMBENT}, meilleur soumettable connu) : "
-        f"permut {res['reading3_permut_above']}/{len(permut)} au-dessus (max "
-        f"{res['reading3_permut_max']:.4f}), neuf {res['reading3_neuf_above']}/{len(neuf)} "
-        f"(max {res['reading3_neuf_max']:.4f})")
+    if len(permut) and len(neuf):
+        res.update(reading3_permut_above=int((permut["design_iiptm"] >= INCUMBENT).sum()),
+                   reading3_neuf_above=int((neuf["design_iiptm"] >= INCUMBENT).sum()),
+                   reading3_permut_max=float(permut["design_iiptm"].max()),
+                   reading3_neuf_max=float(neuf["design_iiptm"].max()))
+        log(f"\n3. QUEUE HAUTE (seuil {INCUMBENT}, meilleur soumettable connu) : "
+            f"permut {res['reading3_permut_above']}/{len(permut)} au-dessus (max "
+            f"{res['reading3_permut_max']:.4f}), neuf {res['reading3_neuf_above']}/{len(neuf)} "
+            f"(max {res['reading3_neuf_max']:.4f})")
 
     # --- 4. temoin : bruit entre runs ---
     don = scored[(scored["arm"] == "donneur") & scored["previous_iiptm"].notna()]
@@ -382,6 +541,28 @@ def analyse(scores_path: str, batch_path: str, log=print) -> dict:
 def verdict(res: dict) -> list[str]:
     """Le verdict, derive des seuils pre-enregistres et de rien d'autre."""
     out = []
+    state = res.get("reading0_state")
+    if state == "fidele":
+        out.append(f"INSTRUMENT FIDELE sur la cible vivante : rho {res['reading0_rho']:+.3f}, "
+                   f"decalage {res['reading0_offset_median']:+.4f}. Nos candidats sont donc "
+                   f"vraiment dans le dernier decile du champ, et le §85 est plus severe "
+                   f"qu'ecrit : la ou nous plafonnons a 0,446, 92,9 % de l'archive est "
+                   f"au-dessus de 0,45.")
+    elif state == "monotone mais deprime":
+        out.append(f"INSTRUMENT MONOTONE MAIS DEPRIME : rho {res['reading0_rho']:+.3f}, "
+                   f"decalage {res['reading0_offset_median']:+.4f}. Les rangs tiennent, "
+                   f"mais tout seuil absolu et toute comparaison au champ sont a refaire — "
+                   f"y compris le 0,178 de 61H7 au §77.")
+    elif state == "monotone, decalage intermediaire":
+        out.append(f"INSTRUMENT MONOTONE, decalage intermediaire "
+                   f"{res['reading0_offset_median']:+.4f} (entre {CALIB_OFFSET_DEPRESSED} "
+                   f"et {CALIB_OFFSET_OK}) : ni fidele ni franchement deprime. A trancher "
+                   f"avec plus de sequences avant d'en tirer quoi que ce soit d'absolu.")
+    elif state == "ne reproduit pas":
+        out.append(f"L'INSTRUMENT NE REPRODUIT PAS LE VALIDATEUR sur cette cible : "
+                   f"rho {res['reading0_rho']:+.3f} < {CALIB_RHO}. Les lectures absolues "
+                   f"des §77, §87, §89 et §90 doivent etre relues, et les lectures 1 a 3 "
+                   f"ci-dessous ne valent plus que comme comparaisons internes au run.")
     mean, wins, n = (res.get("reading1_mean"), res.get("reading1_wins"),
                      res.get("reading1_n"))
     if mean is None:
