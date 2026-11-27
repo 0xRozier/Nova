@@ -268,6 +268,20 @@ def calibration_arm(per_band: int = N_CALIB_PER_BAND, seed: int = SEED,
             f"NanobodyArchive('{CURRENT}', with_regions=False).")
     arch = pd.read_csv(path)
     arch = arch[arch["sequence"].str.len().between(90, 150)]
+
+    # Une conforme et une non conforme par bande. Les 46 118 sequences de
+    # l'archive sont a 90,6 % sous les planchers germinaux d'aujourd'hui
+    # (V >= 82, J >= 86), parce qu'elles viennent d'une ere sans ces regles.
+    # Mais les 4 317 qui les passent notent MIEUX, pas moins : mediane 0,724,
+    # 61,5 % au-dessus de 0,70. Donc les planchers n'excluent pas le haut du
+    # score, et une sequence soumettable atteint 0,83 sur cette cible. Prendre
+    # une conforme par bande rend la lecture 0 impossible a ecarter en disant
+    # que l'archive compare des molecules que les regles interdisent.
+    ident = pd.read_parquet(DATA_DIR / "dataset" / f"{CURRENT}_nanobodies.parquet",
+                            columns=["sequence", "v_identity", "j_identity"])
+    arch = arch.merge(ident, on="sequence", how="left")
+    arch["compliant"] = (arch["v_identity"] >= 82) & (arch["j_identity"] >= 86)
+
     rng = np.random.default_rng(seed)
     picked: list[dict] = []
     for lo, hi in CALIB_BANDS:
@@ -275,7 +289,34 @@ def calibration_arm(per_band: int = N_CALIB_PER_BAND, seed: int = SEED,
         if band.empty:
             raise RuntimeError(f"bande d'etalonnage {lo}-{hi} vide dans l'archive")
         taken = 0
+        # D'abord une conforme, puis une non conforme ; si la bande n'a pas de
+        # conforme, deux non conformes, et le CSV le dit dans `compliant`.
+        for want_compliant in (True, False):
+            sub = band[band["compliant"] == want_compliant]
+            if sub.empty:
+                continue
+            for idx in rng.permutation(len(sub)):
+                row = sub.iloc[int(idx)]
+                if any(jaccard_5mer(row["sequence"], p["sequence"]) >= DONOR_DISTINCT
+                       for p in picked):
+                    continue
+                picked.append({"sequence": row["sequence"], "arm": "calib",
+                               "slot": -1, "label": f"calib#{lo:.2f}-{hi:.2f}.{taken}",
+                               "group": "calibration",
+                               "previous_iiptm": float(row["design_iiptm"]),
+                               "previous_run": "archive_validateurs",
+                               "archive_iiptm": float(row["design_iiptm"]),
+                               "archive_pae": float(row["interaction_pae"]),
+                               "archive_compliant": bool(row["compliant"]),
+                               "band_low": lo, "band_high": hi})
+                taken += 1
+                break
+            if taken >= per_band:
+                break
+        # Completer avec n'importe quelle sequence de la bande si besoin.
         for idx in rng.permutation(len(band)):
+            if taken >= per_band:
+                break
             row = band.iloc[int(idx)]
             if any(jaccard_5mer(row["sequence"], p["sequence"]) >= DONOR_DISTINCT
                    for p in picked):
@@ -287,15 +328,15 @@ def calibration_arm(per_band: int = N_CALIB_PER_BAND, seed: int = SEED,
                            "previous_run": "archive_validateurs",
                            "archive_iiptm": float(row["design_iiptm"]),
                            "archive_pae": float(row["interaction_pae"]),
+                           "archive_compliant": bool(row["compliant"]),
                            "band_low": lo, "band_high": hi})
             taken += 1
-            if taken >= per_band:
-                break
         if taken < per_band:
             raise RuntimeError(f"bande {lo}-{hi} : {taken} sequences distinctes sur {per_band}")
     out = pd.DataFrame(picked)
     log(f"  etalonnage : {len(out)} sequences d'archive, iiptm validateur "
-        f"{out['archive_iiptm'].min():.3f}-{out['archive_iiptm'].max():.3f}")
+        f"{out['archive_iiptm'].min():.3f}-{out['archive_iiptm'].max():.3f}, "
+        f"dont {int(out['archive_compliant'].sum())} conformes aux planchers")
     return out
 
 
@@ -451,9 +492,17 @@ def analyse(scores_path: str, batch_path: str, log=print) -> dict:
         log(f"\n0. L'INSTRUMENT sur {len(calib)} sequences d'archive : "
             f"rho = {rho:+.3f} (seuil {CALIB_RHO}), decalage median "
             f"{off.median():+.4f} -> {res['reading0_state']}")
+        if "archive_compliant" in calib.columns:
+            comp = calib[calib["archive_compliant"].astype(bool)]
+            if len(comp) >= 3:
+                res["reading0_offset_compliant"] = float(
+                    (comp["design_iiptm"] - comp["archive_iiptm"]).median())
+                log(f"   dont {len(comp)} conformes aux planchers : decalage median "
+                    f"{res['reading0_offset_compliant']:+.4f}")
         for r in calib.sort_values("archive_iiptm").itertuples():
+            flag = "conforme" if getattr(r, "archive_compliant", False) else "hors planchers"
             log(f"   validateur {r.archive_iiptm:.4f} -> nous {r.design_iiptm:.4f} "
-                f"({r.design_iiptm - r.archive_iiptm:+.4f})")
+                f"({r.design_iiptm - r.archive_iiptm:+.4f})  {flag}")
     else:
         res["reading0_state"] = None
 
