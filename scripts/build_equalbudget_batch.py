@@ -219,10 +219,12 @@ def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
         fresh = fresh_for_slot(d.v_gene, d.cdr3_length, k=k, seed=seed + slot, log=log)
         if not fresh:
             continue
-        perms = permute_cdr3(d.sequence, k, seed=seed + 1000 + slot,
-                             log=lambda *a, **kw: None)
-        if len(perms) < k:
-            log(f"    seulement {len(perms)} permutations distinctes — creneau abandonne")
+        try:
+            # Leve si l'interieur du CDR3 ne porte pas k permutations distinctes.
+            perms = permute_cdr3(d.sequence, k, seed=seed + 1000 + slot,
+                                 log=lambda *a, **kw: None)
+        except ValueError as exc:
+            log(f"    permutation impossible ({exc}) — creneau abandonne")
             continue
         rows.append({"sequence": d.sequence, "arm": "donneur", "slot": slot,
                      "label": f"donneur#{slot:02d}", "group": "candidate",
