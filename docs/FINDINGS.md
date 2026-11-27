@@ -7169,12 +7169,38 @@ variance. Et comme le bruit de mesure intra-run (≤ 0,006) est dix fois plus
 petit que cette dispersion (0,060), la variance est **réelle** : ce n'est pas
 de la malchance de mesure, c'est la séquence qui change de valeur.
 
-### Le meilleur score jamais mesuré sur IL-6 est une permutation
+### Le meilleur score jamais mesuré sur IL-6 est une permutation — mais il n'est pas soumettable
 
 Sur les 311 séquences uniques que ce dépôt a interrogées sur P05231, le record
 est désormais **0,4457**, et c'est une permutation du CDR3 d'un donneur à
 0,2551 (`permuted_low#02.0`, CDR3 de 17 résidus). La seconde permutation du
 **même** donneur donne 0,3740. Deux tirages, +0,19 et +0,12.
+
+**Correction ajoutée le 27 novembre, et elle retire la moitié du titre.** La
+colonne `layer1` de ce lot vaut « ANARCI did not return exactly one heavy-chain
+domain » sur ses 56 lignes : `hmmscan` était absent de la machine qui a construit
+le lot, donc **la couche 1 n'y a jamais été vérifiée** — le piège §6 du filtre
+qui refuse tout quand une pièce manque, en version silencieuse. Vérification
+faite depuis, `hmmer` installé :
+
+| | iiptm | identité V | identité J | soumettable |
+|---|---|---|---|---|
+| `permuted_low#02.0` (le record) | 0,4457 | **79,6** < 82 | **78,6** < 86 | **non** |
+| son donneur `donor_low#02` | 0,2551 | 79,6 | 78,6 | non |
+| le record du lot `ptm` | 0,4048 | 85,7 | **57,1** < 86 | **non** |
+| le meilleur **soumettable** mesuré sur P05231 | **0,3869** | 85,7 | 92,9 | oui |
+
+Le record appartient donc à une lignée que le validateur refuserait, et
+permuter son CDR3 ne la répare pas : la permutation hérite de la charpente, donc
+de l'identité V. Sur les 24 mieux notées de la cible, **12 seulement passent la
+couche 1**. La leçon n'est pas sur la permutation, elle est sur le classement :
+**un vivier trié sur l'iiptm seul contient des séquences qui ne peuvent pas être
+soumises**, et sur ce vivier c'est une sur deux. Tout choix de donneur doit
+filtrer la couche 1 d'abord, l'iiptm ensuite.
+
+Ce qui reste du résultat : le déplacement mesuré (écart-type 0,060 contre un
+bruit de 0,006) ne dépend pas de la soumettabilité et tient tel quel. C'est le
+mot « record » qui était faux.
 
 | meilleur-de-k par donneur (k = 2 ou 3) | valeur |
 |---|---|

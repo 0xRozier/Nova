@@ -97,7 +97,9 @@ décomposition qui a trouvé le levier du §87.
 | écart typique entre rivaux dans une époque | 0,014 | §49 |
 | effet du choix du CDR3 à charpente fixe | écart-type 0,0218 | §77 |
 | effet d'une **permutation** de l'intérieur du CDR3 | écart-type 0,0600, moyenne signée −0,004 (38 permutations) | §90 |
-| meilleur iiptm jamais mesuré sur la cible vivante | **0,4457** sur 311 séquences uniques | §90 |
+| meilleur iiptm jamais mesuré sur la cible vivante | 0,4457 sur 311 séquences uniques, **mais non soumettable** (V 79,6 < 82) | §90 |
+| meilleur iiptm **soumettable** sur la cible vivante | **0,3869** | §90 |
+| part du top 24 de la cible qui passe la couche 1 | **12 sur 24** | §90 |
 | transfert entre cibles, métrique d'**interface** | **ρ = +0,003 ± 0,15** | §80 |
 | transfert entre cibles, `design_ptm` (repliement du monomère) | **ρ = +0,487** | §87 |
 | coût d'une requête | 2,0 à 2,2 min sur 2× T4 | §77, §80 |
@@ -213,6 +215,17 @@ cible** — c'est le §5 du guide amont, et c'est gratuit.
   séquence répétée dans un lot est **une** mesure payée deux fois. Mon premier
   lot de calibration avait 3 répliques par ancre et aurait gâché un tiers de
   l'heure GPU. `verify_boltzgen_notebook` le détecte.
+- **`hmmscan` absent fait passer la couche 1 pour « indisponible » sans que
+  rien ne s'arrête.** Le lot du §90 a été construit sans lui : ses 56 lignes
+  `layer1` disent « ANARCI did not return exactly one heavy-chain domain », et
+  personne n'a su avant le 27 novembre que son record (0,4457) avait une
+  identité V de 79,6 pour un plancher à 82 — donc n'était pas soumettable, ni
+  lui ni aucune permutation de sa charpente. Sur le top 24 de la cible,
+  **12 séquences sur 24 ne passent pas la couche 1**. Un vivier trié sur
+  l'iiptm seul est à moitié inutilisable. `apt-get install -y hmmer` après
+  `apt-get update` remet `regions()` et `germline_identity()` en marche ; sans
+  lui, **filtrer la couche 1 avant l'iiptm est impossible, et tout choix de
+  donneur est suspect**.
 - **Le filtre de nativité ne lève pas quand une pièce manque** : il répond
   `hard_reject=True` pour **tout**, y compris pour des soumissions acceptées.
   Arrivé deux fois (`internal_data/human` au §69, puis `abnumber`/`anarci` au
