@@ -7297,3 +7297,163 @@ question qui n'existe plus.
 **Règle à ajouter au §7 : avant de construire un lot, vérifier que tout score
 historique qui a servi à choisir une séquence porte la cible vivante.** C'est
 gratuit, c'est automatisable, et ça vient de coûter une heure de GPU.
+
+## 91. L'instrument n'a jamais été étalonné sur la cible vivante, et l'archive dit que le champ note trois fois plus haut que nous
+
+Trouvé en construisant le lot du §92, sans dépenser une requête : le vivier du
+générateur exige l'archive publique de la cible, et cette archive est une table
+de 46 118 séquences **notées par les validateurs eux-mêmes sur P05231**.
+
+| | n | iiptm médian | max | > 0,45 | > 0,70 | pae médian |
+|---|---|---|---|---|---|---|
+| archive validateurs, Q9NZQ7 | 9 466 | 0,669 | 0,827 | — | 43,7 % | 9,60 |
+| archive validateurs, **P05231** | 46 118 | **0,654** | **0,854** | **92,9 %** | **43,9 %** | 12,97 |
+| nos runs, Q9NZQ7 | 1 238 | 0,449 | 0,795 | — | 6,2 % | 15,08 |
+| nos runs, **P05231** | 327 | **0,181** | **0,446** | **0 %** | **0 %** | 23,68 |
+
+Le champ trouve les deux cibles également faciles — médianes 0,669 et 0,654,
+et la même part au-dessus de 0,70 à 0,2 point près. Nous, nous sommes passés de
+0,449 à 0,181 de médiane en changeant de cible.
+
+### Ce qui rend le fait grave : l'instrument était exact sur l'ancienne cible
+
+Les runs de l'ancienne cible portaient un groupe `real` : des séquences
+d'archive re-notées chez nous. Elles donnent, sur 84 séquences communes :
+
+| | valeur |
+|---|---|
+| ρ(notre iiptm, iiptm de l'archive) | **+0,984** |
+| décalage médian | **+0,0012** |
+| \|décalage\| médian | 0,0133, soit exactement le bruit entre runs |
+| `interaction_pae` | 15,02 contre 14,96 |
+
+Notre réplique du score des validateurs était donc exacte, et l'affirmation de
+l'ETAT §2 — « il n'y a aucun critère du validateur que nous ne sachions
+calculer » — était vraie **sur Q9NZQ7**.
+
+**Depuis la bascule du 20 novembre, aucun run n'a jamais noté une séquence dont
+on connaît le score du validateur.** Aucune des 327 n'est dans l'archive, et les
+six `ref_intact` du §77 n'y sont pas non plus. L'étalonnage n'a pas été refait,
+et personne — moi compris, jusqu'ici — ne s'en était aperçu.
+
+### Ce qui est écarté, et c'est gratuit
+
+- **L'amont n'a pas changé sous nos pieds.** `external_tools/boltzgen` et
+  `data/` sont identiques entre `db9bf19` (notre `UPSTREAM_COMMIT`) et le HEAD
+  amont : même moteur, même MSA. Seuls `config/`, `config_loader.py`,
+  `challenge.py`, `reactions.py` et `molecule_validity.py` diffèrent, et les
+  quatre derniers ne concernent pas la notation nanobody.
+- **Notre yaml est le leur, caractère par caractère.** `input_yaml` de
+  `scripts/boltzgen_score.py` et `_create_yaml_content` du `boltzgen_wrapper`
+  amont produisent la même chose : même `res_index`, même `msa`, même
+  `binding`, même `msa: empty` sur l'entité B.
+- **Nos constantes sont les leurs.** Le HEAD amont dit `P05231`,
+  `clip_interval [[27, 212]]`, `4O9H`, chaîne `A`, `res_index 21..186`, site
+  `24,77,80,82,131,184..186`. `nova_lab/config.py` dit exactement cela.
+- **La couche 1 ne nous plafonne pas.** C'était l'explication la plus
+  séduisante : l'archive est à 90,6 % sous les planchers germinaux
+  d'aujourd'hui (V ≥ 82, J ≥ 86), donc on pouvait croire que le haut du score
+  vit dans une région que les règles nous interdisent. Faux, et dans le bon
+  sens : les **4 317 séquences de l'archive qui passent les planchers** notent
+  **mieux** que les autres — médiane 0,724 contre 0,649, et 61,5 % au-dessus de
+  0,70. Une séquence soumettable atteint 0,827 sur cette cible. Nos 327
+  conformes plafonnent à 0,446.
+- **L'accord sur la courbe (iiptm, pae) n'écarte rien**, et il ne faut pas s'en
+  servir comme preuve. Nos mesures tombent sur la courbe de l'archive à 0,3-0,6
+  près dans chaque bande, ce qui semble rassurant — mais une cible mal posée
+  produit de vrais mauvais complexes, qui se rangent eux aussi au mauvais bout
+  de la même courbe. Cet indice est compatible avec les deux hypothèses.
+
+### Les deux hypothèses qui restent, et la seule chose qui les sépare
+
+**(a) Notre montage P05231 déprime tout d'environ 0,45.** L'indice le plus
+lourd est le §77 lui-même : 61H7, le liant cristallographique de 4O9H — la
+structure que la config nomme, 8/8 de recouvrement avec le site de la config —
+y note **0,178**, soit la médiane de tout ce que nous mesurons, et sous 92,9 %
+des soumissions ordinaires de l'archive. Un liant natif qui s'amarre à son
+propre épitope ne note pas sous le tout-venant si le montage est correct.
+
+**(b) Les scores de l'archive ont été produits sous une autre configuration.**
+L'archive ne porte **aucune date** — le dépôt le sait depuis le §48 et s'en est
+déjà fait piéger. Si IL-6 a été cible lors d'une saison précédente avec une
+autre structure ou un autre site, ses 46 118 scores sont incomparables aux
+nôtres.
+
+Rien d'autre ne peut les séparer que la mesure, et elle coûte **14 requêtes** :
+noter chez nous des séquences d'archive étalées sur les bandes du validateur.
+C'est exactement ce que les 84 `real` avaient fait sur l'ancienne cible.
+
+Le lot est `inputs/kaggle_instrument.csv`, construit par
+`scripts.build_equalbudget_batch --slots 0`, carnet `notebooks/kaggle_instrument.ipynb`,
+run `instrument`, ~28 min sur 2× T4. Sept bandes, et dans chacune **une
+séquence conforme aux planchers d'aujourd'hui et une qui ne l'est pas** :
+
+| bande | conforme | hors planchers |
+|---|---|---|
+| 0,15-0,30 | 0,291 | 0,182 |
+| 0,30-0,45 | 0,402 | 0,408 |
+| 0,45-0,55 | 0,478 | 0,521 |
+| 0,55-0,65 | 0,609 | 0,639 |
+| 0,65-0,72 | 0,667 | 0,652 |
+| 0,72-0,78 | 0,758 | 0,769 |
+| 0,78-0,90 | 0,784 | 0,831 |
+
+Les sept conformes portent toutes V 82,7-83,5 et J 92,9 : elles seraient
+soumettables aujourd'hui telles quelles. La `interaction_pae` de l'archive
+décroît proprement avec l'iiptm le long de la colonne, de 23,9 à 9,25, ce qui
+donne une seconde lecture gratuite — si notre pae suit la leur mais que notre
+iiptm ne suit pas, l'anomalie est dans l'iiptm seul.
+
+La lecture 0 et ses quatre états sont dans le docstring du module, et
+`tests/test_equalbudget_batch.py` les retrouve tous les quatre sur
+aller-retour synthétique, dont « monotone mais déprimé de 0,45 ». L'analyse a
+aussi été passée à blanc sur ce lot réel avec deux jeux de scores simulés —
+fidèle, et plat à 0,18 comme nos 327 — et rend le bon verdict dans les deux
+cas.
+
+### Une piste pour (b), trouvée en chemin, et un fait à connaître dans tous les cas
+
+`parse_range` de BoltzGen (`data/parse/schema.py`) est **positionnel et
+1-indexé dans la chaîne parsée** : `indices += list(range(c_start + start, c_start + end))`.
+Il ne lit pas le `label_seq_id`. Or la chaîne A de 4O9H compte **279 résidus**
+et son premier porte `label_seq_id 21` (`auth_seq_id 19`). Donc
+`res_index: 21..186` ne sélectionne pas les résidus 21 à 186 de la séquence
+canonique : il saute les vingt premiers résidus observés et court jusqu'au
+186ᵉ résidu du fichier.
+
+L'ancienne cible disait `res_index: 1..115` sur une chaîne de 115 résidus
+commençant à 1 : les deux conventions y donnent le même résultat, au résidu
+près. **C'est pourquoi rien ne pouvait se voir avant la bascule**, et c'est le
+piège du §6 dans sa forme la plus pure — une convention qui ne se révèle que
+quand la valeur change.
+
+Attention à ce que cela n'est pas : ce n'est **pas** une explication de notre
+écart avec les validateurs, qui exécutent le même `parse_range` sur le même
+fichier avec la même config. Si la fenêtre est décalée, elle l'est pour eux
+aussi. Cela ne devient une explication que couplé à (b) : une config antérieure
+dont le `res_index` commençait à 1.
+
+### Ce que cela change dès maintenant, avant toute mesure
+
+Tant que la lecture 0 du §92 n'a pas tranché :
+
+- **toute comparaison de nos valeurs absolues à celles du champ est nulle.**
+  Cela vise le §85 (« notre distribution plafonne à 0,726 quand le champ est à
+  0,75-0,79 »), et le constat du §90 selon lequel nos 311 séquences tiennent
+  entre 0,118 et 0,446 ;
+- **le « résultat central » de l'ETAT §2 est suspendu.** « Le score des
+  validateurs ne mesure pas la liaison biologique » repose sur l'échelle de
+  calibration du §77, mesurée sur cette cible avec cet instrument. Si
+  l'instrument déprime tout à 0,18, l'échelle n'a pas été mesurée — elle a été
+  aplatie, et un classement dans du bruit explique aussi bien le
+  ρ = −0,232 que l'hypothèse « le score ignore la liaison » ;
+- **les §87, §89 et §90 se relisent** pour leurs lectures absolues. Leurs
+  lectures internes à un run (le déplacement du CDR3 du §90, la planéité du
+  `ptm` du §89) survivent, puisqu'elles comparent des séquences entre elles
+  dans la même mesure.
+
+Ce qui ne change pas : la méthode. C'est le témoin qui manquait, et il manquait
+parce que personne ne l'avait inscrit dans la discipline du §7. Il y est
+maintenant : **à chaque changement de cible, re-étalonner l'instrument contre
+l'archive avant de dépenser une heure de GPU sur quoi que ce soit d'autre.**
+Quatorze requêtes, une fois par cible.

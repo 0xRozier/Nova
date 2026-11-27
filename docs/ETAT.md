@@ -17,8 +17,16 @@ données avaient été régénérées. **Avant de conclure qu'un test est cassé
 son erreur : « No such file or directory: data/archive/… » n'est pas un bug.**
 Et `scripts.nativeness.available()` d'abord, toujours (§6).
 
-`docs/FINDINGS.md` est le journal complet, 90 sections, dans l'ordre
-chronologique. Ce fichier-ci n'en est pas un résumé neutre : c'est ce qu'il faut
+`docs/FINDINGS.md` est le journal complet, 91 sections, dans l'ordre
+chronologique.
+
+**À lire avant tout le reste : le §91.** L'instrument n'a jamais été étalonné
+depuis la bascule de cible du 20 novembre, et l'archive publique de P05231
+porte 46 118 séquences notées par les validateurs à 0,654 de médiane quand nos
+327 mesures plafonnent à 0,446 avec 0,181 de médiane. Tant que la lecture 0 du
+lot `inputs/kaggle_instrument.csv` n'a pas tranché, **toute comparaison de nos
+valeurs absolues à celles du champ est suspendue**, et le « résultat central »
+du §2 ci-dessous avec elle. Ce fichier-ci n'en est pas un résumé neutre : c'est ce qu'il faut
 savoir pour ne pas refaire un travail déjà fermé par la mesure.
 
 ---
@@ -48,9 +56,21 @@ doit jamais passer par la conversation (`docs/DEPLOY.md`).
 
 ---
 
-## 2. Le résultat central, et il change tout
+## 2. Le résultat central, et il change tout — mais il est suspendu depuis le §91
 
 **Le score des validateurs ne mesure pas la liaison biologique** (§77).
+
+> **Suspendu le 27 novembre (§91).** Ce résultat repose sur l'échelle de
+> calibration du §77, mesurée sur la cible vivante avec un instrument qui n'a
+> jamais été étalonné contre l'archive depuis la bascule. Si cet instrument
+> déprime tout à 0,18 — et 61H7, le liant cristallographique de la structure que
+> la config nomme, y note 0,178, sous 92,9 % des soumissions ordinaires de
+> l'archive — alors l'échelle n'a pas été mesurée, elle a été aplatie, et un
+> classement dans du bruit explique le ρ = −0,232 aussi bien que « le score
+> ignore la liaison ». 14 requêtes tranchent. **Ne rien bâtir sur ce qui suit
+> avant de les avoir dépensées.** Ce qui reste vrai quoi qu'il arrive : la
+> reproduction du score était exacte sur l'ANCIENNE cible (ρ +0,984, décalage
+> +0,0012 sur 84 séquences), et les lectures internes à un run survivent.
 
 Nous reproduisons le score exactement : leur build de BoltzGen vendorisée, leur
 `design.yaml`, leur protocole `nanobody-anything`, leurs dix métriques, leur

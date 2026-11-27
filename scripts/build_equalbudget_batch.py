@@ -375,8 +375,14 @@ def fresh_for_slot(v_gene: str, cdr3_length: int, k: int = K, seed: int = SEED,
 def build(n_slots: int = N_SLOTS, k: int = K, seed: int = SEED,
           log=print) -> pd.DataFrame:
     calib = calibration_arm(seed=seed, log=log)
-    pool = annotate(live_pool(log=log), log=log)
-    donors = select_donors(pool, n=n_slots, log=log)
+    # n_slots = 0 : le bras d'etalonnage seul, 14 requetes, ~28 min. C'est la
+    # lecture 0 sortie de son lot, pour ne pas payer les 56 requetes de la
+    # comparaison avant de savoir si l'instrument dit la verite.
+    if n_slots == 0:
+        donors = pd.DataFrame()
+    else:
+        pool = annotate(live_pool(log=log), log=log)
+        donors = select_donors(pool, n=n_slots, log=log)
 
     rows: list[dict] = list(calib.to_dict("records"))
     slot = 0
@@ -614,7 +620,11 @@ def verdict(res: dict) -> list[str]:
                    f"ci-dessous ne valent plus que comme comparaisons internes au run.")
     mean, wins, n = (res.get("reading1_mean"), res.get("reading1_wins"),
                      res.get("reading1_n"))
-    if mean is None:
+    if mean is None and not res.get("reading5", {}).keys() & {"permut", "neuf"}:
+        # Lot d'etalonnage seul : la comparaison n'y est pas, ce n'est pas un echec.
+        out.append("Lot d'etalonnage seul : la comparaison a budget egal n'est pas "
+                   "dans ce run, et la lecture 0 ci-dessus dit s'il faut la payer.")
+    elif mean is None:
         out.append("LECTURE 1 IMPOSSIBLE : creneaux incomplets.")
     elif mean > RIVAL_GAP and wins >= WINS_FOR_PERMUT:
         out.append(f"LA PERMUTATION GAGNE : +{mean:.4f} par creneau ({wins}/{n} creneaux). "
