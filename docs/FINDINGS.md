@@ -7457,3 +7457,131 @@ parce que personne ne l'avait inscrit dans la discipline du §7. Il y est
 maintenant : **à chaque changement de cible, re-étalonner l'instrument contre
 l'archive avant de dépenser une heure de GPU sur quoi que ce soit d'autre.**
 Quatorze requêtes, une fois par cible.
+
+## 92. L'instrument est exact, et c'est le générateur qui nous enterre
+
+14 séquences, 31,7 min sur 2× T4, zéro échec.
+`results/scores_nanobody_instrument.csv`, journal
+`results/boltzgen_instrument.log`. Lecture exécutée par
+`scripts.build_equalbudget_batch --analyse`, seuils écrits au §91 avant le run.
+
+### La lecture pré-enregistrée échoue, et il faut le dire avant tout le reste
+
+ρ sur les 14 = **+0,710**, sous le seuil de 0,80. Le verdict écrit d'avance est
+donc « l'instrument ne reproduit pas le validateur », et la règle que j'avais
+posée veut qu'on suspende les lectures absolues des §77, §87, §89 et §90.
+
+**Ce n'est pas ce que les données disent, et la raison est identifiable.** Les 14
+mélangeaient deux populations, et séparées elles ne se ressemblent pas du tout :
+
+| sous-groupe | n | ρ | décalage médian | \|décalage\| max | pae (nous − archive) |
+|---|---|---|---|---|---|
+| **conformes aux planchers** | 7 | **+1,000** | **−0,0099** | 0,0608 | **+0,03** |
+| hors planchers | 7 | +0,679 | −0,2294 | 0,4744 | — |
+
+Sur les sept séquences qui seraient soumettables aujourd'hui, la reproduction
+est **parfaite** — rang pour rang, de 0,29 à 0,78, avec un décalage de 0,01 et
+une `interaction_pae` qui colle à 0,03 près :
+
+| validateur | nous | écart |
+|---|---|---|
+| 0,2909 | 0,2301 | −0,061 |
+| 0,4019 | 0,3563 | −0,046 |
+| 0,4782 | 0,4886 | +0,010 |
+| 0,6094 | 0,6315 | +0,022 |
+| 0,6672 | 0,6573 | −0,010 |
+| 0,7578 | 0,7401 | −0,018 |
+| **0,7840** | **0,7871** | **+0,003** |
+
+### Donc l'hypothèse (a) du §91 est morte, et le §2 est rétabli
+
+Notre montage P05231 **ne déprime rien**. Il a mesuré 0,787 et 0,827 dans ce run,
+sur cette cible, avec cette config, ce `res_index` et cette MSA. L'hypothèse
+« notre instrument écrase tout à 0,18 » est écartée par mesure directe, et elle
+l'est indépendamment du seuil sur les 14 : si l'instrument déprimait, les sept
+conformes se seraient effondrées avec les autres. Elles ont reproduit à ρ = 1.
+
+Conséquences immédiates :
+
+- **le « résultat central » du §2 est rétabli.** Le 0,178 de 61H7 au §77 est une
+  vraie mesure, pas un artefact. Le score des validateurs ne mesure
+  effectivement pas la liaison biologique — un liant cristallographique de
+  l'épitope exact note sous des soumissions ordinaires que nous venons de
+  vérifier à 0,78 ;
+- la piste `parse_range` du §91 (positionnel et non `label_seq_id`) **reste un
+  fait exact sur le code**, mais elle n'explique rien de notre côté : la fenêtre
+  est ce qu'elle est pour tout le monde, et avec elle on atteint 0,83 ;
+- les §87, §89 et §90 gardent leurs lectures absolues.
+
+### Quatre séquences sur quatorze s'effondrent, et elles sont une seule famille
+
+Les quatre écarts de −0,23 à −0,47 sont **hors planchers** et portent le même
+CDR3 à deux ou trois résidus près :
+
+| validateur | nous | écart | CDR3 | identité J | pae archive → nous |
+|---|---|---|---|---|---|
+| 0,652 | 0,195 | −0,457 | NRFPFRYVNIFTQ | 35,7 | 13,2 → 23,1 |
+| 0,639 | 0,165 | −0,474 | NRFPFRYVNIWLR | 28,6 | 13,3 → 24,2 |
+| 0,521 | 0,160 | −0,361 | NRFPFRYVNIYVT | 35,7 | 16,6 → 24,4 |
+| 0,408 | 0,178 | −0,229 | NRFPYRYVNLWQS | 35,7 | 18,7 → 23,6 |
+
+Un **cinquième** membre de la même famille, celui dont la valeur d'archive est
+basse, reproduit exactement : 0,182 → 0,186. Autrement dit, l'archive étale
+cette famille de 0,18 à 0,65 et nous la mesurons plate à 0,16-0,20.
+
+Ce n'est pas un défaut de métrique : notre `interaction_pae` est **+8,93** plus
+haute que la leur sur ces quatre-là, alors qu'elle colle à 0,03 près sur les
+conformes. Notre run produit donc un complexe réellement moins bien amarré pour
+cette famille — pas un chiffre mal lu.
+
+Deux explications, non tranchées :
+
+- **l'archive se trompe sur cette famille** : valeurs d'une autre ère ou d'une
+  autre configuration. L'archive ne porte aucune date (§48) ;
+- **la famille est bimodale** : l'étape `design` de BoltzGen est stochastique
+  (`num_designs: 1`, `noise_scale 0,88`), et l'archive aurait attrapé le bon
+  tirage. Testable pour 12 requêtes — quatre séquences, trois runs, puisque
+  l'empreinte SHA-256 interdit les répliques dans un même run (§6).
+
+Ce qu'il faut en retenir sans attendre : **l'archive est vérifiée là où elle
+compte et douteuse là où elle ne compte pas.** Les 4 317 séquences conformes de
+l'archive (médiane 0,724) ont reproduit 7 fois sur 7 ; sa partie non conforme,
+qui est 90,6 % du total, contient des valeurs que nous ne savons pas refaire.
+La médiane globale de 0,654 citée au §91 est donc gonflée d'une quantité
+inconnue — mais la médiane des conformes, qui est **plus haute** encore, tient.
+
+### Le verrou est le générateur, et le chiffre est maintenant dur
+
+| | iiptm |
+|---|---|
+| séquences conformes de l'archive, **vérifiées par nous** | 0,230 à **0,787** |
+| nos 311 séquences uniques sur cette cible | 0,118 à **0,446**, médiane 0,181 |
+| notre meilleure **soumettable** | 0,387 |
+
+Le §85 disait « notre distribution plafonne à 0,726 quand le champ est à
+0,75-0,79 » — sur l'ancienne cible. Sur celle-ci, l'écart est bien pire et il
+n'est plus discutable : **des séquences soumettables atteignent 0,787 et les
+nôtres s'arrêtent à 0,446**, sur le même instrument, dans le même run, à la
+même heure.
+
+### Ce que cela ouvre, et c'est la première piste neuve depuis le §85
+
+Le vivier de donneurs du dépôt a toujours été **nos propres candidats**. Le §90
+a permuté des séquences à 0,26-0,39, le §77 a greffé sur 61H7 à 0,178, le §68 a
+greffé un motif cristallographique. Personne n'a jamais pris une **séquence
+d'archive conforme, vérifiée haut**, pour l'éditer juste assez qu'elle franchisse
+la règle d'unicité.
+
+C'est pourtant exactement le geste disponible : 4 317 séquences conformes,
+médiane 0,724, dont nous venons d'en vérifier une à 0,787. La question n'est
+plus « notre générateur peut-il faire mieux » mais « combien de score survit à
+l'édition minimale qui rend une séquence d'archive soumettable ». Le §77 a posé
+cette question en partant de 0,178, c'est-à-dire du mauvais bout ; elle n'a
+jamais été posée en partant de 0,78.
+
+**Et la comparaison à budget égal du §91 est à repointer.** Ses huit donneurs
+sont nos propres séquences à 0,256-0,387, choisies quand on croyait que c'était
+le haut de ce qui existe. Permuter le CDR3 d'une séquence à 0,26 alors qu'une
+séquence conforme à 0,787 est disponible dans l'archive n'est plus la bonne
+question. Le lot `inputs/kaggle_equalbudget.csv` reste construit et valide pour
+la question qu'il pose ; il ne se trouve plus être la question qui compte.

@@ -1,0 +1,143 @@
+[boltzgen:debug] Found 14 YAML file(s) in directory: /kaggle/temp/Nova/data/boltzgen/instrument/inputs
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+There are 14 unresolved residues and 132 unresolved atoms in the target.
+Using kernels: False [device capability: (7, 5)]
+Config overrides for protocol nanobody-anything: {'analysis': ['largest_hydrophobic=false', 'largest_hydrophobic_refolded=false'], 'filtering': ['filter_cysteine=true']}
+Using 2 devices
+[1] design                   
+[2] folding                  
+[3] analysis                 
+[4] filtering                
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/3] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 1/3] design - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]   
+[Step 1/3] design - Predicting DataLoader 0: :   0%|          | 0/7 [00:00<?, ?it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  14%|█▍        | 1/7 [01:26<08:39,  0.01it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  29%|██▊       | 2/7 [03:02<07:36,  0.01it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  43%|████▎     | 3/7 [04:32<06:03,  0.01it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  57%|█████▋    | 4/7 [06:09<04:36,  0.01it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  71%|███████▏  | 5/7 [07:41<03:04,  0.01it/s]
+[Step 1/3] design - Predicting DataLoader 0: :  86%|████████▌ | 6/7 [09:17<01:32,  0.01it/s]Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Number of failed examples: 0
+
+[Step 1/3] design - Predicting DataLoader 0: : 100%|██████████| 7/7 [10:48<00:00,  0.01it/s]Number of failed examples: 0
+
+[Step 1/3] design - Predicting DataLoader 0: : 100%|██████████| 7/7 [10:48<00:00,  0.01it/s]Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+Found explicit empty MSA for some proteins, will run these in single sequence mode.
+
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/instrument/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 14
+Found 14 targets and 14 remaining designs that still need to be processed in this step.
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/instrument/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 14
+Found 14 targets and 14 remaining designs that still need to be processed in this step.
+
+Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting: |          | 0/? [00:00<?, ?it/s]
+Predicting DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]    
+[Step 2/3] folding - Predicting DataLoader 0: :   0%|          | 0/7 [00:00<?, ?it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  14%|█▍        | 1/7 [02:13<13:18,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  29%|██▊       | 2/7 [04:35<11:29,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  43%|████▎     | 3/7 [06:49<09:06,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  57%|█████▋    | 4/7 [09:15<06:56,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  71%|███████▏  | 5/7 [11:32<04:37,  0.01it/s]
+[Step 2/3] folding - Predicting DataLoader 0: :  86%|████████▌ | 6/7 [13:56<02:19,  0.01it/s]Number of failed structure predictions: 0
+
+[Step 2/3] folding - Predicting DataLoader 0: : 100%|██████████| 7/7 [16:08<00:00,  0.01it/s]Number of failed structure predictions: 0
+
+[Step 2/3] folding - Predicting DataLoader 0: : 100%|██████████| 7/7 [16:08<00:00,  0.01it/s]
+Initializing FromGeneratedDataModule datasets for /kaggle/temp/Nova/data/boltzgen/instrument/out/intermediate_designs
+[Info] Number of files to process (including already processed ones): 14
+Found 14 targets and 14 remaining designs that still need to be processed in this step.
+
+Processing samples:   0%|          | 0/14 [00:00<?, ?it/s]
+Processing samples:   7%|▋         | 1/14 [00:16<03:32, 16.34s/it]
+Processing samples:  14%|█▍        | 2/14 [00:16<01:22,  6.87s/it]
+Processing samples:  36%|███▌      | 5/14 [00:20<00:25,  2.88s/it]
+Processing samples:  50%|█████     | 7/14 [00:20<00:12,  1.74s/it]
+Processing samples:  57%|█████▋    | 8/14 [00:20<00:08,  1.38s/it]
+Processing samples:  64%|██████▍   | 9/14 [00:24<00:09,  1.90s/it]
+Processing samples:  79%|███████▊  | 11/14 [00:24<00:03,  1.16s/it]
+Processing samples:  86%|████████▌ | 12/14 [00:24<00:01,  1.08it/s]
+Processing samples:  93%|█████████▎| 13/14 [00:26<00:01,  1.13s/it]
+Processing samples: 100%|██████████| 14/14 [00:28<00:00,  2.02s/it]
+Computed metrics successfully for 14 out of 14.
+
+Loading saved metrics from disk. 1% of total:   0%|          | 0/14 [00:00<?, ?it/s]
+Loading saved metrics from disk. 1% of total:  43%|████▎     | 6/14 [00:00<00:00, 51.55it/s]
+Loading saved metrics from disk. 1% of total:  86%|████████▌ | 12/14 [00:00<00:00, 52.16it/s]
+Loading saved metrics from disk. 1% of total: 100%|██████████| 14/14 [00:00<00:00, 51.94it/s]
+Number of targets: 14. Number of designs: 14.
+**************************************************
+Pipeline step 1 of 3: design
+✓ Step design completed successfully in 752.6s
+**************************************************
+Pipeline step 2 of 3: folding
+✓ Step folding completed successfully in 1066.4s
+**************************************************
+Pipeline step 3 of 3: analysis
+✓ Step analysis completed successfully in 40.3s
+14 sequences to score, inputs in /kaggle/temp/Nova/data/boltzgen/instrument/inputs
+      group  rank_sum  design_iiptm  interaction_pae
+calibration      28.0       0.76334          9.63789
+calibration      31.0       0.82747          9.19666
+calibration      34.0       0.78714          9.92745
+calibration      34.0       0.74013         10.96761
+calibration      45.0       0.65733         12.40549
+calibration      48.0       0.63154         13.48561
+calibration      55.0       0.48859         15.86903
+calibration      72.0       0.19478         23.14231
+calibration      73.0       0.35630         18.98582
+calibration      80.0       0.23014         22.14026
+calibration      85.0       0.17848         23.60846
+calibration      88.0       0.16458         24.18374
+calibration      89.0       0.18643         23.49381
+calibration      94.0       0.15970         24.44125
+
+14 sequences in 31.7 min (2.3 min/sequence)
+saved to /kaggle/temp/Nova/data/boltzgen/instrument/scores.csv

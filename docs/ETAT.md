@@ -17,16 +17,17 @@ données avaient été régénérées. **Avant de conclure qu'un test est cassé
 son erreur : « No such file or directory: data/archive/… » n'est pas un bug.**
 Et `scripts.nativeness.available()` d'abord, toujours (§6).
 
-`docs/FINDINGS.md` est le journal complet, 91 sections, dans l'ordre
+`docs/FINDINGS.md` est le journal complet, 92 sections, dans l'ordre
 chronologique.
 
-**À lire avant tout le reste : le §91.** L'instrument n'a jamais été étalonné
-depuis la bascule de cible du 20 novembre, et l'archive publique de P05231
-porte 46 118 séquences notées par les validateurs à 0,654 de médiane quand nos
-327 mesures plafonnent à 0,446 avec 0,181 de médiane. Tant que la lecture 0 du
-lot `inputs/kaggle_instrument.csv` n'a pas tranché, **toute comparaison de nos
-valeurs absolues à celles du champ est suspendue**, et le « résultat central »
-du §2 ci-dessous avec elle. Ce fichier-ci n'en est pas un résumé neutre : c'est ce qu'il faut
+**À lire avant tout le reste : les §91 et §92.** L'instrument n'avait jamais été
+étalonné depuis la bascule de cible du 20 novembre ; il l'est depuis le
+27 novembre, et **il est exact**. Sur sept séquences d'archive conformes aux
+planchers, notre notation reproduit celle des validateurs à ρ = +1,000, décalage
+médian −0,010, de 0,29 à 0,78, avec une `interaction_pae` qui colle à 0,03 près.
+Conséquence : le « résultat central » du §2 est **rétabli**, et le verrou est
+bien le générateur — des séquences soumettables de l'archive atteignent 0,787
+quand les nôtres s'arrêtent à 0,446. Ce fichier-ci n'en est pas un résumé neutre : c'est ce qu'il faut
 savoir pour ne pas refaire un travail déjà fermé par la mesure.
 
 ---
@@ -56,21 +57,18 @@ doit jamais passer par la conversation (`docs/DEPLOY.md`).
 
 ---
 
-## 2. Le résultat central, et il change tout — mais il est suspendu depuis le §91
+## 2. Le résultat central, et il change tout
 
 **Le score des validateurs ne mesure pas la liaison biologique** (§77).
 
-> **Suspendu le 27 novembre (§91).** Ce résultat repose sur l'échelle de
-> calibration du §77, mesurée sur la cible vivante avec un instrument qui n'a
-> jamais été étalonné contre l'archive depuis la bascule. Si cet instrument
-> déprime tout à 0,18 — et 61H7, le liant cristallographique de la structure que
-> la config nomme, y note 0,178, sous 92,9 % des soumissions ordinaires de
-> l'archive — alors l'échelle n'a pas été mesurée, elle a été aplatie, et un
-> classement dans du bruit explique le ρ = −0,232 aussi bien que « le score
-> ignore la liaison ». 14 requêtes tranchent. **Ne rien bâtir sur ce qui suit
-> avant de les avoir dépensées.** Ce qui reste vrai quoi qu'il arrive : la
-> reproduction du score était exacte sur l'ANCIENNE cible (ρ +0,984, décalage
-> +0,0012 sur 84 séquences), et les lectures internes à un run survivent.
+> **Suspendu le 27 novembre, rétabli le même jour (§91, §92).** Le doute était
+> légitime : l'instrument n'avait jamais été étalonné sur cette cible, et 61H7
+> — le liant cristallographique de la structure que la config nomme — y note
+> 0,178, sous 92,9 % des soumissions de l'archive. Quatorze requêtes ont
+> tranché : sur les sept séquences d'archive **conformes aux planchers**, notre
+> notation reproduit celle des validateurs à ρ = +1,000 et −0,010 de décalage,
+> jusqu'à 0,787. L'instrument ne déprime rien. Le 0,178 de 61H7 est une vraie
+> mesure, et ce résultat tient.
 
 Nous reproduisons le score exactement : leur build de BoltzGen vendorisée, leur
 `design.yaml`, leur protocole `nanobody-anything`, leurs dix métriques, leur
@@ -118,7 +116,10 @@ décomposition qui a trouvé le levier du §87.
 | effet du choix du CDR3 à charpente fixe | écart-type 0,0218 | §77 |
 | effet d'une **permutation** de l'intérieur du CDR3 | écart-type 0,0600, moyenne signée −0,004 (38 permutations) | §90 |
 | meilleur iiptm jamais mesuré sur la cible vivante | 0,4457 sur 311 séquences uniques, **mais non soumettable** (V 79,6 < 82) | §90 |
-| meilleur iiptm **soumettable** sur la cible vivante | **0,3869** | §90 |
+| meilleur iiptm **soumettable** sur la cible vivante, par nous | **0,3869** | §90 |
+| meilleur iiptm d'une séquence **conforme de l'archive**, vérifié par nous | **0,787** | §92 |
+| fidélité de l'instrument sur la cible vivante, séquences conformes | ρ **+1,000**, décalage −0,010, pae +0,03 (n=7) | §92 |
+| séquences conformes dans l'archive P05231 | **4 317**, médiane **0,724**, 61,5 % au-dessus de 0,70 | §91 |
 | part du top 24 de la cible qui passe la couche 1 | **12 sur 24** | §90 |
 | transfert entre cibles, métrique d'**interface** | **ρ = +0,003 ± 0,15** | §80 |
 | transfert entre cibles, `design_ptm` (repliement du monomère) | **ρ = +0,487** | §87 |
@@ -326,7 +327,21 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
    `ptm` prédit monte. La restriction d'étendue est écartée : le `ptm` mesuré a
    un écart-type de 0,0150, soit 4,4 fois le bruit.
 
-3. **Le seul axe ouvert, et il est sur le générateur.** Le §90 a trouvé que la
+3. **La piste neuve, et c'est la première depuis le §85 : partir de l'archive.**
+   Le vivier de donneurs de ce dépôt a toujours été **nos propres candidats**.
+   Le §90 a permuté des séquences à 0,26-0,39, le §77 a greffé sur 61H7 à
+   0,178, le §68 a greffé un motif cristallographique. Or l'archive publique de
+   la cible porte **4 317 séquences conformes aux planchers d'aujourd'hui,
+   médiane 0,724**, et nous venons d'en vérifier une à **0,787** sur notre
+   propre instrument (§92). Personne n'a jamais pris une de ces séquences pour
+   l'éditer juste assez qu'elle franchisse la règle d'unicité du validateur
+   (Jaccard 5-mer < 0,90 contre le top 50, et les seuils d'identité de CDR du
+   filtre). La question n'est plus « notre générateur peut-il faire mieux » mais
+   **« combien de score survit à l'édition minimale qui rend une séquence
+   d'archive soumettable »**. Le §77 a posé cette question en partant de 0,178,
+   c'est-à-dire du mauvais bout ; elle n'a jamais été posée en partant de 0,78.
+   C'est le prochain lot à construire, avec un verdict écrit avant.
+4. **L'axe permutation, qui reste ouvert mais s'est déplacé.** Le §90 a trouvé que la
    permutation de l'intérieur du CDR3 est une source de variance **gratuite**
    (aucune requête pour produire le candidat), réelle (écart-type 0,060 contre
    un bruit de mesure de 0,006), sans direction (moyenne signée −0,004), qui
@@ -339,13 +354,17 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
    cette comparaison, on ne sait pas si la permutation vaut mieux que
    simplement tirer k candidats de plus — et c'est la seule question qui
    compte. Ne pas rebâtir le lot du §90 : son bras haut est impossible à poser
-   sur cette cible.
-4. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
+   sur cette cible. **Et depuis le §92, ses donneurs sont le mauvais vivier** :
+   le lot `inputs/kaggle_equalbudget.csv` est construit et valide pour la
+   question qu'il pose, mais il permute des séquences à 0,26-0,39 alors que
+   l'archive en offre à 0,787. Le repointer sur des donneurs d'archive avant de
+   payer ses 56 requêtes.
+5. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
    soumis. Les validateurs notent gratuitement et exactement ce qu'on leur
    envoie, là où Kaggle ne donne que des approximations payantes — mais soumettre
    engage du TAO, ce que la règle du dépôt interdit pendant la recherche.
    **C'est une décision pour le propriétaire du dépôt, pas pour un agent.**
-5. **Le GPU, si la question revient.** Une époque dure 72 min, donc 2× T4
+6. **Le GPU, si la question revient.** Une époque dure 72 min, donc 2× T4
    n'évaluent qu'une trentaine de candidats dedans : avec Kaggle on ne peut pas
    *concourir*, seulement rejouer des époques passées, puisqu'on ne commande pas
    quand la session démarre. Passer de 30 à 300 candidats interrogés vaut
