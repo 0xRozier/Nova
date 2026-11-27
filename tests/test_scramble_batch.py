@@ -7,6 +7,7 @@ and the analyse/verdict logic. Run after generating the batch:
     python -m pytest tests/test_scramble_batch.py -v
 """
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,10 @@ import pytest
 
 from nova_lab import REPO_ROOT
 from nova_lab.nanobodies import regions
+from nova_lab.provenance import (assert_current_target, runs_on_current_target,
+                                 target_of)
 from scripts.build_scramble_batch import (
+    score_path,
     JACCARD_CEILING,
     N_ANCHOR,
     N_HIGH,
@@ -72,7 +76,8 @@ def test_no_duplicate_sequences(batch):
 
 
 def test_all_sequences_are_strings(batch):
-    assert batch["sequence"].dtype == object
+    # pandas 3 lit une colonne de texte en StringDtype, pandas 2 en object :
+    # c'est le contenu qui compte, pas le dtype que la version choisit.
     assert all(isinstance(s, str) and len(s) >= 80 for s in batch["sequence"])
 
 
@@ -174,11 +179,20 @@ def test_jaccard_below_ceiling(batch):
 # ---------------------------------------------------------------------------
 # anchors
 # ---------------------------------------------------------------------------
+def _score_files():
+    """Tous les CSV de scores, dans results/ comme a la racine."""
+    seen: dict[str, Path] = {}
+    for d in (REPO_ROOT / "results", REPO_ROOT):
+        for p in sorted(d.glob(SCORE_GLOB)):
+            seen.setdefault(p.name, p)
+    return list(seen.values())
+
+
 def test_anchors_are_real_repeats(batch):
     """Every anchor must have been scored in a previous run."""
     anchor_seqs = set(batch[batch["arm"] == "anchor"]["sequence"])
     scored_before: set[str] = set()
-    for path in sorted(REPO_ROOT.glob(SCORE_GLOB)):
+    for path in _score_files():
         try:
             df = pd.read_csv(path, usecols=["sequence"])
         except (ValueError, KeyError):
@@ -186,6 +200,30 @@ def test_anchors_are_real_repeats(batch):
         scored_before.update(df["sequence"])
     missing = anchor_seqs - scored_before
     assert not missing, f"{len(missing)} anchors not in any previous score CSV"
+
+
+def test_anchor_sources_are_all_on_the_live_target():
+    """Le vivier d'ancres ne doit contenir que des runs de la cible vivante.
+
+    Les quatre ancres du lot `scramble` venaient de l'ancienne cible : elles
+    n'ont mesure aucun bruit entre runs, parce que select_anchors lisait une
+    liste de fichiers ecrite en dur (FINDINGS 90).
+    """
+    names = runs_on_current_target()
+    assert names, "aucun run de la cible vivante : la table de provenance est vide"
+    assert_current_target([score_path(n) for n in names], "le vivier d'ancres")
+
+
+def test_every_score_file_has_an_established_target():
+    """Aucun fichier de scores ne doit avoir de cible inconnue.
+
+    C'est la condition pour qu'un constructeur de lot puisse refuser de puiser
+    dans la mauvaise : un fichier ajoute sans cible etablie doit casser ici,
+    pas apres 110 min de GPU.
+    """
+    unknown = [p.name for p in _score_files() if target_of(p) is None]
+    assert not unknown, (f"cible non etablie pour {unknown} — "
+                         f"l'inscrire dans nova_lab/provenance.RUN_TARGET")
 
 
 # ---------------------------------------------------------------------------

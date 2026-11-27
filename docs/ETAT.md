@@ -1,10 +1,23 @@
 # Où en est le projet
 
-Passation pour le prochain agent. Écrit le 2026-11-25, branche
-`claude/eloquent-feynman-ipdup2`, commit `e15e1de`, 206 tests verts (hors
-`tests/test_nanobody_parity.py`, qui dure 21 min).
+Passation pour le prochain agent. Mis à jour le 2026-11-27, branche
+`claude/eloquent-feynman-ipdup2`.
 
-`docs/FINDINGS.md` est le journal complet, 87 sections, dans l'ordre
+**Sur l'état des tests, et ne pas s'y laisser prendre.** Dans un conteneur neuf
+(dépôt fraîchement cloné, `requirements.txt` installé, rien d'autre) :
+218 passent, 20 échouent, 15 en erreur. **Aucun de ces rouges n'est une
+régression du code** : ils viennent tous de ce que `.gitignore` exclut `data/*`,
+donc le cache d'archive (`data/archive/<cible>_regions.csv`) et les pièces de
+nativité (`hmmscan`, `internal_data/human`) sont absents après chaque
+reconstruction. Les modules touchés : `test_ptm_batch`, `test_calibration_batch`,
+`test_learning_batch`, `test_regions_cache`, `test_analyze_target`,
+`test_nativeness`, `test_repair_binder`, `test_parity`, `test_esm_surrogate`.
+Le « 206 tests verts » des passations précédentes supposait une machine où ces
+données avaient été régénérées. **Avant de conclure qu'un test est cassé, lire
+son erreur : « No such file or directory: data/archive/… » n'est pas un bug.**
+Et `scripts.nativeness.available()` d'abord, toujours (§6).
+
+`docs/FINDINGS.md` est le journal complet, 90 sections, dans l'ordre
 chronologique. Ce fichier-ci n'en est pas un résumé neutre : c'est ce qu'il faut
 savoir pour ne pas refaire un travail déjà fermé par la mesure.
 
@@ -83,6 +96,8 @@ décomposition qui a trouvé le levier du §87.
 | bruit **à l'intérieur** d'un run | ≤ 0,006 | §77 bis |
 | écart typique entre rivaux dans une époque | 0,014 | §49 |
 | effet du choix du CDR3 à charpente fixe | écart-type 0,0218 | §77 |
+| effet d'une **permutation** de l'intérieur du CDR3 | écart-type 0,0600, moyenne signée −0,004 (38 permutations) | §90 |
+| meilleur iiptm jamais mesuré sur la cible vivante | **0,4457** sur 311 séquences uniques | §90 |
 | transfert entre cibles, métrique d'**interface** | **ρ = +0,003 ± 0,15** | §80 |
 | transfert entre cibles, `design_ptm` (repliement du monomère) | **ρ = +0,487** | §87 |
 | coût d'une requête | 2,0 à 2,2 min sur 2× T4 | §77, §80 |
@@ -174,6 +189,19 @@ cible** — c'est le §5 du guide amont, et c'est gratuit.
 
 ## 6. Pièges qui ont déjà coûté
 
+- **Une constante survit à un changement de cible, et ça a mordu deux fois.**
+  La deuxième (§90) a coûté une heure de GPU : `build_scramble_batch.py` tirait
+  ses donneurs d'une liste de fichiers nommée `LIVE_TARGET_RUNS`, écrite avant
+  la bascule du 20 novembre et devenue fausse ce jour-là sans que rien ne le
+  dise. Dix séquences du champ choisies pour leur iiptm de 0,715-0,795 **sur
+  PD-L1** notaient 0,145-0,224 sur IL-6, et 40 des 56 séquences du lot ont été
+  payées sur une prémisse vide. La cause racine : **les CSV de `results/`
+  n'enregistraient pas la cible**. Désormais `boltzgen_score` écrit une colonne
+  `target`, `nova_lab/provenance.py` porte la table des quinze fichiers
+  antérieurs (établie sur deux signatures, pas sur la date de commit, qui ne
+  prouve rien dans le sens utile), et `assert_current_target()` refuse tout
+  fichier dont la cible n'est pas établie. **À appeler dans tout constructeur
+  de lot qui puise une séquence, un score ou une ancre dans l'historique.**
 - **Une constante survit à un changement de cible.** `TARGET = "Q9NZQ7"` était
   en dur dans `boltzgen_score.py` alors que quatre autres valeurs venaient de la
   config : 6 min de GPU perdues au milieu d'un run de 2 h, parce que le nom ne
@@ -219,6 +247,12 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 - **Un témoin dans chaque lot.** Le bras `scramble` du §74 (même charpente, même
   composition de CDR3, ordre mélangé) a donné le bruit intra-run qu'on n'avait
   jamais mesuré. Le bras `repeat` du §79 a donné le bruit de la cible vivante.
+- **Vérifier la provenance des séquences avant de construire le lot.** Tout
+  score historique qui a servi à *choisir* une séquence doit porter la cible
+  vivante : `nova_lab.provenance.assert_current_target(paths)`. C'est gratuit,
+  et son absence a coûté une heure de GPU au §90. `verify_boltzgen_notebook` ne
+  le fait pas : il vérifie la charge utile, pas la question posée. Un lot peut
+  être techniquement parfait et poser une question qui n'existe plus.
 - **Vérifier le carnet en local avant l'upload** :
   `python -m scripts.verify_boltzgen_notebook <carnet> --batch <lot> --run <nom>`.
   Il a attrapé les deux pannes les plus chères du projet.
@@ -240,6 +274,8 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 | réutiliser les requêtes d'une cible sur une autre, pour l'interface | ρ = +0,003 | §80, §82 |
 | une représentation de séquence plus riche (ESM-2) | égale les 3-mers partout | §86 |
 | `design_ptm` comme cible de substitution | prospectif ρ +0,145, iiptm en baisse | §89 |
+| « permuter le CDR3 donne une jumelle diverse **au même score** » | faux : déplacement 10× le bruit intra-run, 29/38 permutations au-delà | §90 |
+| la permutation du CDR3 à 0,70-0,79 | **impossible à poser** : 0 séquence sur 311 au-dessus de 0,45 sur cette cible | §90 |
 
 ---
 
@@ -257,12 +293,26 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
    `ptm` prédit monte. La restriction d'étendue est écartée : le `ptm` mesuré a
    un écart-type de 0,0150, soit 4,4 fois le bruit.
 
-3. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
+3. **Le seul axe ouvert, et il est sur le générateur.** Le §90 a trouvé que la
+   permutation de l'intérieur du CDR3 est une source de variance **gratuite**
+   (aucune requête pour produire le candidat), réelle (écart-type 0,060 contre
+   un bruit de mesure de 0,006), sans direction (moyenne signée −0,004), qui
+   préserve la couche 1 et laisse le Jaccard à 0,80. Le record de la cible
+   (0,4457 sur 311 séquences) est une permutation d'un donneur à 0,2551. Sur un
+   objectif aussi tassé, une variance gratuite est ce que consomme une
+   recherche par meilleur-de-k. **Ce qui n'est pas fait, et qui décide :
+   comparer à budget GPU égal**, dans un seul run, k permutations d'un donneur
+   contre k candidats neufs du générateur habituel, verdict écrit avant. Sans
+   cette comparaison, on ne sait pas si la permutation vaut mieux que
+   simplement tirer k candidats de plus — et c'est la seule question qui
+   compte. Ne pas rebâtir le lot du §90 : son bras haut est impossible à poser
+   sur cette cible.
+4. **La question stratégique, qui n'est pas technique.** Le dépôt n'a jamais
    soumis. Les validateurs notent gratuitement et exactement ce qu'on leur
    envoie, là où Kaggle ne donne que des approximations payantes — mais soumettre
    engage du TAO, ce que la règle du dépôt interdit pendant la recherche.
    **C'est une décision pour le propriétaire du dépôt, pas pour un agent.**
-4. **Le GPU, si la question revient.** Une époque dure 72 min, donc 2× T4
+5. **Le GPU, si la question revient.** Une époque dure 72 min, donc 2× T4
    n'évaluent qu'une trentaine de candidats dedans : avec Kaggle on ne peut pas
    *concourir*, seulement rejouer des époques passées, puisqu'on ne commande pas
    quand la session démarre. Passer de 30 à 300 candidats interrogés vaut
@@ -279,6 +329,7 @@ Elle a attrapé plusieurs de mes propres erreurs ; la garder.
 | `docs/FINDINGS.md` | le journal, 87 sections, chronologique |
 | `docs/DEPLOY.md` | remonter l'environnement, secrets |
 | `nova_lab/config.py` | cible, structure, site, seuils ; `PREVIOUS_NANOBODY` garde l'ancienne |
+| `nova_lab/provenance.py` | **contre quelle cible chaque fichier de `results/` a été noté** ; `assert_current_target` avant tout lot |
 | `nova_lab/nanobodies.py` | couche 1 (`check_sequence`), régions, germinal, `is_vhh` |
 | `nova_lab/structures.py` | lecture mmCIF, deux numérotations, contacts |
 | `scripts/nativeness.py` | exécute le **vrai** filtre du validateur ; `available()` d'abord |

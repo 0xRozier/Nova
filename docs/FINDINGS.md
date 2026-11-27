@@ -7075,3 +7075,199 @@ n'ajoute rien aux 3-mers), le §89 ferme la cible de substitution
 montré que le verrou est le générateur : notre distribution plafonne à 0,726
 d'iiptm quand le champ est à 0,75-0,79, et 2 000 candidats interrogés ne
 referment pas l'écart.
+
+## 90. Le lot `scramble` : 40 séquences payées sur une prémisse vide, et ce que les 16 autres ont quand même appris
+
+56 séquences, 110,4 min sur 2× T4, zéro échec.
+`results/scores_nanobody_scramble.csv`, journal
+`results/boltzgen_scramble.log`. Lecture exécutée par
+`scripts.build_scramble_batch --analyse`, écrite au moment de construire le lot.
+
+**La question pré-enregistrée est restée sans réponse, et c'est de notre faute,
+pas celle de la mesure.** Le lot demandait si permuter l'intérieur du CDR3
+préserve l'iiptm **à haut score (0,70-0,79)**. Aucune de ses 56 séquences n'était
+à haut score sur la cible vivante : le lot entier tient dans 0,118-0,446.
+
+### Le piège du §6 a mordu une deuxième fois
+
+`scripts/build_scramble_batch.py` tirait ses dix donneurs « hauts » d'une
+constante :
+
+```python
+LIVE_TARGET_RUNS = [
+    "scores_nanobody_arms_26299_26306.csv",
+    "scores_nanobody_deep_26304_26345_26347.csv",
+    ...
+]
+```
+
+Ces cinq runs sont des **époques 26299 à 26347**, toutes antérieures à la
+bascule de cible du 20 novembre (`b154501` : Q9NZQ7 / PD-L1 / 8AOK →
+P05231 / IL-6 / 4O9H). Le nom de la constante est devenu faux ce jour-là, en
+silence. Les dix donneurs sont des séquences du **champ** (`group == "real"`,
+des soumissions réelles de ces époques) choisies pour un iiptm de 0,715 à 0,795
+— mesuré **contre PD-L1**.
+
+Sur IL-6, les mêmes dix séquences donnent :
+
+| | ancienne cible | cible vivante | écart |
+|---|---|---|---|
+| étendue iiptm des 10 donneurs | 0,715 - 0,795 | **0,145 - 0,224** | −0,52 à −0,63 |
+| `interaction_pae` du groupe `real` | 8,8 - 9,2 | 23,4 - 25,0 | — |
+| leur rang parmi les 56 de ce run | — | 11 à 52 | — |
+| ρ(iiptm PD-L1, iiptm IL-6), n=10 | — | **+0,297** (p ≈ 0,4) | — |
+
+C'est le §80 confirmé une troisième fois, et cette fois avec des **séquences du
+champ** et non les nôtres : le transfert des métriques d'interface d'une cible à
+l'autre ne vaut rien. Les gagnants d'époque de PD-L1 sont quelconques sur IL-6.
+
+### Le run est sain, et ce sont les donneurs bas qui le prouvent
+
+Avant d'accuser le carnet, il fallait écarter une panne de run — MSA absente,
+mauvaise structure, mauvais site. Trois faits l'écartent :
+
+| contrôle | lecture |
+|---|---|
+| les 4 donneurs **bas**, pris dans `scores_nanobody_ptm.csv` (même cible) | écarts −0,019, −0,020, −0,003, +0,014 ; moyenne \|Δ\| **0,0142** pour un bruit entre runs de 0,0133 |
+| distribution du run contre celle du lot `ptm` du §89 | iiptm médian 0,172 contre 0,182 ; `interaction_pae` 24,0 contre 23,6 ; `ptm` 0,772 contre 0,781 |
+| même comparaison contre un run de l'ancienne cible (`wide4arms`) | iiptm médian 0,539, pae **13,0** — une autre échelle |
+
+Les quatre donneurs bas se reproduisent au bruit près d'un run à l'autre. Une
+MSA manquante ou une mauvaise structure les aurait emportés avec les autres.
+**Ce sont les 0,79 qui étaient hors sujet, pas les 0,16.**
+
+Accessoirement : les quatre **ancres**, censées mesurer le bruit entre runs,
+venaient toutes de l'ancienne cible. Elles n'ont donc rien contrôlé. Le témoin
+du run a été fourni par accident, par les quatre donneurs bas.
+
+### Ce que les 16 séquences valides ont mesuré, et c'est un résultat
+
+Tout ce qui suit est **à l'intérieur d'un seul run**, sur la bonne cible, donc
+comparable (§3) : on compare chaque permutation à son donneur **re-mesuré dans
+ce run**, pas à son ancienne valeur. L'analyse pré-enregistrée fait déjà cela ;
+c'est pourquoi ses lectures 1, 2 et 4 restent lisibles, à condition de les lire
+dans la bande 0,145-0,282 et non 0,70-0,79.
+
+| 38 permutations appariées, 14 donneurs | valeur |
+|---|---|
+| \|écart\| médian | 0,0277 |
+| \|écart\| moyen | **0,0419** |
+| écart-type des écarts | **0,0600** |
+| contre le bruit **intra-run** (≤ 0,006, §77 bis) | **10×** |
+| permutations au-delà de 2× ce bruit | **29 / 38** |
+| écart **signé** moyen | −0,0041 |
+| permutations au-dessus de leur donneur | 16 / 38 |
+
+**Permuter l'intérieur du CDR3 n'est pas neutre.** Le §77 avait conclu le
+contraire sur un seul donneur à iiptm 0,21, avec un déplacement de 0,004 ; avec
+14 donneurs et 38 permutations, le déplacement est dix fois le bruit intra-run.
+Le §77 était sous-échantillonné, et son chiffre est retiré.
+
+Mais le déplacement **n'a pas de direction** : 16 permutations au-dessus, 22 en
+dessous, moyenne signée −0,004. Ce n'est pas une amélioration, c'est de la
+variance. Et comme le bruit de mesure intra-run (≤ 0,006) est dix fois plus
+petit que cette dispersion (0,060), la variance est **réelle** : ce n'est pas
+de la malchance de mesure, c'est la séquence qui change de valeur.
+
+### Le meilleur score jamais mesuré sur IL-6 est une permutation
+
+Sur les 311 séquences uniques que ce dépôt a interrogées sur P05231, le record
+est désormais **0,4457**, et c'est une permutation du CDR3 d'un donneur à
+0,2551 (`permuted_low#02.0`, CDR3 de 17 résidus). La seconde permutation du
+**même** donneur donne 0,3740. Deux tirages, +0,19 et +0,12.
+
+| meilleur-de-k par donneur (k = 2 ou 3) | valeur |
+|---|---|
+| donneurs dont au moins une permutation fait mieux | 7 / 14 |
+| gain médian | +0,0057 |
+| gain moyen | **+0,0133** (≈ un écart entre rivaux, 0,014) |
+| gain maximal | **+0,1906** |
+
+À l'opposé, le donneur `pair 10` perd 0,114 sur ses deux permutations. La queue
+est épaisse des deux côtés.
+
+**Ce que cela vaut, prudemment.** Le §85 a établi que le verrou est le
+générateur : notre distribution plafonne, et sur cette cible elle plafonne à
+0,446 sur 311 requêtes. La permutation du CDR3 est un générateur **gratuit**
+(aucun modèle, aucune requête pour produire le candidat), qui préserve la
+composition du CDR3 et les extrémités germinales — donc la couche 1 — et qui
+laisse le Jaccard 5-mer à 0,80 en médiane, sous le plafond de 0,90 du
+validateur. Sur un objectif où tout est tassé entre 0,12 et 0,45, une source de
+variance gratuite est exactement ce qu'une recherche par meilleur-de-k
+consomme.
+
+**Ce que cela ne vaut pas.** Rien ici ne dit que la permutation vaut mieux que
+tirer k candidats de plus du générateur habituel : la comparaison n'a pas été
+faite, et c'est elle qui décide. Le gain meilleur-de-k est de surcroît mesuré
+sur la même mesure qui a servi à choisir le gagnant. Ici le biais de sélection
+est petit — le bruit de mesure (≤ 0,006) est dix fois sous la dispersion
+(0,060), donc l'essentiel du gain est réel et non de la malédiction du
+vainqueur — mais un essai propre doit comparer **à budget GPU égal** : k
+permutations d'un donneur contre k candidats neufs, dans un seul run, avec le
+verdict écrit avant.
+
+### La diversité passe, mais de justesse sur les CDR3 courts
+
+Lecture 4, la seule pré-enregistrée qui soit indépendante de la cible et qui
+passe telle quelle : les 38 permutations sont toutes sous le plafond de Jaccard
+5-mer de 0,90, médiane 0,796. Mais le maximum est **0,899**, sur un CDR3 de 10
+résidus (`permuted_high#07.1`). Un CDR3 court n'a pas assez d'intérieur à
+permuter pour s'éloigner : sur 10 résidus, trois positions fixes à chaque bout
+n'en laissent que quatre. **Opérationnellement : ne pas permuter un CDR3 de
+moins de 12 résidus en comptant sur la permutation pour franchir la règle de
+diversité.**
+
+### Ce qui est réparé, pour que le piège ne morde pas une troisième fois
+
+La cause racine n'est pas la constante, c'est que **les CSV de `results/`
+n'enregistraient pas la cible**. Tant qu'il n'y en avait qu'une, l'omission
+était invisible ; la bascule l'a rendue coûteuse, et rien dans le dépôt ne
+pouvait répondre à « ce fichier a été noté contre quoi ? ».
+
+- `scripts/boltzgen_score.py` écrit désormais une colonne **`target`** dans
+  chaque fichier de scores. Les runs à venir se décrivent eux-mêmes.
+- `nova_lab/provenance.py` porte la table des quinze fichiers existants, qui ne
+  peuvent plus être réparés après coup. Chaque entrée est établie sur deux
+  signatures concordantes : la présence et la valeur de la colonne `epoch`
+  (25996-26347 sur l'ancienne cible, absente sur la cible vivante) et l'échelle
+  de l'`interaction_pae` (médiane 10,9-21,9 contre 23,2-24,2).
+- **La date de commit ne prouve rien dans le sens utile.**
+  `scores_nanobody_xtal_26301.csv` est commité le 23 novembre, trois jours après
+  la bascule, et porte l'ancienne cible — ses quatre `real` sont à 0,700 pour une
+  pae de 9,19. Elle ne prouve que l'inverse : un fichier commité avant le
+  20 novembre ne peut pas porter une cible qui n'existait pas encore.
+- `assert_current_target()` est appelé par `build_scramble_batch` **avant** toute
+  construction de lot, sur les runs des donneurs hauts comme bas, et
+  `select_anchors` ne lit plus que des runs de la cible vivante. Un fichier dont
+  la cible n'est pas établie est refusé, pas supposé à jour.
+- Trois tests dans `tests/test_scramble_batch.py` : le vivier d'ancres ne
+  contient que la cible vivante, aucun fichier de scores n'a de cible inconnue,
+  et les ancres sont de vraies répétitions (ce dernier cherche désormais dans
+  `results/` **et** à la racine — il cherchait au mauvais endroit et passait à
+  côté de la moitié des fichiers).
+
+Conséquence immédiate, et elle est brutale : avec le garde-fou en place,
+`build_scramble_batch` **ne peut plus construire ce lot**. Il demande dix
+donneurs au-dessus de 0,70 et il n'en existe aucun sur la cible vivante — 0 sur
+311 séquences, le record étant 0,446. La question « la permutation préserve-t-elle
+le score à 0,75 ? » n'est pas seulement sans réponse : elle est **impossible à poser** sur
+cette cible, tant que rien n'y atteint 0,70. C'est le §85 qui parle, pas ce lot.
+
+### Le coût, et la leçon
+
+110,4 min de GPU. Les 40 séquences des bras `donor_high` et `permuted_high`
+(10 + 30) répondaient à une question vide ; les 16 autres ont donné le
+déplacement du CDR3 et le record de la cible. Appelons-le moitié perdu.
+
+La discipline du §7 a fonctionné à moitié, et il faut être précis sur quelle
+moitié. `verify_boltzgen_notebook` a fait son travail : la charge utile, la MSA,
+le `TARGET` embarqué et l'absence de doublons étaient tous corrects, et le
+carnet a tourné sans un échec. Ce qu'il ne vérifie pas, parce que personne ne le
+lui a demandé, c'est la **provenance des séquences du lot** : d'où elles
+viennent, contre quoi leur score d'origine a été mesuré, et si ce score veut
+encore dire quelque chose. Un lot peut être techniquement parfait et poser une
+question qui n'existe plus.
+
+**Règle à ajouter au §7 : avant de construire un lot, vérifier que tout score
+historique qui a servi à choisir une séquence porte la cible vivante.** C'est
+gratuit, c'est automatisable, et ça vient de coûter une heure de GPU.

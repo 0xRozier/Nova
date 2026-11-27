@@ -159,6 +159,10 @@ def main():
         sys.exit("BoltzGen produced no metrics")
     res = res.merge(meta.drop_duplicates("sequence"), on="sequence", how="left")
     res["rank_sum"] = rank_sum(res)
+    # La cible, inscrite dans le fichier : sans elle, rien ne distingue un run
+    # de l'ancienne cible d'un run de celle-ci, et un constructeur de lot a
+    # puise ses donneurs dans la mauvaise (FINDINGS 90, nova_lab/provenance.py).
+    res["target"] = TARGET
     res = res.sort_values("rank_sum")
     res.to_csv(base / "scores.csv", index=False)
 

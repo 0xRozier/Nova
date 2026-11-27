@@ -30,6 +30,7 @@ Usage:
     python -m scripts.build_scramble_batch --analyse scores.csv --batch inputs/kaggle_scramble.csv
 """
 import argparse
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -37,6 +38,8 @@ from scipy.stats import spearmanr
 
 from nova_lab import REPO_ROOT
 from nova_lab.nanobodies import _regions_of, check_sequence, regions
+from nova_lab.provenance import (assert_current_target, runs_on_current_target,
+                                 target_of)
 
 SCORE_GLOB = "scores_nanobody_*.csv"
 
@@ -81,14 +84,14 @@ def _regions_batch_safe(sequences: list[str]) -> list[dict | None]:
         out.append(_regions_of(c) if c is not None else None)
     return out
 
-# Live-target runs with high-scoring field sequences
-LIVE_TARGET_RUNS = [
-    "scores_nanobody_arms_26299_26306.csv",
-    "scores_nanobody_deep_26304_26345_26347.csv",
-    "scores_nanobody_design3arms_26345.csv",
-    "scores_nanobody_k1sample_26345.csv",
-    "scores_nanobody_wide4arms_26345.csv",
-]
+# Les runs notes sur la cible VIVANTE. Cette liste etait ecrite en dur et
+# nommee LIVE_TARGET_RUNS ; elle enumerait cinq runs des epoques 26299-26347,
+# tous anterieurs a la bascule du 20 novembre. Le nom est devenu faux ce jour-la
+# sans que rien ne le dise, et le lot a paye 40 sequences sur une premisse vide
+# (FINDINGS 90). Elle est desormais derivee de nova_lab.provenance, et
+# assert_current_target refuse tout fichier dont la cible n'est pas etablie.
+def live_target_runs() -> list[str]:
+    return runs_on_current_target()
 
 N_HIGH = 10
 N_PERM_HIGH = 3
@@ -123,11 +126,22 @@ def jaccard_5mer(a: str, b: str) -> float:
 # ---------------------------------------------------------------------------
 # load live-target scores
 # ---------------------------------------------------------------------------
+def score_path(name: str) -> Path:
+    """Le fichier de scores, dans results/ ou a la racine (les deux ont servi)."""
+    for candidate in (REPO_ROOT / "results" / name, REPO_ROOT / name):
+        if candidate.exists():
+            return candidate
+    return REPO_ROOT / "results" / name
+
+
 def load_live_target_scores(log=print) -> pd.DataFrame:
     """Load all scores from live-target runs, deduplicate by sequence keeping best iiptm."""
+    names = live_target_runs()
+    paths = [score_path(n) for n in names]
+    # Avant toute depense : chaque source doit porter la cible vivante.
+    assert_current_target(paths, "les runs sources des donneurs")
     frames = []
-    for name in LIVE_TARGET_RUNS:
-        path = REPO_ROOT / name
+    for name, path in zip(names, paths):
         if not path.exists():
             log(f"  WARNING: {name} not found, skipping")
             continue
@@ -259,9 +273,10 @@ def select_donors(scores: pd.DataFrame, n_high: int = N_HIGH, n_low: int = N_LOW
         f"CDR3 lengths {sorted(high_donors['cdr3_len'].unique())}")
 
     # --- Low donors ---
-    ptm_path = REPO_ROOT / "scores_nanobody_ptm.csv"
+    ptm_path = score_path("scores_nanobody_ptm.csv")
     if not ptm_path.exists():
         raise RuntimeError(f"ptm scores not found: {ptm_path}")
+    assert_current_target([ptm_path], "le run source des donneurs bas")
     ptm_scores = pd.read_csv(ptm_path)
     low_pool = ptm_scores[(ptm_scores["design_iiptm"] >= 0.20) &
                           (ptm_scores["design_iiptm"] <= 0.40)].copy()
@@ -294,10 +309,16 @@ def select_donors(scores: pd.DataFrame, n_high: int = N_HIGH, n_low: int = N_LOW
 # ---------------------------------------------------------------------------
 def select_anchors(batch_sequences: set[str], n: int = N_ANCHOR,
                    log=print) -> pd.DataFrame:
-    """Pick sequences scored in 2+ previous runs, not already in the batch."""
+    """Pick sequences scored in 2+ previous runs, not already in the batch.
+
+    Uniquement des runs de la cible vivante : une ancre notee sur une autre
+    cible ne mesure aucun bruit entre runs, elle mesure le transfert, qui vaut
+    rho = +0,003 (FINDINGS 80). Les quatre ancres du lot `scramble` venaient
+    toutes de l'ancienne cible et n'ont donc rien controle (FINDINGS 90).
+    """
     seq_runs: dict[str, list[str]] = {}
     seq_iiptm: dict[str, list[float]] = {}
-    for path in sorted(REPO_ROOT.glob(SCORE_GLOB)):
+    for path in sorted(score_path(n) for n in runs_on_current_target()):
         run = path.stem.replace("scores_nanobody_", "")
         try:
             df = pd.read_csv(path, usecols=["sequence", "design_iiptm"])
@@ -525,7 +546,7 @@ def analyse(scores_path: str, batch_path: str, log=print) -> dict:
         log(f"\n1. SCORE PRESERVATION: {n_pass}/{n_tested} donors have displacement < {SIGMA_2} "
             f"({'PASS' if result['reading1_pass'] else 'FAIL'}: need {PRESERVATION_PASS}/{N_HIGH})")
         for d in displacements_high:
-            log(f"   pair {d['pair_id']:2d}: donor {d['donor_iiptm']:.3f}, "
+            log(f"   pair {int(d['pair_id']):2d}: donor {d['donor_iiptm']:.3f}, "
                 f"median perm {d['median_perm_iiptm']:.3f}, "
                 f"displacement {d['displacement']:.4f} {'✓' if d['pass'] else '✗'}")
     else:
